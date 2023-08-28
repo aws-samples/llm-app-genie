@@ -1,0 +1,45 @@
+import json
+import os
+
+import boto3
+
+# ------------------------------------------------------------------------------
+# import environment configuration based on the STAGE
+# ------------------------------------------------------------------------------
+# Load the Environment Configuration from the JSON file
+with open(
+    "configs/" + (os.environ["STAGE"] if "STAGE" in os.environ else "dev") + ".json",
+    "r",
+) as file:
+    config = json.load(file)
+
+# Adding environment and prefix
+config["appPrefix"] = os.environ["CDK_APP"] if "CDK_APP" in os.environ else "Gena"
+config["appPrefixLC"] = config["appPrefix"].lower()
+
+
+config["code"] = os.environ["CDK_ENV_CODE"] if "CDK_ENV_CODE" in os.environ else ""
+
+# adding CODEBUILD_BUILD_NUMBER to the version tag
+config["globalTags"]["version"] += "." + (
+    os.environ["CODEBUILD_BUILD_NUMBER"]
+    if "CODEBUILD_BUILD_NUMBER" in os.environ
+    else config["code"]
+)
+
+# add application prefix to all tags
+global_tags = {}
+for key, value in config["globalTags"].items():
+    key = config["appPrefixLC"] + ":" + key
+    global_tags[key] = value
+
+config["globalTags"] = global_tags
+
+quotas_client = boto3.client(
+    "service-quotas", region_name=os.environ["CDK_DEFAULT_REGION"]
+)
+quotas = {
+    "ml.g5.12xlarge": "L-65C4BD00",
+    "ml.g5.48xlarge": "L-0100B823",
+    "ml.g4dn.xlarge": "L-B67CFA0C",
+}

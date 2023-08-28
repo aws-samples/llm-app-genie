@@ -1,0 +1,32 @@
+# JSON Schema for App Config
+The [JSON schemas](http://json-schema.org/) in the `json_schema` folder describe the structure for configuring the AWSomeChat application using a `appconfig.json` file in the root folder of the application.
+
+Use the `$schema` property in the `appconfig.json` file to point to the [aws_awsomechat_app_config.schema.json](./aws_awsomechat_app_config.schema.json) JSON schema. Here is an example for the `appconfig.json` file:
+```json
+{
+    "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+    "appearance": {
+      "type": "AWSomeChatAppearance",
+      "parameters": {
+        "name": "My Chat",
+        "faviconUrl": "chatbot/aws.png"
+      }
+    }
+  }
+```
+
+## Why
+JSON schema describes and validates the format of a JSON document. This enhances the developer experience when configuring the AWSomeChat application using the `appconfig.json` file. We also use the JSON schema to automatically generate code that parses the `appconfig.json` file.
+
+## Development
+The entire `json_schema/` directory can be excluded from any build artifacts (i.e. Docker container) because the application does not use it at run time. The JSON schema is used during development.
+
+[Quicktype](https://quicktype.io/) is the tool to generate the code to parse the `appconfig.json` file during runtime. To install Quicktype run `npm install -g quicktype` 
+
+You can modify [aws_awsomechat_app_config.schema.json](./aws_awsomechat_app_config.schema.json) to expand the schema. For backwards compatibilty we should only extend and not delete/modify the existing schema if possible. After making changes to [aws_awsomechat_app_config.schema.json](./aws_awsomechat_app_config.schema.json) you can generate the code with the following command:
+```bash 
+quicktype -o app_config_change.py -t AppConfig -s schema --src ./json_schema/aws_awsomechat_app_config.schema.json --telemetry disable  --python-version 3.7
+```
+Now you can take the code from the `app_config_change.py` file and integrate the changes into [app_config.py](../app_config.py) file. Do not replace all the content in `app_config.py` with the new code because `app_config.py` contains manual changes. Add the new code that is the result of your schema additions to the existing code.
+
+

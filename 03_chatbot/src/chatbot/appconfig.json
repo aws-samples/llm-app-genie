@@ -1,0 +1,19 @@
+{
+  "$schema": "json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "Gena",
+      "faviconUrl": "aws.png"
+    }
+  },
+  "amazonBedrock": [
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-west-2",
+        "endpointURL": "https://prod.us-west-2.frontend.bedrock.aws.dev"
+      }
+    }
+  ]
+}

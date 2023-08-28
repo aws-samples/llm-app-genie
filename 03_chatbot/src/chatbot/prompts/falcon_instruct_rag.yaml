@@ -1,0 +1,12 @@
+_type: prompt
+input_variables:
+  - context
+  - question
+template: |
+  Answer the question based on the context below. Keep the answer short and concise. Respond "Unsure about answer" if not sure about the answer.
+
+  Context:
+  {context}
+
+  Question: {question}
+  Helpful Answer:

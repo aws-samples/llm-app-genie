@@ -1,0 +1,61 @@
+# English (United States) translations for genaiax.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# This file is distributed under the same license as the genaiax project.
+# Malte Reimann malterei@amazon.com, 2023.
+msgid ""
+msgstr ""
+"Project-Id-Version: genaiax 0.0.1\n"
+"Report-Msgid-Bugs-To: malterei@amazon.com\n"
+"POT-Creation-Date: 2023-08-17 20:02+0200\n"
+"PO-Revision-Date: 2023-08-17 20:15+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en_US\n"
+"Language-Team: en_US <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: src/chatbot/__main__.py:53
+msgid "{chatbot_name} - An LLM-powered app for your custom data"
+msgstr ""
+
+#: src/chatbot/__main__.py:54
+msgid ""
+"Made with ❤️ by your AWS WWSO AIML EMEA and Swiss SA Team (and Amazon "
+"CodeWhisperer 🤫)"
+msgstr ""
+
+#: src/chatbot/__main__.py:55
+msgid "LLM-powered app built using:"
+msgstr ""
+
+#: src/chatbot/__main__.py:155
+msgid "Reset Session"
+msgstr ""
+
+#: src/chatbot/__main__.py:176
+msgid "Ask a question or prompt the LLM"
+msgstr ""
+
+#: src/chatbot/ui/chat_messages.py:55
+msgid "Hi, I'm {chatbot_name}. How may I help you?"
+msgstr ""
+
+#: src/chatbot/ui/chat_messages.py:58
+msgid "The information source is {retriever_name}."
+msgstr ""
+
+#: src/chatbot/ui/chat_messages.py:59
+msgid "You are chatting with {model_name}."
+msgstr ""
+
+#: src/chatbot/ui/sidebar.py:50
+msgid "Knowledge Base"
+msgstr ""
+
+#: src/chatbot/ui/sidebar.py:54
+msgid "Language Model"
+msgstr ""
+

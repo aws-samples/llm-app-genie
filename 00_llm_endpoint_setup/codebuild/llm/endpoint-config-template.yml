@@ -1,0 +1,61 @@
+Description: Template to deploy a falcon 40B model to sagemaker
+Parameters:
+  ModelExecutionRoleArn:
+    Type: String
+    Description: Execution role used for deploying the model.
+  EndpointInstanceType:
+    Type: String
+    Description: The ML compute instance type for the endpoint.
+  EndpointName:
+    Type: String
+    Description: Endpoint name for the embeddings in SageMaker hosting
+  Image:
+    Type: String
+    Description: ECR image for the serving container
+  Region:
+    Type: String
+    Description: AWS Region where to deploy
+
+Resources:
+  Model:
+    Type: AWS::SageMaker::Model
+    Properties:
+      PrimaryContainer:
+        Image: !Ref Image
+        Mode: SingleModel
+        Environment:
+          HF_MODEL_ID: tiiuae/falcon-40b-instruct
+          HF_MODEL_REVISION: 1e7fdcc9f45d13704f3826e99937917e007cd975
+          MAX_INPUT_LENGTH: 1900
+          MAX_TOTAL_TOKENS: 2048
+          SAGEMAKER_CONTAINER_LOG_LEVEL: 20
+          SAGEMAKER_REGION: !Ref Region
+          SM_NUM_GPUS: 4
+      EnableNetworkIsolation: false
+      ExecutionRoleArn: !Ref ModelExecutionRoleArn
+
+  EndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      ProductionVariants:
+        - InitialInstanceCount: 1
+          InitialVariantWeight: 1.0
+          InstanceType: !Ref EndpointInstanceType
+          ModelName: !GetAtt Model.ModelName
+          VariantName: AllTraffic
+          ContainerStartupHealthCheckTimeoutInSeconds: 600
+
+  Endpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: !Ref EndpointName
+      EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+      Tags:
+        - Key: gena:friendly-name
+          Value: Falcon 40B Instruct
+        - Key: gena:prompt-rag
+          Value: prompts/falcon_fine_tuned_greetings_rag.yaml
+        - Key: gena:prompt-chat
+          Value: prompts/falcon_chat.yaml
+        - Key: gena:deployment
+          Value: 'True'

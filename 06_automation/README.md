@@ -1,0 +1,266 @@
+# 06 Automation
+
+- We are using [trunk.io](https://docs.trunk.io/check) to check the code, to validate the code, run the below command
+
+```bash
+trunk check 06_automation/
+```
+
+- Check and update if required the the environmnet parameters in _config/env_code.json_:
+
+```python
+{
+  "globalTags": {
+    "gena:version": "0.1",
+    "gena:app": "gen-ai-demo",
+    "gena:owner": "aws-alps-gen-ai-accelerator"
+  },
+  "customer_name": "Swiss-Government",
+  "bedrock_region": "us-west-2",
+  "opensearch_domain_name": "os-accelerator",
+  "opensearch_index_name": "swiss-governement",
+  # Instance type for calculating the embeddings
+  "sagemaker_embeddings_instance_type": "ml.g4dn.xlarge",
+  # Name of the endpoint to compute the endpoint
+  "sagemaker_embeddings_endpoint_name": "embeddings-e5-large",
+  # We recommend either a ml.g5.12xlarge or a ml.g5.48xlarge for the Falcon 40B instruct LLM
+  "sagemaker_llm_instance_type": "ml.g5.12xlarge",
+  # Name of the endpoint that hosts the LLM
+  "sagemaker_llm_endpoint_name": "falcon-40b-instruct",
+  "kendra": {
+    # Edition of the Kendra index (DEVELOPER_EDITION or ENTERPRISE EDITION)
+    "kendra_edition": "DEVELOPER_EDITION",
+    # Kendra datasources JSON in the format documented:
+    # https://docs.aws.amazon.com/kendra/latest/dg/ds-schemas.html#ds-schema-web-crawler
+    # multiple datasource can be added to array
+    "data_sources": [
+      {
+        "name": "press-releases-en",
+        "TemplateConfiguration": {
+          "Template": {
+            "connectionConfiguration": {
+              "repositoryEndpointMetadata": {
+                "s3SeedUrl": null,
+                # Website to be crawled: will be used to populate the Kendra Index
+                # OpenSearch crawler has independent setup
+                "seedUrlConnections": [
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=0"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=1"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=2"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=3"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=4"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=5"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=6"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=7"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=8"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=9"
+                  }
+                ],
+                # List of website sitemaps, working in Kendra only for the momment
+                # Make sure to use either sitemaps or urls, Kendra doesn't support both for the same data source
+                # Pay attation to format difference, below sitemaps are example only.
+                "siteMapUrls": [
+                    "https://www.admin.ch/gov/en/sitemap1.xml",
+                    "https://www.admin.ch/gov/en/sitemap2.xml"
+                ],
+                "s3SiteMapUrl": null,
+                "authentication": "NoAuthentication"
+              }
+            },
+            "enableIdentityCrawler": false,
+            "syncMode": "FULL_CRAWL",
+            "additionalProperties": {
+              "inclusionFileIndexPatterns": [],
+              "rateLimit": "100",
+              "maxFileSize": "50",
+              "crawlDepth": "1",
+              "crawlAllDomain": false,
+              "crawlSubDomain": true,
+              "inclusionURLIndexPatterns": [],
+              "exclusionFileIndexPatterns": [],
+              "proxy": {},
+              "exclusionURLCrawlPatterns": [],
+              "exclusionURLIndexPatterns": [],
+              "crawlAttachments": true,
+              "honorRobots": true,
+              "inclusionURLCrawlPatterns": [],
+              "maxLinksPerUrl": "150"
+            },
+            "type": "WEBCRAWLERV2",
+            "version": "1.0.0",
+            "repositoryConfigurations": {
+              "attachment": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              },
+              "webPage": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "press-releases-de",
+        "TemplateConfiguration": {
+          "Template": {
+            "connectionConfiguration": {
+              "repositoryEndpointMetadata": {
+                "s3SeedUrl": null,
+                "seedUrlConnections": [
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=0"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=1"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=2"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=3"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=4"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=5"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=6"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=7"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=8"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/de/start/dokumentation/medienmitteilungen.html?dyn_pageIndex=9"
+                  }
+                ],
+                "siteMapUrls": [],
+                "s3SiteMapUrl": null,
+                "authentication": "NoAuthentication"
+              }
+            },
+            "enableIdentityCrawler": false,
+            "syncMode": "FULL_CRAWL",
+            "additionalProperties": {
+              "inclusionFileIndexPatterns": [],
+              "rateLimit": "100",
+              "maxFileSize": "50",
+              "crawlDepth": "1",
+              "crawlAllDomain": false,
+              "crawlSubDomain": true,
+              "inclusionURLIndexPatterns": [],
+              "exclusionFileIndexPatterns": [],
+              "proxy": {},
+              "exclusionURLCrawlPatterns": [],
+              "exclusionURLIndexPatterns": [],
+              "crawlAttachments": true,
+              "honorRobots": true,
+              "inclusionURLCrawlPatterns": [],
+              "maxLinksPerUrl": "150"
+            },
+            "type": "WEBCRAWLERV2",
+            "version": "1.0.0",
+            "repositoryConfigurations": {
+              "attachment": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              },
+              "webPage": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+- Setup the required configuration, the default configuration is **dev**, you can have many configuration files and update it with environment variable, **dev** is default value::
+
+```bash
+export STAGE=env_code
+```
+
+- CDK is using the default AWS_REGION and AWS_ACCOUNT for deployment, to deploy into another account update the defaul account
+
+```bash
+aws configure get region
+aws sts get-caller-identity --query Account --output text
+# or
+cat ~/.aws/config
+```
+
+-- There are 2 additional parameters to control the naming of the stacks, the final name will be: **CDK_ENV_CODE + CDK_PREFIX + StackId**
+
+```bash
+export CDK_APP=Gena # Application code will be added to stack names
+export CDK_ENV=CODE_OF_YOUR_ENVIRONMENT
+```

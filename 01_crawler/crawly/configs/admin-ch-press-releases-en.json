@@ -1,0 +1,30 @@
+{
+  "start_urls": [
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=0",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=1",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=2",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=3",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=4",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=5",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=6",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=7",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=8",
+    "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=9"
+  ],
+  "CRAWLER_DEPTH": 2,
+  "ROBOTSTXT_OBEY": false,
+  "custom_settings": {
+    "LOG_LEVEL": "INFO",
+    "PLAYWRIGHT_LAUNCH_OPTIONS": {
+      "headless": true
+    },
+    "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
+    "CONCURRENT_REQUESTS": 10,
+    "DOWNLOAD_DELAY": 10,
+    "COOKIES_ENABLED": true,
+    "PLAYWRIGHT_BROWSER_TYPE": ""
+  },
+  "whitelist_patterns": ["documentation/media-releases.msg"],
+  "blacklist_patterns": ["#", "media-releases.html"],
+  "file_extensions": [".pdf", ".docx", ".xlsx", ".csv"]
+}

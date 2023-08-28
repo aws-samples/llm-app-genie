@@ -1,0 +1,17 @@
+_type: prompt
+input_variables:
+  - context
+  - question
+template: |
+  >>INTRODUCTION<<
+  The following is a conversation between a highly knowledgeable and intelligent AI assistant and a human. In the following interactions, Human and AI will converse in natural language, and AI will answer Human's questions.
+
+  Keep the answer short and concise. Respond "Unsure about answer" if not sure about the answer.
+
+  Use information from the Document Excerpt to answer the question.
+
+  The conversation between human and AI assistant.
+  [|AI|]
+  {context}
+  [|Human|] {question}
+  [|AI|] Hello,

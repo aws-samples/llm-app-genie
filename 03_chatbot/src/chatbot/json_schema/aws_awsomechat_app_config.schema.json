@@ -1,0 +1,112 @@
+{
+  "$ref": "#/$defs/AppConfig",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://genai-accelerator.aws.amazon.com/aws_awsomechat_app_config.schema.json",
+  "$defs": {
+    "AppConfig": {
+      "title": "AWS AWSomeChat Config",
+      "description": "App configuration for the AWSomeChat application.",
+      "required": [],
+      "type": "object",
+      "properties": {
+        "appearance": {
+          "$ref": "#/$defs/AWSomeChatAppearance"
+        },
+        "amazonBedrock": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AmazonBedrock"
+          },
+          "default": [],
+          "minItems": 0
+        }
+      }
+    },
+    "AWSomeChatAppearance": {
+      "title": "AWSsomeChat Appearance",
+      "description": "Personalize how the app looks like to your use case.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "AWSomeChatAppearance"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of your chatbot.",
+              "default": "AWSomeChat"
+            },
+            "faviconUrl": {
+              "type": "string",
+              "description": "URL or path to image that is the logo for your chat application. Relative to the 03_chatbot directory.",
+              "default": "chatbot/aws.png"
+            }
+          }
+        }
+      }
+    },
+    "AmazonBedrock": {
+      "title": "Amazon Bedrock",
+      "description": "Optional Configuration for Amazon Bedrock.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "AmazonBedrock"
+        },
+        "parameters": {
+          "required": ["region"],
+          "type": "object",
+          "properties": {
+            "region": {
+              "$ref": "#/$defs/AWSRegion"
+            },
+            "endpointURL": {
+              "type": "string",
+              "description": "Optional endpoint url to access Amazon Bedrock."
+            }
+          }
+        }
+      }
+    },
+    "AWSRegion": {
+      "title": "AWS Region",
+      "description": "Represents an AWS Region",
+      "type": "string",
+      "enum": [
+        "ap-south-2",
+        "ap-south-1",
+        "eu-south-1",
+        "eu-south-2",
+        "me-central-1",
+        "ca-central-1",
+        "eu-central-1",
+        "eu-central-2",
+        "us-west-1",
+        "us-west-2",
+        "af-south-1",
+        "eu-north-1",
+        "eu-west-3",
+        "eu-west-2",
+        "eu-west-1",
+        "ap-northeast-3",
+        "ap-northeast-2",
+        "me-south-1",
+        "ap-northeast-1",
+        "sa-east-1",
+        "ap-east-1",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "ap-southeast-4",
+        "us-east-1",
+        "us-east-2"
+      ]
+    }
+  }
+}

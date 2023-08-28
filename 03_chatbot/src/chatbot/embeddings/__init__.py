@@ -1,0 +1,1 @@
+from .sagemaker_endpoint_embeddings import SageMakerEndpointEmbeddings

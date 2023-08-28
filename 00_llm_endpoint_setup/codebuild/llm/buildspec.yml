@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      - python -m pip install --upgrade pip
+      - pip install "sagemaker==2.163.0" --upgrade --quiet
+  build:
+    on-failure: ABORT
+    commands:
+      - ls -lah
+      - env
+      # Export the staging and production configuration files
+      - python scripts/build.py --model-execution-role "${MODEL_EXECUTION_ROLE_ARN}" --s3-bucket "${S3_BUCKET}" --instance-type "${INSTANCE_TYPE}" --export-config "${EXPORT_CONFIG}" --region "${REGION}" --endpoint-name "${ENDPOINT_NAME}"
+      - aws cloudformation package --template endpoint-config-template.yml --s3-bucket "$ARTIFACT_BUCKET" --output-template "$EXPORT_TEMPLATE_NAME"
+      - cat "$EXPORT_TEMPLATE_NAME"
+      - cat "$EXPORT_CONFIG"
+artifacts:
+  files:
+    - $EXPORT_TEMPLATE_NAME
+    - $EXPORT_CONFIG
