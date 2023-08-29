@@ -186,36 +186,36 @@ Optionally you can also configure more details on how the app uses Amazon Bedroc
 
 Here is an example `appconfig.json`:
 
-```
+```json
 {
-    "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
-    "appearance": {
-      "type": "AWSomeChatAppearance",
-      "parameters": {
-        "name": "My Chatbot",
-        "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
-      }
+  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "My Chatbot",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
     }
   }
+}
 ```
 
 Here is an example `appconfig.json` with optional Amazon Bedrock:
 
-```
+```json
 {
-    "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
-    "appearance": {
-      "type": "AWSomeChatAppearance",
-      "parameters": {
-        "name": "My Chatbot",
-        "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
-      }
-    },
+  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "My Chatbot",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
+    }
+  },
   "amazonBedrock": [
     {
       "type": "AmazonBedrock",
       "parameters": {
-        "region": "us-east-1",
+        "region": "us-east-1"
       }
     },
     {
@@ -226,7 +226,7 @@ Here is an example `appconfig.json` with optional Amazon Bedrock:
       }
     }
   ]
-  }
+}
 ```
 
 If you are a developer and want to add more configuration options to this application then you should read the [Readme in the json_schema directory](src/chatbot/json_schema/Readme).
@@ -242,14 +242,6 @@ export AWS_APP_CONFIG_APPLICATION=ChatbotApp
 export AWS_APP_CONFIG_ENVIRONMENT="ChatbotApp Environment"
 export AWS_APP_CONFIG_PROFILE=Chatbot
 ```
-
-**INTERNAL ONLY REMOVE BEFORE PUBLISHING**
-
-Note that the **Bedrock Python SDK** is included, **remove before publishing**.
-
-If using Isengard roles, you can use the `isengardcli` to get temporary credentials using `isengardcli creds` and selecting the role for the right account which has `Administrator` permissions
-
-**INTERNAL ONLY END**
 
 ## Internationalization (i18n)
 
@@ -305,7 +297,7 @@ pybabel extract ./src -o "./src/chatbot/i18n/chatbot.pot" \
 \n# Malte Reimann malterei@amazon.com, 2023.\n'
 ```
 
-This generates a (chatbot.pot)[./src/chatbot/i18n/chatbot.pot] that contains the strings in the application that need internationalization.
+This generates a [chatbot.pot](./src/chatbot/i18n/chatbot.pot) that contains the strings in the application that need internationalization.
 
 Next step: [Update an existing language after code changes](#update-an-existing-language-after-code-changes)
 
@@ -334,7 +326,7 @@ The `msgstr` is the UI text translated into your language. This is what you can 
 
 The following example shows an entry in the `chatbot.po` file for `de_DE` (German) with a UI text that is not yet translated.
 
-```
+```txt
 #: src/chatbot/ui/chat_messages.py:59
 msgid "You are chatting with {model_name}."
 msgstr ""
@@ -342,7 +334,7 @@ msgstr ""
 
 Here is the same entry if the text has already been translated.
 
-```
+```txt
 #: src/chatbot/ui/chat_messages.py:59
 msgid "You are chatting with {model_name}."
 msgstr "Sie chatten mit {model_name}."
@@ -352,7 +344,7 @@ Translate each `msgid` and write the translated text into `msgstr`. Text in curl
 
 An entry that has been changed might still be present in the `chatbot.po` file. They are commented out. You can consider removing them. Here is an example of a previous UI text that has been changed or replaced:
 
-```
+```txt
 #~ msgid "{chatbot_name} - An LLM-powered src for your custom data"
 #~ msgstr ""
 ```
