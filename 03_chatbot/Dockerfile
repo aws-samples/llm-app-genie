@@ -68,7 +68,8 @@ COPY --chown=python_application:docker --chmod=550 entrypoint.sh ./
 COPY --chown=python_application:docker --chmod=550 generate_secrets.py ./
 
 COPY --chown=python_application:docker poetry.lock pyproject.toml ./
-COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
+# activate after adding bedrock sdk
+#COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
 COPY --chown=python_application:docker src ./src/
 RUN mkdir ${STREAMLIT_CONFIG_DIR} && chown python_application:docker ${STREAMLIT_CONFIG_DIR}
 

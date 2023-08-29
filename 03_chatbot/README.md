@@ -168,6 +168,12 @@ botocore = { path = "./bedrock-python-sdk/botocore-1.31.21-py3-none-any.whl" }
 
 ```
 
+Activate the bedrock sdk in the [Dockerfile](03_chatbot/Dockerfile)
+
+```bash
+COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
+```
+
 The easy configuration for the app to use Amazon Bedrock is to set the `BEDROCK_REGION` environment variable (see also [Environment Variables](#environment-variables)). The app will discover the Amazon Bedrock models in that region.
 
 If you want the app to use Amazon Bedrock in multiple regions or you want to control more of the app configuration for Amazon Bedrock then you should take a look at the [Personalize the app](#personalize-the-app) section.
