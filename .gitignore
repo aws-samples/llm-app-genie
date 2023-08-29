@@ -8,6 +8,7 @@
 **/package-lock.json
 **/__pycache__
 **/.pytest_cache
+.venv
 **/*.egg-info
 # CDK asset staging directory
 **/.cdk.staging
@@ -16,7 +17,6 @@
 !appconfig.json
 infrastructure/genaiax.code-workspace
 */~*.pptx
-env.list
 .vscode/launch.json
 **/launch.json
 **/cdk.context.json
@@ -24,3 +24,5 @@ env.list
 env.list
 .vscode/
 secrets.toml
+
+**/bedrock-python-sdk/

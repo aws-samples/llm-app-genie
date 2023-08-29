@@ -251,7 +251,7 @@ The solution provides notebooks for experimentation. For example:
 - [./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb](./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb) to deploy a SageMaker endpoint to help create document embeddings with HuggingFace's Transformers.
 - [./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb](./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb) to deploy Falcon 40b Foundation Model.
 
-Note than any modification in the notebooks or the default configuration, needs to be reflected in the [app config](06_automation/configs/dev.json), otherwise the chatbot won't know about these.
+Note than any modification iwhile we think that collaboration is key to success and synergies, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change the notebooks or the default configuration, needs to be reflected in the [app config](06_automation/configs/dev.json), otherwise the chatbot won't know about these.
 
 ```bash
 cdk deploy SageMakerStudioDomainStack --require-approval never
@@ -264,6 +264,13 @@ The most common scenarios are:
 - Amazon Kendra + Full LLM (Falcon 40B)
 - Amazon OpenSearch + Full LLM (Bedrock, Claude Instant 12K)
 - Amazon OpenSearch + Light LLM (e.g. Falcon 7B)
+
+## I need help
+
+If you want to report a bug please open an issue in this repository with the _Default bug_ issue template.
+Would you like to request a new feature then please open an issue with the _Feature Request_ template.
+
+In case you have a general question or simply need help please open an issue with the _I need Help_ issue template so that we can get in touch with you.
 
 ## Usage Scenarios <a name="usage-scenarios"></a>
 
@@ -337,6 +344,12 @@ You should follow the [local development guide](#local-development-guide), if yo
 
 - How to setup the development environment for the chatbot? <br> Follow the [chatbot Readme](./03_chatbot/README.md).
 - How to setup the development environment for the automation project? <br>Follow the [Full Deployment section](#full-deployment).
+
+### Pull Requests
+
+We appreciate your collaboration because it is key to success and synergies. However, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change
+
+If you want to contribute a bug fix please use the _Default pull_ request template.
 
 ### Repository structure <a name="repo_structure"></a>
 
