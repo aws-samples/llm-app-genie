@@ -4,7 +4,7 @@ import aws_cdk.aws_kendra as kendra
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=redefined-builtin
-from aws_cdk import CfnOutput, CfnTag, RemovalPolicy
+from aws_cdk import CfnTag, RemovalPolicy
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
@@ -89,14 +89,3 @@ class KendraIndexStack(GenAiStack):
 
         # Set removal policy to retain on delete
         self.index.apply_removal_policy(RemovalPolicy.DESTROY)
-
-        # ==================================================
-        # =================== OUTPUTS ======================
-        # ==================================================
-        CfnOutput(
-            scope=self,
-            id=config["appPrefix"] + "KendraIndexId",
-            value=self.index.ref,
-            description="Knowledge base Kendra index ID",
-            export_name=f"{config['appPrefix']}-KendraIndexId-{customer_name}",  # whitestaces can't be exported
-        )
