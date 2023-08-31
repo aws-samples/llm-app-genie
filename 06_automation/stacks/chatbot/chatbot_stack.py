@@ -1,6 +1,6 @@
 import json
 
-from aws_cdk import CfnOutput, Duration, RemovalPolicy, Tags, CustomResource
+from aws_cdk import Duration, RemovalPolicy, Tags, CustomResource
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets
@@ -337,12 +337,4 @@ class ChatbotStack(GenAiStack):
             target_utilization_percent=70,
             scale_in_cooldown=Duration.seconds(60),
             scale_out_cooldown=Duration.seconds(60),
-        )
-        # ==================================================
-        # =================== OUTPUTS ======================
-        # ==================================================
-        CfnOutput(
-            scope=self,
-            id="LoadBalancerDNS",
-            value=fargate_service.load_balancer.load_balancer_dns_name,
         )
