@@ -81,15 +81,4 @@ datasource_stack.add_dependency(index_stack)
 ## Streamlit chatbot
 chatbot = ChatbotStack(app, "ChatBotStack", env=env)
 
-chatbot_code_commit_repo = ChatbotCodeCommitRepoStack(
-    app, "ChatBotCodeCommitRepoStack", env=env
-)
-chatbot_cicd_stack = ChatbotCiCdStack(
-    app,
-    "ChatBotCiCdStack",
-    chatbot_app_stack_source=chatbot_code_commit_repo.code_pipeline_source,
-    env=env,
-)
-chatbot_cicd_stack.add_dependency(chatbot_code_commit_repo)
-
 app.synth()
