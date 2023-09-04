@@ -9,7 +9,7 @@ class GenAiStack(Stack):
         # ------------------------------------------------------------------------------
         super().__init__(
             app,
-            config["code"] + config["appPrefix"] + id,
+            config["appPrefix"] + id,
             description=stack["description"],
             **kwargs
         )

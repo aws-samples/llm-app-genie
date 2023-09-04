@@ -34,8 +34,6 @@ class KendraDataSourcesStack(GenAiStack):
             sitemaps = ds["TemplateConfiguration"]["Template"][
                 "connectionConfiguration"
             ]["repositoryEndpointMetadata"]["siteMapUrls"]
-            # name = ds["name"]
-            # del ds["name"]
 
             if urls is not None and len(urls) > 0:
                 # transformed_list = [{"seedUrl": url} for url in urls]
@@ -52,8 +50,6 @@ class KendraDataSourcesStack(GenAiStack):
                     index_id=index_id,
                     data_source_name=ds["name"],
                     config=ds
-                    # urls=transformed_list,
-                    # urls=urls,
                 )
 
             # crawler accepts either urls or site maps
@@ -64,8 +60,4 @@ class KendraDataSourcesStack(GenAiStack):
                     index_id=index_id,
                     data_source_name=ds["name"],
                     config=ds
-                    # sitemap_urls=sitemaps,
                 )
-
-            # we can add it as global or stack tag if required
-            # Tags.of(self).add("GenAIAcceleratorDeployment", "True")

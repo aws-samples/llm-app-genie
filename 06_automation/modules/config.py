@@ -14,23 +14,21 @@ with open(
     config = json.load(file)
 
 # Adding environment and prefix
-config["appPrefix"] = os.environ["CDK_APP"] if "CDK_APP" in os.environ else "Gena"
-config["appPrefixLC"] = config["appPrefix"].lower()
+config["appPrefix"] = os.environ["CDK_APP_PREFIX"] if "CDK_APP_PREFIX" in os.environ else "Gena"
+config["appPrefixLowerCase"] = config["appPrefix"].lower()
 
-
-config["code"] = os.environ["CDK_ENV_CODE"] if "CDK_ENV_CODE" in os.environ else ""
 
 # adding CODEBUILD_BUILD_NUMBER to the version tag
 config["globalTags"]["version"] += "." + (
     os.environ["CODEBUILD_BUILD_NUMBER"]
     if "CODEBUILD_BUILD_NUMBER" in os.environ
-    else config["code"]
+    else ""
 )
 
 # add application prefix to all tags
 global_tags = {}
 for key, value in config["globalTags"].items():
-    key = config["appPrefixLC"] + ":" + key
+    key = config["appPrefixLowerCase"] + ":" + key
     global_tags[key] = value
 
 config["globalTags"] = global_tags

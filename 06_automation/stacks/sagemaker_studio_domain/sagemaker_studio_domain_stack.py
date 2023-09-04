@@ -6,6 +6,7 @@ import aws_cdk.aws_iam as iam
 import aws_cdk.aws_sagemaker as sagemaker
 from constructs import Construct
 from modules.stack import GenAiStack
+from modules.config import config
 
 stack = {"description": "Sagemaker Studio Domain"}
 
@@ -20,9 +21,9 @@ class SageMakerStudioStack(GenAiStack):
                     effect=iam.Effect.ALLOW,
                     actions=["ssm:GetParameters", "ssm:GetParameter"],
                     resources=[
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/hf_predictor_endpoint_name",
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefixLC']}_opensearch_domain_name",
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefixLC']}_opensearch_endpoint",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}HfPredictorEndpointName",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}OpenSearchDomainName",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}OpenSearchEndpoint",
                     ],
                 ),
                 iam.PolicyStatement(
@@ -39,7 +40,7 @@ class SageMakerStudioStack(GenAiStack):
                         "secretsmanager:ListSecretVersionIds",
                     ],
                     resources=[
-                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:opensearch_pw*"
+                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefix']}OpenSearchCredentials*"
                     ],
                 ),
             ]
@@ -62,8 +63,8 @@ class SageMakerStudioStack(GenAiStack):
             inline_policies={"parametersAndSecrets": secrets_policy},
         )
 
-        team = "get-ai-data-scientist"
-        sagemaker_domain_name = "gen-ai-sagemaker-studio"
+        team = config['appPrefix'] + "DataScientist"
+        sagemaker_domain_name = config['appPrefix'] + "SagemakerStudio"
 
         default_vpc = ec2.Vpc.from_lookup(self, id="VPC", is_default=True)
         public_subnet_ids = [

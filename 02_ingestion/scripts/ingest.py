@@ -21,7 +21,7 @@ os_domain_name = os.getenv("OPENSEARCH_DOMAIN_NAME")
 os_index_name = os.getenv("OPENSEARCH_INDEX_NAME")
 hf_predictor_endpoint_name = os.getenv('ENDPOINT_NAME')
 #TODO: find a better way to app app specific prefix
-app_prefix = os.getenv("APP_PREFIX_LC")
+app_prefix = os.getenv("APP_PREFIX")
 
 def get_credentials(secret_id: str, region_name: str) -> str:
     client = boto3.client("secretsmanager", region_name=region_name)
@@ -37,13 +37,13 @@ os_http_auth = (user, secret)
 
 print(f"opensearch domain name: {os_domain_name}")
 
-os_domain_ep = ssm_client.get_parameter(Name=f"{app_prefix}_opensearch_endpoint")["Parameter"][
+os_domain_ep = ssm_client.get_parameter(Name=f"{app_prefix}OpenSearchEndpoint")["Parameter"][
     "Value"
 ]
 print(f"opensearch domain endpoint: {os_domain_ep}")
 
 # Get data
-crawled_file_path = ssm_client.get_parameter(Name="crawled_file_location")["Parameter"][
+crawled_file_path = ssm_client.get_parameter(Name=f"{app_prefix}CrawledFileLocation")["Parameter"][
     "Value"
 ]
 df = pd.read_json(crawled_file_path)

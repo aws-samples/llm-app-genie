@@ -10,7 +10,7 @@ from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
 
 stack = {
-    "description": "Generative AI LLM Pipeline",
+    "description": "MLOps Pipeline to deploy LLM to SageMaker inference endpoint",
     "tags": {},
 }
 
@@ -21,6 +21,7 @@ class LLMSageMakerStack(GenAiStack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
 
+        # check for required instance quate in account
         response = quotas_client.get_service_quota(
             ServiceCode="sagemaker",
             QuotaCode=quotas[config["sagemaker"]["llm_instance_type"]],
@@ -37,17 +38,18 @@ class LLMSageMakerStack(GenAiStack):
         repo = codecommit.Repository(
             self,
             "Repository",
-            repository_name="llm_sagemaker",
+            repository_name=config["appPrefix"]+"LlmSagemaker",
             code=codecommit.Code.from_directory(
                 "../00_llm_endpoint_setup/codebuild/llm", branch="main"
             ),
         )
 
+        # should we name the S3 bucket?
         s3_bucket = s3.Bucket(
             self,
             "Bucket",
             versioned=False,
-            bucket_name=f"sagemaker-llm-falcon-artifact-{self.region}-{self.account}",
+            bucket_name=f"{config['appPrefixLowerCase']}-sagemaker-llm-falcon-artifact-{self.region}-{self.account}",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             encryption=s3.BucketEncryption.S3_MANAGED,
             enforce_ssl=True,
@@ -74,8 +76,7 @@ class LLMSageMakerStack(GenAiStack):
 
         cdk_deploy = codebuild.PipelineProject(
             self,
-            "SageMakerLLMEndpoint",
-            project_name="SageMakerLLMEndpoint",
+            config["appPrefix"] + "SageMakerLLMEndpoint",
             build_spec=codebuild.BuildSpec.from_asset(
                 "../00_llm_endpoint_setup/codebuild/llm/buildspec.yml"
             ),
@@ -102,7 +103,7 @@ class LLMSageMakerStack(GenAiStack):
                         value="config.json"
                     ),
                     "ENDPOINT_NAME": codebuild.BuildEnvironmentVariable(
-                        value=config["sagemaker"]["llm_endpoint_name"]
+                        value=config["appPrefix"] + config["sagemaker"]["llm_endpoint_name"]
                     ),
                 }
             ),
@@ -116,11 +117,9 @@ class LLMSageMakerStack(GenAiStack):
 
         source_output = codepipeline.Artifact()
 
-        pipeline_name = "llm_setup_pipeline"
         codepipeline.Pipeline(
             self,
-            pipeline_name,
-            pipeline_name=pipeline_name,
+            "Pipeline",
             role=iam_role,
             artifact_bucket=s3_bucket,
             stages=[

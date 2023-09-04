@@ -23,4 +23,4 @@ phases:
     on-failure: ABORT
     commands:
       # upload customer .json file to s3
-      - aws ssm put-parameter --name "crawled_file_location" --value "${S3_BUCKET}/${S3_PREFIX}" --type String --overwrite
+      - aws ssm put-parameter --name "${APP_PREFIX}CrawledFileLocation" --value "${S3_BUCKET}/${S3_PREFIX}" --type String --overwrite

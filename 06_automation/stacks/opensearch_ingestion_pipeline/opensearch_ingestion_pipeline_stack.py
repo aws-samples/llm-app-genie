@@ -13,7 +13,7 @@ from constructs import Construct
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
 
-stack = {"description": "OpenSearch Pipeline", "tags": {}}
+stack = {"description": "OpenSearch Ingestion Pipeline", "tags": {}}
 
 
 class OpenSearchIngestionPipelineStack(GenAiStack):
@@ -26,6 +26,8 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             ServiceCode="sagemaker",
             QuotaCode=quotas[config["sagemaker"]["embeddings_instance_type"]],
         )
+
+        # check for required instance quate in account
         if response["Quota"]["Value"] == 0.0:
             raise (
                 f"Please adjust your quota for the Embeddings Endpoint for type {config['sagemaker']['embeddings_instance_type']}"
@@ -35,33 +37,33 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                 f"You have enough instances quotas for the Embeddings Endpoint of type {config['sagemaker']['embeddings_instance_type']}"
             )
 
-        bucket_name = f"sagemaker-gen-ai-{self.account}-{self.region}"
-
+        bucket_name = f"{config['appPrefixLowerCase']}-sagemaker-{self.account}-{self.region}"
+        
         ssm.StringParameter(
             scope=self,
-            id="sagemaker_embeddings_instance_type",
-            parameter_name="sagemaker_embeddings_instance_type",
+            id="SagemakerEmbeddingsInstanceType",
+            parameter_name=config['appPrefix'] + "SagemakerEmbeddingsInstanceType",
             string_value=config["sagemaker"]["embeddings_instance_type"],
         )
 
         ssm.StringParameter(
             scope=self,
-            id="hf_predictor_endpoint_name",
-            parameter_name="hf_predictor_endpoint_name",
+            id="HfPredictorEndpointName",
+            parameter_name=config['appPrefix'] + "HfPredictorEndpointName",
             string_value=config["sagemaker"]["embeddings_endpoint_name"],
         )
 
         ssm.StringParameter(
             scope=self,
-            id="crawled_file_location",
-            parameter_name="crawled_file_location",
+            id="CrawledFileLocation",
+            parameter_name=config['appPrefix'] + "CrawledFileLocation",
             string_value="TO_BE_SET",
         )
 
         ssm.StringParameter(
             scope=self,
-            id="opensearch_index_name",
-            parameter_name="opensearch_index_name",
+            id="OpenSearchIndexName",
+            parameter_name=config['appPrefix'] + "OpenSearchIndexName",
             string_value=config["opensearch"]["index"],
         )
 
@@ -79,8 +81,8 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         repo_embeddings = codecommit.Repository(
             self,
-            "EmbeddingsRepository",
-            repository_name="sagemaker_embeddings",
+            "SagemakerEmbeddings",
+            repository_name=config['appPrefix'] + "SagemakerEmbeddings",
             code=codecommit.Code.from_directory(
                 "../00_llm_endpoint_setup/codebuild/embeddings", branch="main"
             ),
@@ -88,15 +90,15 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         repo_crawler = codecommit.Repository(
             self,
-            "CrawlerRepository",
-            repository_name="custom_crawler",
+            "CustomCrawler",
+            repository_name=config['appPrefix'] + "CustomCrawler",
             code=codecommit.Code.from_directory("../01_crawler", branch="main"),
         )
 
         repo_ingestion = codecommit.Repository(
             self,
-            "IngestionRepository",
-            repository_name="ingestion",
+            "Ingestion",
+            repository_name=config['appPrefix'] + "Ingestion",
             code=codecommit.Code.from_directory("../02_ingestion", branch="main"),
         )
 
@@ -108,10 +110,10 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                     effect=iam.Effect.ALLOW,
                     actions=["ssm:GetParameters", "ssm:GetParameter"],
                     resources=[
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/hf_predictor_endpoint_name",
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefixLC']}_opensearch_domain_name",
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefixLC']}_opensearch_endpoint",
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/opensearch_index_name",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}HfPredictorEndpointName",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}OpenSearchDomainName",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}OpenSearchEndpoint",
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}OpenSearchIndexName",
                     ],
                 ),
                 iam.PolicyStatement(
@@ -122,7 +124,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                         "ssm:PutParameter",
                     ],
                     resources=[
-                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/crawled_file_location"
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/{config['appPrefix']}CrawledFileLocation"
                     ],
                 ),
                 iam.PolicyStatement(
@@ -139,7 +141,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                         "secretsmanager:ListSecretVersionIds",
                     ],
                     resources=[
-                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefixLC']}_opensearch_pw*"
+                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefix']}OpenSearchCredentials*"
                     ],
                 ),
             ]
@@ -166,8 +168,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         cdk_deploy = codebuild.PipelineProject(
             self,
-            "SageMakerEmbeddingsEndpoint",
-            project_name="SageMakerEmbeddingsEndpoint",
+            config["appPrefix"] + "SageMakerEmbeddingsEndpoint",
             build_spec=codebuild.BuildSpec.from_asset(
                 "../00_llm_endpoint_setup/codebuild/embeddings/buildspec.yml"
             ),
@@ -194,7 +195,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                         value="config.json"
                     ),
                     "ENDPOINT_NAME": codebuild.BuildEnvironmentVariable(
-                        value=config["sagemaker"]["embeddings_endpoint_name"]
+                        value=config['appPrefix'] + config["sagemaker"]["embeddings_endpoint_name"]
                     ),
                 }
             ),
@@ -208,7 +209,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         cdk_crawler = codebuild.PipelineProject(
             self,
-            "Crawler",
+            config["appPrefix"] + "Crawler",
             build_spec=codebuild.BuildSpec.from_asset(
                 "../01_crawler/buildspec.yml"
             ),
@@ -220,6 +221,9 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                 "S3_BUCKET": codebuild.BuildEnvironmentVariable(
                     value=f"s3://{bucket_name}"
                 ),
+                "APP_PREFIX": codebuild.BuildEnvironmentVariable(
+                    value=config['appPrefix']
+                )
             },
             cache=codebuild.Cache.local(
                 codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
@@ -228,11 +232,9 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             timeout=Duration.minutes(300),
         )
 
-        cdk_ingest_name = "CodeBuildIngest"
         cdk_ingest = codebuild.PipelineProject(
             self,
-            cdk_ingest_name,
-            project_name=cdk_ingest_name,
+            config["appPrefix"] + "CodeBuildIngest",
             build_spec=codebuild.BuildSpec.from_asset(
                 "../02_ingestion/buildspec.yml"
             ),
@@ -245,17 +247,17 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                     value=config["opensearch"]["index"]
                 ),
                 "OPENSEARCH_SECRET_NAME": codebuild.BuildEnvironmentVariable(
-                    value=f"{config['appPrefixLC']}_opensearch_pw"
+                    value=f"{config['appPrefix']}OpenSearchCredentials"
                 ),
                 "OPENSEARCH_DOMAIN_NAME": codebuild.BuildEnvironmentVariable(
-                    value=f"{config['appPrefixLC']}-{config['opensearch']['domain']}"
+                    value=f"{config['appPrefix']}{config['opensearch']['domain']}"
                 ),
                 "ENDPOINT_NAME": codebuild.BuildEnvironmentVariable(
-                    value=config["sagemaker"]["embeddings_endpoint_name"]
+                    value=config["appPrefix"] + config["sagemaker"]["embeddings_endpoint_name"]
                 ),
-                "APP_PREFIX_LC": codebuild.BuildEnvironmentVariable(
-                    value=config['appPrefixLC']
-                ),
+                "APP_PREFIX": codebuild.BuildEnvironmentVariable(
+                    value=config['appPrefix']
+                )
             },
             cache=codebuild.Cache.local(
                 codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
@@ -268,11 +270,9 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
         source_crawler_output = codepipeline.Artifact()
         source_ingestion_output = codepipeline.Artifact()
 
-        pipeline_name = "opensearch_ingestion_pipeline"
         codepipeline.Pipeline(
             self,
-            pipeline_name,
-            pipeline_name=pipeline_name,
+            "Pipeline",
             role=iam_role,
             artifact_bucket=s3_bucket,
             stages=[

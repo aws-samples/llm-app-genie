@@ -1,26 +1,28 @@
 {
   "globalTags": {
-    "version": "0.1",
-    "app": "gen-ai-demo",
-    "owner": "aws-alps-gen-ai-accelerator",
+    "version": "1.0",
+    "app": "demo",
+    "owner": "gena-team",
     "deployment": "True"
   },
   "bedrock_region": "us-west-2",
   "customer": {
-    "name": "swiss-gov"
+    "name": "SwissGov"
   },
   "opensearch": {
-    "domain": "os-accelerator",
-    "index": "swiss-gov"
+    "domain": "KB",
+    "instance_type": "t3.medium.search",
+    "index":"press-releases-en"
   },
   "sagemaker": {
     "embeddings_instance_type": "ml.g4dn.xlarge",
-    "embeddings_endpoint_name": "embeddings-e5-large",
+    "embeddings_endpoint_name": "EmbeddingsE5Large",
     "llm_instance_type": "ml.g5.12xlarge",
-    "llm_endpoint_name": "falcon-40b-instruct"
+    "llm_endpoint_name": "Falcon40bInstruct12xlarge"
   },
   "kendra": {
-    "kendra_edition": "DEVELOPER_EDITION",
+    "edition": "DEVELOPER_EDITION",
+    "index": "KnowledgeBase",
     "data_sources": [
       {
         "name": "press-releases-en",
