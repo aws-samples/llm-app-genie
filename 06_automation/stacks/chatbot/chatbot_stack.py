@@ -54,12 +54,12 @@ class ChatbotStack(GenAiStack):
         )
 
         provider = cr.Provider(
-            self, "self_signed_cert_custom_resource_provider",
+            self, "SelfSignedCertCustomResourceProvider",
             on_event_handler=cert_function
         )
 
         custom_resource = CustomResource(
-            self, "self_signed_cert_custom_resource",
+            self, "SelfSignedCertCustomResource",
             service_token=provider.service_token,
             properties={
                 "email_address": config['self_signed_certificate']['email_address'],
@@ -82,14 +82,9 @@ class ChatbotStack(GenAiStack):
 
         certificate = acm.Certificate.from_certificate_arn(
             self,
-            id="self_signed_cert",
+            id="SelfSignedCert",
             certificate_arn=custom_resource.ref
         )
-
-        # The code that defines your stack goes here
-
-        cluster_name = "gen-ai-cluster"
-        service_name = "gen-ai-service"
 
         public_subnet = ec2.SubnetConfiguration(
             name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
@@ -100,7 +95,7 @@ class ChatbotStack(GenAiStack):
 
         vpc = ec2.Vpc(
             scope=self,
-            id="gen-ai-vpc",
+            id="vpc",
             ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
             max_azs=2,
             nat_gateway_provider=ec2.NatProvider.gateway(),
@@ -119,7 +114,7 @@ class ChatbotStack(GenAiStack):
         )
 
         Tags.of(memory_table).add(
-            f"{config['appPrefixLC']}:memory-table",
+            f"{config['appPrefixLowerCase']}:memory-table",
             "Use this table to store the history",
         )
 
@@ -128,8 +123,8 @@ class ChatbotStack(GenAiStack):
         # ==================================================
         cdk_streamlit_pw = sm.Secret(
             scope=self,
-            id="streamlit_credentials",
-            secret_name="streamlit_credentials",
+            id="StreamlitCredentials",
+            secret_name=config['appPrefix'] + "StreamlitCredentials",
             generate_secret_string=sm.SecretStringGenerator(
                 secret_string_template=json.dumps({"username": "admin"}),
                 generate_string_key="password",
@@ -143,7 +138,7 @@ class ChatbotStack(GenAiStack):
         # ==================================================
         role = iam.Role(
             scope=self,
-            id="TASKROLE",
+            id="Taskrole",
             assumed_by=iam.ServicePrincipal(service="ecs-tasks.amazonaws.com"),
         )
         role.add_managed_policy(
@@ -266,12 +261,12 @@ class ChatbotStack(GenAiStack):
         # =============== FARGATE SERVICE ==================
         # ==================================================
         cluster = ecs.Cluster(
-            scope=self, id="CLUSTER", cluster_name=cluster_name, vpc=vpc
+            scope=self, id="Cluster", vpc=vpc
         )
 
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
-            id="streamlit-chatbot",
+            id=config["appPrefix"] + "StreamlitChatbot",
             task_role=role,
             cpu=2 * 1024,
             memory_limit_mib=4 * 1024,
@@ -281,13 +276,13 @@ class ChatbotStack(GenAiStack):
         container_port = 3001
 
         container = task_definition.add_container(
-            id="streamit-container",
+            id=config["appPrefix"] + "StreamitContainer",
             image=ecs.ContainerImage.from_asset(
                 directory="../03_chatbot",
                 platform=aws_ecr_assets.Platform.LINUX_AMD64,
                 build_args={"LISTEN_PORT": str(container_port)},
             ),
-            logging=ecs.LogDriver.aws_logs(stream_prefix="gen-ai-app"),
+            logging=ecs.LogDriver.aws_logs(stream_prefix=config["appPrefixLowerCase"] + "-ai-app"),
             environment={
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
@@ -314,8 +309,8 @@ class ChatbotStack(GenAiStack):
 
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             scope=self,
-            id="Gen-AI",
-            service_name=service_name,
+            id="Service",
+            # service_name=service_name,
             cluster=cluster,
             task_definition=task_definition,
             certificate=certificate
@@ -325,7 +320,7 @@ class ChatbotStack(GenAiStack):
         fargate_service.service.connections.security_groups[0].add_ingress_rule(
             peer=ec2.Peer.ipv4(vpc.vpc_cidr_block),
             connection=ec2.Port.tcp(container_port),
-            description="Allow inbound from VPC for gen-ai-app",
+            description=f"Allow inbound from VPC for {config['appPrefixLowerCase']}-ai-app",
         )
 
         # Setup autoscaling policy
@@ -333,7 +328,7 @@ class ChatbotStack(GenAiStack):
             max_capacity=2
         )  # figure out autscaling metrics
         scaling.scale_on_cpu_utilization(
-            id="AUTOSCALING",
+            id="Autoscaling",
             target_utilization_percent=70,
             scale_in_cooldown=Duration.seconds(60),
             scale_out_cooldown=Duration.seconds(60),

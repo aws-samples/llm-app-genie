@@ -281,7 +281,7 @@ You can add knowledge (textual content) by ingesting it to the available knowled
 The main options are:
 
 1. Add additional data sources to Amazon Kendra and run the ingestion
-2. Manually add knowledge to Amazon Opensearch by
+2. Manually add knowledge to Amazon OpenSearch by
 
 - [running the crawler](01_crawler/README.md) and
 - [ingesting crawling results](02_ingestion/04_ingest_html_embeddings_to_opensearch.ipynb)

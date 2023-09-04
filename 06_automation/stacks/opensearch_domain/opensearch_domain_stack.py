@@ -13,7 +13,15 @@ from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
 
-stack = {"description": "OpenSearch Domain", "tags": {}}
+stack = {
+    "description": "OpenSearch Domain", 
+    "tags": {
+        f"{config['appPrefixLowerCase']}:secrets-id": f"{config['appPrefix']}OpenSearchCredentials",
+        f"{config['appPrefixLowerCase']}:index-name": config['opensearch']['index'],
+        f"{config['appPrefixLowerCase']}:sagemaker-embedding-endpoint-name": f"{config['appPrefix']}{config['sagemaker']['embeddings_endpoint_name']}",
+        f"{config['appPrefixLowerCase']}:friendly-name": f"OpenSearch Index: {config['customer']['name']}"
+    }
+}
 
 
 class OpenSearchStack(GenAiStack):
@@ -29,14 +37,15 @@ class OpenSearchStack(GenAiStack):
             principals=[iam.ArnPrincipal("*")],
             actions=["es:*"],
             resources=[
-                f"arn:aws:es:{self.region}:{self.account}:domain/{config['appPrefixLC']}-{config['opensearch']['domain']}/*"
+                f"arn:aws:es:{self.region}:{self.account}:domain/{config['appPrefixLowerCase']}{config['opensearch']['domain'].lower()}*/*"
             ],
         )
 
         cdk_opensearch_pw = sm.Secret(
             scope=self,
-            id=config["appPrefixLC"] + "opensearch_pw",
-            secret_name=config["appPrefixLC"] + "_opensearch_pw",
+            # do we need id and name
+            id="OpenSearchCredentials",
+            secret_name=config["appPrefix"] + "OpenSearchCredentials",
             generate_secret_string=sm.SecretStringGenerator(
                 secret_string_template=json.dumps({"user": "admin"}),
                 generate_string_key="password",
@@ -46,15 +55,14 @@ class OpenSearchStack(GenAiStack):
 
         ## TODO: create the domain in a private subnet
         domain = opensearch.Domain(
-            self,
-            config["appPrefixLC"] + "Domain",
-            domain_name=config["appPrefixLC"] + "-" + config["opensearch"]["domain"],
+            self,            
+            config["appPrefix"] + config["opensearch"]["domain"],
             version=opensearch.EngineVersion.OPENSEARCH_2_7,
             ebs=opensearch.EbsOptions(
                 volume_size=100, volume_type=ec2.EbsDeviceVolumeType.GP2
             ),
             capacity=opensearch.CapacityConfig(
-                data_nodes=1, data_node_instance_type="t3.medium.search"
+                data_nodes=1, data_node_instance_type=config["opensearch"]["instance_type"]
             ),
             node_to_node_encryption=True,
             encryption_at_rest=opensearch.EncryptionAtRestOptions(enabled=True),
@@ -69,19 +77,6 @@ class OpenSearchStack(GenAiStack):
             ),
         )
 
-        # Needed by the app to fetch configs from AWS tagged resources
-        Tags.of(domain).add(f"{config['appPrefixLC']}:secrets-id", f"{config['appPrefixLC']}_opensearch_pw")
-        Tags.of(domain).add(
-            f"{config['appPrefixLC']}:index-name", config["opensearch"]["index"]
-        )
-        Tags.of(domain).add(
-            f"{config['appPrefixLC']}:sagemaker-embedding-endpoint-name",
-            config["sagemaker"]["embeddings_endpoint_name"],
-        )
-        Tags.of(domain).add(
-            f"{config['appPrefixLC']}:friendly-name",
-            f"OpenSearch Index: {config['customer']['name']}",
-        )
         # ==================================================
         # =================== OUTPUTS ======================
         # ==================================================
@@ -94,7 +89,7 @@ class OpenSearchStack(GenAiStack):
         # Store in SSM
         ssm.StringParameter(
             scope=self,
-            id=config["appPrefix"] + "OpenSearchEndpointParamter",
-            parameter_name=config["appPrefixLC"] + "_opensearch_endpoint",
+            id="OpenSearchEndpoint",
+            parameter_name=config["appPrefix"] + "OpenSearchEndpoint",
             string_value=f"https://{domain.domain_endpoint}:443",
         )

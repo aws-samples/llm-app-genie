@@ -6,8 +6,6 @@ import os
 
 from aws_cdk import App, Environment, Tags
 from modules.config import config
-from stacks.chatbot.chatbot_cicd_stack import ChatbotCiCdStack
-from stacks.chatbot.chatbot_codecommit_repo_stack import ChatbotCodeCommitRepoStack
 from stacks.chatbot.chatbot_stack import ChatbotStack
 from stacks.kendra_datasources.kendra_datasources_stack import KendraDataSourcesStack
 from stacks.kendra_index.kendra_index_stack import KendraIndexStack
@@ -42,7 +40,7 @@ for key, value in config["globalTags"].items():
 ## Basic Infrastructure
 llm_pipeline = LLMSageMakerStack(
     app,
-    "AiLlmPipelineStack",
+    "LlmPipelineStack",
     env=env,
 )
 

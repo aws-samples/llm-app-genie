@@ -27,11 +27,10 @@ class KendraIndexStack(GenAiStack):
         # with required permissions to write CloudWatch logs and metrics
         kendra_role = iam.Role(
             self,
-            config["appPrefix"] + "KendraRole",
+            "KendraRole",
             assumed_by=iam.ServicePrincipal("kendra.amazonaws.com"),
             inline_policies={
-                config["appPrefix"]
-                + "KendraCloudWatchPolicy": iam.PolicyDocument(
+                "KendraCloudWatchPolicy": iam.PolicyDocument(
                     statements=[
                         # IAM policy to allow creating log groups
                         iam.PolicyStatement(
@@ -71,17 +70,17 @@ class KendraIndexStack(GenAiStack):
 
         # Create a Kendra index
         customer_name = config["customer"]["name"]
-        edition = config["kendra"]["kendra_edition"]
+
         self.index = kendra.CfnIndex(
             self,
-            config["appPrefix"] + "KnowledgeBaseKendra",
-            name=f"kendra-knowledge-base-{customer_name}",
+            id = f"{config['appPrefix']}{config['kendra']['index']}{customer_name}",
+            name=f"{config['appPrefix']}{config['kendra']['index']}{customer_name}",
             role_arn=kendra_role.role_arn,
-            edition=edition,
+            edition=config["kendra"]["edition"],
             description=f"Knowledge base for {customer_name}",
             tags=[
                 CfnTag(
-                    key=f"{config['appPrefixLC']}:friendly-name",
+                    key=f"{config['appPrefixLowerCase']}:friendly-name",
                     value=f"Amazon Kendra index - {customer_name}",
                 )
             ],

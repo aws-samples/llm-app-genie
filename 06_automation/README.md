@@ -11,25 +11,34 @@ trunk check 06_automation/
 ```python
 {
   "globalTags": {
-    "gena:version": "0.1",
-    "gena:app": "gen-ai-demo",
-    "gena:owner": "aws-alps-gen-ai-accelerator"
+    "version": "1.0",
+    "app": "demo",
+    "owner": "gena-team",
+    "deployment": "True"
   },
-  "customer_name": "Swiss-Government",
   "bedrock_region": "us-west-2",
-  "opensearch_domain_name": "os-accelerator",
-  "opensearch_index_name": "swiss-governement",
-  # Instance type for calculating the embeddings
-  "sagemaker_embeddings_instance_type": "ml.g4dn.xlarge",
-  # Name of the endpoint to compute the endpoint
-  "sagemaker_embeddings_endpoint_name": "embeddings-e5-large",
-  # We recommend either a ml.g5.12xlarge or a ml.g5.48xlarge for the Falcon 40B instruct LLM
-  "sagemaker_llm_instance_type": "ml.g5.12xlarge",
-  # Name of the endpoint that hosts the LLM
-  "sagemaker_llm_endpoint_name": "falcon-40b-instruct",
+  "customer": {
+    "name": "SwissGov"
+  },
+  "opensearch": {
+    "domain": "KB",
+    "instance_type": "t3.medium.search",
+    "index":"press-releases-en"
+  },
+  "sagemaker": {
+    # Instance type for calculating the embeddings
+    "embeddings_instance_type": "ml.g4dn.xlarge",
+    # Name of the endpoint to compute the endpoint
+    "embeddings_endpoint_name": "EmbeddingsE5Large",
+    # We recommend either a ml.g5.12xlarge or a ml.g5.48xlarge for the Falcon 40B instruct LLM
+    "llm_instance_type": "ml.g5.12xlarge",
+    # Name of the endpoint that hosts the LLM
+    "llm_endpoint_name": "Falcon40bInstruct12xlarge"
+  },
   "kendra": {
     # Edition of the Kendra index (DEVELOPER_EDITION or ENTERPRISE EDITION)
     "kendra_edition": "DEVELOPER_EDITION",
+    "index": "KnowledgeBase",
     # Kendra datasources JSON in the format documented:
     # https://docs.aws.amazon.com/kendra/latest/dg/ds-schemas.html#ds-schema-web-crawler
     # multiple datasource can be added to array
@@ -261,6 +270,5 @@ cat ~/.aws/config
 -- There are 2 additional parameters to control the naming of the stacks, the final name will be: **CDK_ENV_CODE + CDK_PREFIX + StackId**
 
 ```bash
-export CDK_APP=Gena # Application code will be added to stack names
-export CDK_ENV=CODE_OF_YOUR_ENVIRONMENT
+export CDK_APP_PREFIX=Gena # Application code will be added to stack names
 ```
