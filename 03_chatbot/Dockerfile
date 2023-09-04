@@ -51,14 +51,14 @@ ENV PATH="$VIRTUAL_ENVIRONMENT_PATH/bin:$PATH"
 
 # Principle of least privilege: create a new user for running the application
 RUN groupadd docker
-RUN useradd -r -u 1001 -g docker python_application
+RUN useradd -r -g docker python_application
 
 # Copy only requirements to cache them in docker layer
 WORKDIR $APP_DIR
 
 RUN chown python_application:docker $APP_DIR
 
-# Create cache directory and set permissions because user 1001 has no home
+# Create cache directory and set permissions because user has no home
 # and poetry cache directory.
 # https://python-poetry.org/docs/configuration/#cache-directory
 RUN mkdir ${POETRY_CACHE_DIR} && chown python_application:docker ${POETRY_CACHE_DIR}

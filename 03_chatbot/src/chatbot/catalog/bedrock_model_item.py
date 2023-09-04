@@ -1,4 +1,5 @@
 import boto3
+from chatbot.config import AmazonBedrockParameters
 from langchain.llms.base import LLM
 from langchain.llms.bedrock import Bedrock
 
@@ -10,10 +11,8 @@ class BedrockModelItem(ModelCatalogItem):
     Class that represents a Kendra retriever catalog item.
     """
 
-    region: str
-    """ AWS Region """
-    endpoint_url: str
-    """ Bedrock endpoint URL """
+    config: AmazonBedrockParameters
+    """Amazon Bedrock configuration"""
     model_id: str
     """ Model ID """
     model_kwargs: dict
@@ -22,26 +21,30 @@ class BedrockModelItem(ModelCatalogItem):
     def __init__(
         self,
         model_id,
-        endpoint_url,
+        bedrock_config: AmazonBedrockParameters,
         chat_prompt_identifier,
         rag_prompt_identifier,
-        region=None,
         **model_kwargs,
     ):
         super().__init__(
-            f"Bedrock - {model_id} - ({region})",
+            f"Bedrock - {model_id} - ({bedrock_config.region.value})",
             chat_prompt_identifier,
             rag_prompt_identifier,
         )
-        self.region = region
-        self.endpoint_url = endpoint_url
+        self.config = bedrock_config
         self.model_kwargs = model_kwargs
         self.model_id = model_id
 
     def get_instance(self) -> LLM:
+        region = self.config.region.value
+        endpoint_url = self.config.endpoint_url
+        profile = self.config.profile
+
+        session = boto3.Session(profile_name=profile)
+
         return Bedrock(
-            client=boto3.client("bedrock", self.region, endpoint_url=self.endpoint_url),
+            client=session.client("bedrock", region, endpoint_url=endpoint_url),
             model_id=self.model_id,
-            region_name=self.region,
-            model_kwargs=self.model_kwargs,
+            region_name=region,
+            **self.model_kwargs,
         )

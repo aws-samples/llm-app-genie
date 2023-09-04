@@ -69,6 +69,10 @@
             "endpointURL": {
               "type": "string",
               "description": "Optional endpoint url to access Amazon Bedrock."
+            },
+            "profile": {
+              "type": "string",
+              "description": "Optional credentials profile name to use for access to Amazon Bedrock."
             }
           }
         }

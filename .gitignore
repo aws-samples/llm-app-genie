@@ -26,3 +26,4 @@ env.list
 secrets.toml
 
 **/bedrock-python-sdk/
+**/logs/

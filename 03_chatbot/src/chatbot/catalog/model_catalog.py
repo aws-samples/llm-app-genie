@@ -38,9 +38,12 @@ class ModelCatalog(Catalog):
         for bedrock_config in self.bedrock_config:
             region = bedrock_config.parameters.region.value
             endpoint_url = bedrock_config.parameters.endpoint_url
+            profile = bedrock_config.parameters.profile
 
             try:
-                bedrock_client = boto3.client(
+                session = boto3.Session(profile_name=profile)
+
+                bedrock_client = session.client(
                     "bedrock", region, endpoint_url=endpoint_url
                 )
                 foundation_models = bedrock_client.list_foundation_models()[
@@ -51,10 +54,10 @@ class ModelCatalog(Catalog):
                 models += [
                     BedrockModelItem(
                         model_id=fm["modelId"],
-                        endpoint_url=endpoint_url,
-                        region=region,
+                        bedrock_config=bedrock_config.parameters,
                         chat_prompt_identifier="prompts/default_chat.yaml",
                         rag_prompt_identifier="prompts/default_rag.yaml",
+                        model_kwargs={"max_tokens_to_sample": 800},
                     )
                     for fm in foundation_models
                 ]
@@ -62,15 +65,17 @@ class ModelCatalog(Catalog):
             except (
                 botocore.exceptions.EndpointConnectionError,
                 botocore.exceptions.NoCredentialsError,
-            ):
-                logging.info("No Amazon Bedrock models retrieved in %s.", region)
+            ) as err:
+                logging.info(
+                    "No Amazon Bedrock models retrieved in %s.\n%s", region, err
+                )
             except botocore.exceptions.ClientError as err:
                 logging.error(
                     "There was an error while retrieving models from Amazon Bedrock.\n%s",
                     err,
                 )
-            except botocore.exceptions.UnknownServiceError:
-                logging.info("Running without Amazon Bedrock.")
+            except botocore.exceptions.UnknownServiceError as err:
+                logging.info("Running without Amazon Bedrock.\n%s", err)
         logging.info(
             "%s Bedrock models retrieved in %s seconds",
             len(models),

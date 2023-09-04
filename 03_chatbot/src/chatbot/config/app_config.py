@@ -7,7 +7,8 @@ from typing import Any, List, Optional
 from appconfig_helper import AppConfigHelper
 from chatbot.helpers import ChatbotEnvironment, ChatbotEnvironmentVariables
 
-from .config_amazon_bedrock import AmazonBedrock
+from .aws_region import AWSRegion
+from .config_amazon_bedrock import AmazonBedrock, AmazonBedrockParameters
 from .config_appearance import AWSsomeChatAppearance
 from .parser_helpers import from_list, from_none, from_union, to_class
 
@@ -30,8 +31,40 @@ LOCAL_DEV_APPCONFIG_JSON_PATH = "../appconfig.json"
 class AppConfig:
     """App configuration for the AWSomeChat application."""
 
-    amazon_bedrock: Optional[List[AmazonBedrock]] = None
+    _amazon_bedrock: Optional[List[AmazonBedrock]] = None
     appearance: AWSsomeChatAppearance = None
+
+    def __init__(
+        self,
+        appearance: AWSsomeChatAppearance,
+        amazon_bedrock: Optional[List[AmazonBedrock]] = None,
+    ):
+        self.appearance = appearance
+        self._amazon_bedrock = amazon_bedrock
+
+    @property
+    def amazon_bedrock(self) -> Optional[List[AmazonBedrock]]:
+        return self._amazon_bedrock
+
+    def add_amazon_bedrock(self, region: AWSRegion, endpoint_url: str = None):
+        """Adds an AWS Region for Amazon Bedrock usage to the config.
+
+        If the region is already configured, it will be ignored.
+
+        :param region: AWS Region for Amazon Bedrock usage.
+        :param endpoint_url: Optional endpoint URL for Amazon Bedrock usage.
+        """
+        new_bedrock_config = AmazonBedrock(
+            AmazonBedrockParameters(region, endpoint_url)
+        )
+        if self._amazon_bedrock is None:
+            self._amazon_bedrock = [new_bedrock_config]
+        elif not any(
+            existing_bedrock.parameters.region == region
+            for existing_bedrock in self._amazon_bedrock
+        ):
+            # Only append if Amazon Bedrock region has not already been configured.
+            self._amazon_bedrock.append(new_bedrock_config)
 
     @staticmethod
     def from_dict(obj: Any) -> "AppConfig":
