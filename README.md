@@ -304,23 +304,13 @@ The solution is flexible and will [automatically discover the available resource
 
 Example Pricing of the main components in USD for AWS region us-east-1 (N. Virginia) as of August 2023:
 
-| Item                                    |                                     Description                                     | Costs monthly |
-| :-------------------------------------- | :---------------------------------------------------------------------------------: | ------------: |
-| Ingestion                               |                                                                                     |               |
-| Knowledge Base - Amazon Kendra          |                                                                                     |               |
-| Knowledge Base - Amazon OpenSearch      |                                                                                     |               |
-| Full LLM (Falcon 40B)                   | ml.g5.12xlarge (CPU:48, 192 GiB, GPU: 4),<br> 8 hours/day x 20 days x 7.09 USD/hour |  1,134.40 USD |
-| Light LLM (Falcon 7B)                   |  ml.g5.4xlarge (CPU:16, 64 GiB, GPU: 1),<br> 8 hours/day x 20 days x 2.03 USD/hour  |    324.80 USD |
-| Full LLM (Bedrock - Claude Instant 12K) |     8K monthly conversations, each 20K tokens prompts (), 10K tokens completion     |    701.60 USD |
-
-Example 1:
-Kendra + Full LLM (Falcon 40B)
-
-Example 2:
-OpenSearch + Full LLM (Bedrock, Claude Instant 12K)
-
-Example 3:
-OpenSearch + Light LLM (Falcon 7B)
+| Item                               |                                     Description                                     | Costs monthly |
+| :--------------------------------- | :---------------------------------------------------------------------------------: | ------------: |
+| Ingestion                          |                                                                                     |               |
+| Knowledge Base - Amazon Kendra     |                                                                                     |               |
+| Knowledge Base - Amazon OpenSearch |                                                                                     |               |
+| Full LLM (Falcon 40B)              | ml.g5.12xlarge (CPU:48, 192 GiB, GPU: 4),<br> 8 hours/day x 20 days x 7.09 USD/hour |  1,134.40 USD |
+| Light LLM (Falcon 7B)              |  ml.g5.4xlarge (CPU:16, 64 GiB, GPU: 1),<br> 8 hours/day x 20 days x 2.03 USD/hour  |    324.80 USD |
 
 ### Clean up
 

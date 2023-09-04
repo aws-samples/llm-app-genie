@@ -114,7 +114,7 @@ Go to the `03_chatbot` directory
 
 ```bash
 cd <cloned-repository>/03_chatbot
-poetry install --without bedrock
+poetry install
 poetry shell
 streamlit run src/run_module.py --server.enableCORS true --server.port 80 --browser.serverPort 80
 ```
@@ -176,7 +176,7 @@ COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
 
 The easy configuration for the app to use Amazon Bedrock is to set the `BEDROCK_REGION` environment variable (see also [Environment Variables](#environment-variables)). The app will discover the Amazon Bedrock models in that region.
 
-If you want the app to use Amazon Bedrock in multiple regions or you want to control more of the app configuration for Amazon Bedrock then you should take a look at the [Personalize the app](#personalize-the-app) section.
+If you want the app to use Amazon Bedrock in multiple regions or you want to control more of the app configuration for Amazon Bedrock then you should take a look at the [Personalize the app](#personalize-the-app) section. If you configure an AWS Region for Amazon Bedrock usage through the app configuration and the environment variable then the app configuration takes precedent.
 
 ## Personalize the app
 

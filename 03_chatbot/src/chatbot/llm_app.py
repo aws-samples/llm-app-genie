@@ -78,7 +78,7 @@ class LLMApp(ABC):
             return_messages=True,
             k=3,
             output_key="answer",
-        )  # , human_prefix="[|Human|]", ai_prefix="[|AI|]",return_messages=False)
+        )  # , human_prefix="[|Human|]", ai_prefix="[|AI|]",return_messages=True)
         chain = self.get_chain(memory=memory, callbacks=callbacks)
 
         response = chain(self.get_input(query))

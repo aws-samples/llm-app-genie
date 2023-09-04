@@ -11,18 +11,22 @@ class AmazonBedrockParameters:
     """AWS Region to access Amazon Bedrock."""
     endpoint_url: Optional[str] = None
     """Optional endpoint url to access Amazon Bedrock."""
+    profile: Optional[str] = None
+    """Optional credentials profile name to use for access to Amazon Bedrock."""
 
     @staticmethod
     def from_dict(obj: Any) -> "AmazonBedrockParameters":
         assert isinstance(obj, dict)
         region = AWSRegion(obj.get("region"))
         endpoint_url = from_union([from_str, from_none], obj.get("endpointURL"))
-        return AmazonBedrockParameters(region, endpoint_url)
+        profile = from_union([from_str, from_none], obj.get("profile"))
+        return AmazonBedrockParameters(region, endpoint_url, profile)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["region"] = to_enum(AWSRegion, self.region)
         result["endpointURL"] = from_union([from_str, from_none], self.endpoint_url)
+        result["profile"] = from_union([from_str, from_none], self.profile)
         return result
 
 
@@ -37,10 +41,6 @@ class AmazonBedrock:
         self.parameters = parameters
         self.type = AmazonBedrock.typename()
 
-    def __init__(self, parameters: AmazonBedrockParameters, type: str):
-        self.parameters = parameters
-        self.type = type
-
     @classmethod
     def typename(cls) -> str:
         return "AmazonBedrock"
@@ -51,7 +51,7 @@ class AmazonBedrock:
         parameters = AmazonBedrockParameters.from_dict(obj.get("parameters"))
         type = from_str(obj.get("type"))
         assert type == AmazonBedrock.typename()
-        return AmazonBedrock(parameters, type)
+        return AmazonBedrock(parameters)
 
     def to_dict(self) -> dict:
         result: dict = {}

@@ -18,6 +18,7 @@ from chatbot.config import (
     AmazonBedrockParameters,
     AppConfigProvider,
     AWSConfig,
+    AWSRegion,
 )
 from chatbot.helpers import (
     ChatbotEnvironment,
@@ -85,135 +86,130 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     about_page(chatbot_name, favicon_url, gettext)
 
-    if check_password(chatbot_name):
-        chat_history = ChatHistory(chatbot_name, gettext)
+    if not check_password(chatbot_name):
+        # need to login first
+        st.stop()
 
-        if "show_llm_debug_messages" in st.session_state:
-            show_llm_debug_messages = st.session_state["show_llm_debug_messages"]
-        else:
-            show_llm_debug_messages = False
-            st.session_state["show_llm_debug_messages"] = show_llm_debug_messages
+    chat_history = ChatHistory(chatbot_name, gettext)
 
-        def on_llm_log(log_message: str):
-            if st.session_state["show_llm_debug_messages"]:
-                chat_history.add_chat_message(
-                    DebugMessage(ChatParticipant.DEBUGGER, log_message)
-                )
+    if "show_llm_debug_messages" in st.session_state:
+        show_llm_debug_messages = st.session_state["show_llm_debug_messages"]
+    else:
+        show_llm_debug_messages = False
+        st.session_state["show_llm_debug_messages"] = show_llm_debug_messages
 
-        def on_technical_log(log_message: str):
-            chat_history.add_log_message(
-                InfoMessage(ChatParticipant.DEBUGGER, log_message)
+    def on_llm_log(log_message: str):
+        if st.session_state["show_llm_debug_messages"]:
+            chat_history.add_chat_message(
+                DebugMessage(ChatParticipant.DEBUGGER, log_message)
             )
 
-        # Logging
-        if "TECHNICAL_LOGGER" in st.session_state:
-            logger = st.session_state["TECHNICAL_LOGGER"]
-        else:
-            logger = get_technical_logger(
-                ui_handler=LogToUiHandler(on_technical_log), session_id=session_id
+    def on_technical_log(log_message: str):
+        chat_history.add_log_message(InfoMessage(ChatParticipant.DEBUGGER, log_message))
+
+    # Logging
+    if "TECHNICAL_LOGGER" in st.session_state:
+        logger = st.session_state["TECHNICAL_LOGGER"]
+    else:
+        logger = get_technical_logger(
+            ui_handler=LogToUiHandler(on_technical_log), session_id=session_id
+        )
+        st.session_state["TECHNICAL_LOGGER"] = logger
+
+    if "LLM_LOGGER" in st.session_state:
+        llm_logger = st.session_state["LLM_LOGGER"]
+    else:
+        llm_logger = get_llm_logger(
+            ui_handler=LogToUiHandler(on_llm_log), session_id=session_id
+        )
+        st.session_state["LLM_LOGGER"] = llm_logger
+
+    if "LLM_LOG_HANDLER" in st.session_state:
+        llm_log_handler = st.session_state["LLM_LOG_HANDLER"]
+    else:
+        llm_log_handler = get_llm_log_handler(llm_logger)
+        st.session_state["LLM_LOG_HANDLER"] = llm_log_handler
+
+    if "aws_config" not in st.session_state:
+        try:
+            account_id = get_current_account_id()
+            region = environment.get_env_variable(ChatbotEnvironmentVariables.AWSRegion)
+            logger.info("AWS account number: %s", account_id)
+            logger.info(f"AWS region: {region}")
+            st.session_state["aws_config"] = AWSConfig(
+                account_id=account_id, region=region
             )
-            st.session_state["TECHNICAL_LOGGER"] = logger
-
-        if "LLM_LOGGER" in st.session_state:
-            llm_logger = st.session_state["LLM_LOGGER"]
-        else:
-            llm_logger = get_llm_logger(
-                ui_handler=LogToUiHandler(on_llm_log), session_id=session_id
+            bedrock_region = environment.get_env_variable(
+                ChatbotEnvironmentVariables.AmazonBedrockRegion
             )
-            st.session_state["LLM_LOGGER"] = llm_logger
+            if bedrock_region:
+                app_config.config.add_amazon_bedrock(AWSRegion(bedrock_region))
 
-        if "LLM_LOG_HANDLER" in st.session_state:
-            llm_log_handler = st.session_state["LLM_LOG_HANDLER"]
-        else:
-            llm_log_handler = get_llm_log_handler(llm_logger)
-            st.session_state["LLM_LOG_HANDLER"] = llm_log_handler
+        except Exception as e:
+            logger.error(
+                "Unable to get AWS account number. Ensure that you have AWS credentials configured."
+            )
+            logger.error(e)
+            sys.exit(0)
 
-        if "aws_config" not in st.session_state:
-            try:
-                account_id = get_current_account_id()
-                region = environment.get_env_variable(
-                    ChatbotEnvironmentVariables.AWSRegion
-                )
-                logger.info("AWS account number: %s", account_id)
-                logger.info(f"AWS region: {region}")
-                st.session_state["aws_config"] = AWSConfig(
-                    account_id=account_id, region=region
-                )
-                bedrock_region = environment.get_env_variable(
-                    ChatbotEnvironmentVariables.AmazonBedrockRegion
-                )
-                if bedrock_region:
-                    app_config.config.amazon_bedrock.append(
-                        AmazonBedrock(AmazonBedrockParameters(bedrock_region))
-                    )
+    logger.info("Session ID: %s", session_id)
 
-            except Exception:
-                logger.error(
-                    "Unable to get AWS account number. Ensure that you have AWS credentials configured."
-                )
-                sys.exit(0)
+    aws_config: AWSConfig = st.session_state["aws_config"]
 
-        logger.info("Session ID: %s", session_id)
+    regions = [aws_config.region]
 
-        aws_config: AWSConfig = st.session_state["aws_config"]
+    retriever, model, retriever_or_model_changed = write_sidebar(
+        chatbot_name,
+        favicon_url,
+        regions,
+        gettext=gettext,
+        show_llm_debug_messages=show_llm_debug_messages,
+        app_config=app_config.config,
+    )
 
-        regions = [aws_config.region]
+    if "prompt_catalog" not in st.session_state:
+        st.session_state["prompt_catalog"] = PromptCatalog()
+    prompt_catalog: Dict[PromptCatalogItem] = st.session_state["prompt_catalog"]
 
-        retriever, model, retriever_or_model_changed = write_sidebar(
-            chatbot_name,
-            favicon_url,
-            regions,
-            gettext=gettext,
-            show_llm_debug_messages=show_llm_debug_messages,
-            app_config=app_config.config,
+    if "memory_catalog" not in st.session_state:
+        st.session_state["memory_catalog"] = MemoryCatalog(regions)
+    memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
+
+    # Refresh button callback
+    def refresh():
+        session_id = create_session_id()
+        st.session_state.session_id = session_id
+        chat_history.clear()
+
+    write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
+
+    if retriever_or_model_changed:
+        chat_history.add_chat_message(
+            chat_history.create_system_message(model, retriever)
         )
 
-        if "prompt_catalog" not in st.session_state:
-            st.session_state["prompt_catalog"] = PromptCatalog()
-        prompt_catalog: Dict[PromptCatalogItem] = st.session_state["prompt_catalog"]
+    # Layout of input/response containers
+    response_container = st.container()
+    # input_container = st.container()
+    empty_input_text = _("Ask a question or prompt the LLM")
+    prompt = st.chat_input(empty_input_text)
 
-        if "memory_catalog" not in st.session_state:
-            st.session_state["memory_catalog"] = MemoryCatalog(regions)
-        memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
-
-        # Refresh button callback
-        def refresh():
-            session_id = create_session_id()
-            st.session_state.session_id = session_id
-            chat_history.clear()
-
-        write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
-
-        if retriever_or_model_changed:
-            chat_history.add_chat_message(
-                chat_history.create_system_message(model, retriever)
+    ## Conditional display of AI generated responses as a function of user provided prompts
+    with response_container:
+        if prompt:
+            memory_item = next(iter(memory_catalog or []), None)
+            memory = (
+                StreamlitChatMessageHistory()
+                if memory_item is None
+                else memory_item.get_instance(session_id)
             )
 
-        # Layout of input/response containers
-        response_container = st.container()
-        # input_container = st.container()
-        empty_input_text = _("Ask a question or prompt the LLM")
-        prompt = st.chat_input(empty_input_text)
+            app = retriever.llm_app_factory(model, prompt_catalog)
 
-        ## Conditional display of AI generated responses as a function of user provided prompts
-        with response_container:
-            if prompt:
-                memory_item = next(iter(memory_catalog or []), None)
-                memory = (
-                    StreamlitChatMessageHistory()
-                    if memory_item is None
-                    else memory_item.get_instance(session_id)
-                )
+            chat_history.add_chat_message(ChatMessage(ChatParticipant.USER, prompt))
+            response = app.generate_response(
+                prompt, memory, callbacks=[llm_log_handler]
+            )
+            chat_history.add_chat_message(ChatMessage(ChatParticipant.BOT, response))
 
-                app = retriever.llm_app_factory(model, prompt_catalog)
-
-                response = app.generate_response(prompt, memory)
-                chat_history.add_chat_message(ChatMessage(ChatParticipant.USER, prompt))
-                response = app.generate_response(
-                    prompt, memory, callbacks=[llm_log_handler]
-                )
-                chat_history.add_chat_message(
-                    ChatMessage(ChatParticipant.BOT, response)
-                )
-
-            chat_history.write()
+        chat_history.write()

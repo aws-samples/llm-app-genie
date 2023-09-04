@@ -98,7 +98,8 @@ class DebugMessage(AbstractChatMessage):
     @property
     def avatar(self) -> str:
         """See base class."""
-        return "src/icons/llm-xray-chat.png"
+        # return "src/icons/llm-xray-chat.png"
+        return "src/icons/X-Ray.png"
 
     def write(self):
         """See base class."""
@@ -148,7 +149,7 @@ class ChatHistory:
         """
         _ = self.gettext
         retriever_name = retriever.friendly_name
-        model_name = model.friendly_name
+
         document_search_msg = (
             ""
             if retriever_name == NO_DOCUMENT_SEARCH
@@ -157,9 +158,12 @@ class ChatHistory:
                 retriever_name=retriever_name
             )
         )
-        model_msg = _("You are chatting with {model_name}.").format(
-            model_name=model_name
-        )
+        if model:
+            model_msg = _("You are chatting with {model_name}.").format(
+                model_name=model.friendly_name
+            )
+        else:
+            model_msg = ""
         return InfoMessage(ChatParticipant.BOT, model_msg + document_search_msg)
 
     def clear(self):
