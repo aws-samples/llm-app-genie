@@ -4,16 +4,7 @@
     "type": "AWSomeChatAppearance",
     "parameters": {
       "name": "Gena",
-      "faviconUrl": "aws.png"
+      "faviconUrl": "https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg"
     }
-  },
-  "amazonBedrock": [
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-east-1",
-        "profile": "bedrock"
-      }
-    }
-  ]
+  }
 }

@@ -133,7 +133,9 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     if "aws_config" not in st.session_state:
         try:
             account_id = get_current_account_id()
-            region = environment.get_env_variable(ChatbotEnvironmentVariables.AWSRegion)
+            region = environment.get_env_variable(
+                ChatbotEnvironmentVariables.AWSRegion
+            )
             logger.info("AWS account number: %s", account_id)
             logger.info(f"AWS region: {region}")
             st.session_state["aws_config"] = AWSConfig(
@@ -143,13 +145,16 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
                 ChatbotEnvironmentVariables.AmazonBedrockRegion
             )
             if bedrock_region:
-                app_config.config.add_amazon_bedrock(AWSRegion(bedrock_region))
+                app_config.config.amazon_bedrock.append(
+                    AmazonBedrock(
+                        AmazonBedrockParameters(AWSRegion(bedrock_region))
+                    )
+                )
 
-        except Exception as e:
+        except Exception:
             logger.error(
                 "Unable to get AWS account number. Ensure that you have AWS credentials configured."
             )
-            logger.error(e)
             sys.exit(0)
 
     logger.info("Session ID: %s", session_id)
@@ -190,7 +195,6 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     # Layout of input/response containers
     response_container = st.container()
-    # input_container = st.container()
     empty_input_text = _("Ask a question or prompt the LLM")
     prompt = st.chat_input(empty_input_text)
 

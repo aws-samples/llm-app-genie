@@ -7,6 +7,9 @@ from langchain.schema import BaseRetriever
 
 from .retriever_catalog_item import RetrieverCatalogItem
 
+import boto3
+from botocore.config import Config
+
 
 @dataclass
 class KendraRetrieverItem(RetrieverCatalogItem):
@@ -60,8 +63,27 @@ class KendraRetrieverItem(RetrieverCatalogItem):
             for src in self._selected_data_sources
         ]
 
+        attribute_filter = {"OrAllFilters": data_src_filters}
+        filter = attribute_filter
+
+        if len(self._selected_data_sources) == 1:
+            # Add data source language filter if the language is not English
+            language = self._selected_data_sources[0][1].get("LanguageCode", None)
+            if language and language != "en":
+                lang_filter = {
+                    "EqualsTo": {
+                        "Key": "_language_code",
+                        "Value": {
+                            "StringValue": language
+                        }
+                    }
+                }
+
+                filter = {"AndAllFilters": [attribute_filter, lang_filter]}
+
         return AmazonKendraRetriever(
             index_id=self.index_id,
             region_name=self.region,
-            attribute_filter={"OrAllFilters": data_src_filters},
+            attribute_filter=filter,
+            top_k=3
         )

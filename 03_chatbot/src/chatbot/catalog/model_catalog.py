@@ -50,6 +50,23 @@ class ModelCatalog(Catalog):
                     "modelSummaries"
                 ]
 
+                # Filter out models that don't generate text (Stable Diffusion and Titan embeddings)
+                foundation_models = filter(
+                    lambda x: x["modelId"].find("stability") < 0 and x["modelId"].find("titan-e1t") < 0,
+                    foundation_models)
+                
+                models += [
+                    BedrockModelItem(
+                        model_id=fm["modelId"],
+                        endpoint_url=endpoint_url,
+                        region=region,
+                        chat_prompt_identifier="prompts/default_chat.yaml",
+                        rag_prompt_identifier="prompts/default_rag.yaml",
+                        bedrock_config=bedrock_config.parameters
+                    )
+                    for fm in foundation_models
+                ]
+
                 logging.info(foundation_models)
                 models += [
                     BedrockModelItem(
