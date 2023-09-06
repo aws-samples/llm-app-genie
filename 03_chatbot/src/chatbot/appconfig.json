@@ -4,7 +4,7 @@
     "type": "AWSomeChatAppearance",
     "parameters": {
       "name": "Gena",
-      "faviconUrl": "https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg"
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
     }
   }
 }

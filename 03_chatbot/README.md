@@ -181,6 +181,7 @@ If you want the app to use Amazon Bedrock in multiple regions or you want to con
 ## Personalize the app
 
 You can change the name and the icon of the app by adjusting `appconfig.json`.
+For the extensive configuration specification take a look at the [App Config JSON Schema](/src/chatbot/json_schema/aws_awsomechat_app_config.schema.json).
 
 Optionally you can also configure more details on how the app uses Amazon Bedrock.
 
@@ -199,7 +200,13 @@ Here is an example `appconfig.json`:
 }
 ```
 
-Here is an example `appconfig.json` with optional Amazon Bedrock:
+### Optional Amazon Bedrock config
+
+To get started with Amazon Bedrock follow the [Amazon Bedrock](#amazon-bedrock) section.
+
+If you want to configure Amazon Bedrock in multiple regions, use a different endpoint, or want to configure the chatbot IAM access to Amazon Bedrock then you can use `appconfig.json`.
+
+Here is an example `appconfig.json` with Amazon Bedrock in multiple regions:
 
 ```json
 {
@@ -221,8 +228,73 @@ Here is an example `appconfig.json` with optional Amazon Bedrock:
     {
       "type": "AmazonBedrock",
       "parameters": {
+        "region": "us-west-2"
+      }
+    }
+  ]
+}
+```
+
+Here is an example `appconfig.json` specifing the Amazon Bedrock endpoint:
+
+```json
+{
+  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "My Chatbot",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
+    }
+  },
+  "amazonBedrock": [
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
         "region": "us-east-1",
         "endpointURL": "https://bedrock.us-east-1.amazonaws.com"
+      }
+    }
+  ]
+}
+```
+
+Here is an example `appconfig.json` specifying the [profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) or a second one specifying the IAM role to use for Amazon Bedrock access:
+
+```json
+{
+  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "My Chatbot",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
+    }
+  },
+  "amazonBedrock": [
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-east-1",
+        "iam": {
+          "type": "BotoIAM",
+          "parameters": {
+            "profile": "<YOUR_PROFILE_NAME>"
+          }
+        }
+      }
+    },
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-east-1",
+        "endpointURL": "https://bedrock.us-east-1.amazonaws.com",
+        "iam": {
+          "type": "BotoIAM",
+          "parameters": {
+            "profile": "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/<YOUR_ROLE_NAME>"
+          }
+        }
       }
     }
   ]

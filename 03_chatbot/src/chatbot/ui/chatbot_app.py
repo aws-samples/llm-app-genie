@@ -75,7 +75,20 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     _ = gettext
 
     if "app_config" not in st.session_state:
-        st.session_state["app_config"] = AppConfigProvider(environment)
+        aws_app_config_app_name = environment.get_env_variable(
+            ChatbotEnvironmentVariables.AWSAppConfigApplication
+        )
+        aws_app_config_env_name = environment.get_env_variable(
+            ChatbotEnvironmentVariables.AWSAppConfigEnvironment
+        )
+        aws_app_config_profile_name = environment.get_env_variable(
+            ChatbotEnvironmentVariables.AWSAppConfigProfile
+        )
+        st.session_state["app_config"] = AppConfigProvider(
+            aws_app_config_app_name,
+            aws_app_config_env_name,
+            aws_app_config_profile_name,
+        )
     app_config: AppConfigProvider = st.session_state["app_config"]
 
     chatbot_name = app_config.config.appearance.parameters.name
@@ -133,9 +146,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     if "aws_config" not in st.session_state:
         try:
             account_id = get_current_account_id()
-            region = environment.get_env_variable(
-                ChatbotEnvironmentVariables.AWSRegion
-            )
+            region = environment.get_env_variable(ChatbotEnvironmentVariables.AWSRegion)
             logger.info("AWS account number: %s", account_id)
             logger.info(f"AWS region: {region}")
             st.session_state["aws_config"] = AWSConfig(
@@ -146,9 +157,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
             )
             if bedrock_region:
                 app_config.config.amazon_bedrock.append(
-                    AmazonBedrock(
-                        AmazonBedrockParameters(AWSRegion(bedrock_region))
-                    )
+                    AmazonBedrock(AmazonBedrockParameters(AWSRegion(bedrock_region)))
                 )
 
         except Exception:
