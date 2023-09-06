@@ -158,21 +158,16 @@ When creating the Amazon DynamoDB table use `SessionId` with type `String` as th
 
 ## Amazon Bedrock
 
-To use Amazon Bedrock you need to unzip the Amazon Bedrock SDK into the [`03_chatbot/bedrock-python-sdk`](../03_chatbot/bedrock-python-sdk/) directory. You then need to change [03_chatbot/pyproject.toml](./pyproject.toml) before you run `poetry install` to:
+To use Amazon Bedrock, you need the Amazon Bedrock SDK.
+If you want to run the chatbot locally, you need to download the Amazon Bedrock SDK locally into the [`03_chatbot/bedrock-python-sdk`](../03_chatbot/bedrock-python-sdk/) directory.
+We provide a [script (download_bedrock_sdk)](./download_bedrock_sdk.sh) to download and unzip the Amazon Bedrock SDK.
 
-```toml
-#boto3 = ">=1.28.21"
-# Uncomment if you use Amazon Bedrock and comment the line above with boto3
-boto3 = { path = "./bedrock-python-sdk/boto3-1.28.21-py3-none-any.whl" }
-botocore = { path = "./bedrock-python-sdk/botocore-1.31.21-py3-none-any.whl" }
-
+```Bash
+cd 03_chatbot/
+./download_bedrock_sdk.sh
 ```
 
-Activate the bedrock sdk in the [Dockerfile](03_chatbot/Dockerfile)
-
-```bash
-COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
-```
+If you deploy the chatbot to AWS using `cdk`, you dont need to do anything as it gets automatically installed in the Docker image.
 
 The easy configuration for the app to use Amazon Bedrock is to set the `BEDROCK_REGION` environment variable (see also [Environment Variables](#environment-variables)). The app will discover the Amazon Bedrock models in that region.
 
