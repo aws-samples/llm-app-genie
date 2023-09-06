@@ -5,11 +5,10 @@ from dataclasses import dataclass
 from typing import Any, List, Optional
 
 from appconfig_helper import AppConfigHelper
-from chatbot.helpers import ChatbotEnvironment, ChatbotEnvironmentVariables
 
+from .amazon_bedrock import AmazonBedrock, AmazonBedrockParameters
+from .appearance import AWSsomeChatAppearance
 from .aws_region import AWSRegion
-from .config_amazon_bedrock import AmazonBedrock, AmazonBedrockParameters
-from .config_appearance import AWSsomeChatAppearance
 from .parser_helpers import from_list, from_none, from_union, to_class
 
 # This code is used to parse the configuration file for this application.
@@ -101,16 +100,12 @@ def app_config_to_dict(x: AppConfig) -> Any:
 class AppConfigProvider:
     __config: AppConfig = None
 
-    def __init__(self, environment: ChatbotEnvironment) -> None:
-        aws_app_config_app_name = environment.get_env_variable(
-            ChatbotEnvironmentVariables.AWSAppConfigApplication
-        )
-        aws_app_config_env_name = environment.get_env_variable(
-            ChatbotEnvironmentVariables.AWSAppConfigEnvironment
-        )
-        aws_app_config_profile_name = environment.get_env_variable(
-            ChatbotEnvironmentVariables.AWSAppConfigProfile
-        )
+    def __init__(
+        self,
+        aws_app_config_app_name: str,
+        aws_app_config_env_name: str,
+        aws_app_config_profile_name: str,
+    ) -> None:
         if (
             aws_app_config_app_name is not None
             and aws_app_config_env_name is not None

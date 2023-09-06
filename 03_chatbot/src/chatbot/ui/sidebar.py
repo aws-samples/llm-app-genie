@@ -44,9 +44,15 @@ def write_sidebar(
     _ = gettext
 
     def __render_dropdown(
-        label: str, selected_state_name: str, options: OptionSequence[T]
+        label: str, selected_state_name: str, options: OptionSequence[T], params
     ) -> Tuple[T, bool]:
-        selected = st.selectbox(label=label, options=options, index=0)
+        default_index = 0
+        if selected_state_name in params and len(params[selected_state_name]) > 0:
+            option_names = [str(option) for option in options]
+            filtered_names = list(set(option_names) & set(params[selected_state_name]))
+            options = [option for option in options if str(option) in filtered_names]
+
+        selected = st.selectbox(label=label, options=options, index=default_index)
 
         changed = False
         if selected_state_name not in st.session_state:
@@ -65,24 +71,43 @@ def write_sidebar(
         with col2:
             st.title(chatbot_name)
 
+        params = st.experimental_get_query_params()
+
         retriever_state_name = "retriever_catalog"
         if retriever_state_name not in st.session_state:
             st.session_state[retriever_state_name] = RetrieverCatalog(regions)
         retriever_options = st.session_state[retriever_state_name]
         knowledgebase_label = _("Knowledge Base")
         retriever, retriever_changed = __render_dropdown(
-            knowledgebase_label, "retriever", retriever_options
+            knowledgebase_label, "retriever", retriever_options, params
         )
 
         filter_options = retriever.available_filter_options
         current_filter_options = retriever.current_filter
 
+        filter_disabled = filter_options is None
+
+        filter_options = [] if filter_options is None else filter_options
+
+        filter_query_param_name = "filter"
+        if (
+            filter_query_param_name in params
+            and len(params[filter_query_param_name]) > 0
+        ):
+            option_names = [option[0] for option in filter_options]
+            filtered_names = list(
+                set(option_names) & set(params[filter_query_param_name])
+            )
+            filter_options = [
+                option for option in filter_options if option[0] in filtered_names
+            ]
+
         options = st.multiselect(
             _("Optional: Filter {knowledge_base_name}").format(
                 knowledge_base_name=retriever.friendly_name
             ),
-            filter_options if filter_options is not None else [],
-            disabled=filter_options is None,
+            filter_options,
+            disabled=filter_disabled,
             default=current_filter_options,
             placeholder=_("Full search. Choose a filter."),
             format_func=lambda x: x[0],
@@ -98,7 +123,7 @@ def write_sidebar(
         model_options = st.session_state[model_state_name]
         language_model_label = _("Language Model")
         model, model_changed = __render_dropdown(
-            language_model_label, "model", model_options
+            language_model_label, "model", model_options, params
         )
 
         st.checkbox(

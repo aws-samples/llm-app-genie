@@ -1,5 +1,6 @@
 import boto3
 from chatbot.config import AmazonBedrockParameters
+from chatbot.helpers import get_boto_session
 from langchain.llms.base import LLM
 from langchain.llms.bedrock import Bedrock
 
@@ -45,43 +46,44 @@ class BedrockModelItem(ModelCatalogItem):
     def get_instance(self) -> LLM:
         region = self.config.region.value
         endpoint_url = self.config.endpoint_url
-        profile = self.config.profile
 
-        session = boto3.Session(profile_name=profile)
+        iam_config = self.config.iam
+
+        session = get_boto_session(iam_config)
 
         return Bedrock(
             client=session.client("bedrock", region, endpoint_url=endpoint_url),
             model_id=self.model_id,
-            region_name=region,
-            **self.model_kwargs,
+            # region_name=region,
+            model_kwargs=self.model_kwargs,
         )
 
     def _set_default_model_kwargs(self):
         if not self.model_kwargs:
-            if (self.model_provider == 'anthropic'): #Anthropic model
-                self.model_kwargs = { #anthropic
+            if self.model_provider == "anthropic":  # Anthropic model
+                self.model_kwargs = {  # anthropic
                     "max_tokens_to_sample": 512,
-                    "temperature": 0, 
-                    "top_k": 250, 
-                    "top_p": 1, 
-                    "stop_sequences": ["\n\nHuman:"] 
+                    "temperature": 0,
+                    "top_k": 250,
+                    "top_p": 1,
+                    "stop_sequences": ["\n\nHuman:"],
                 }
-            
-            elif (self.model_provider == 'ai21'): #AI21
-                self.model_kwargs = { #AI21
-                    "maxTokens": 512, 
-                    "temperature": 0, 
-                    "topP": 0.5, 
-                    "stopSequences": [], 
-                    "countPenalty": {"scale": 0 }, 
-                    "presencePenalty": {"scale": 0 }, 
-                    "frequencyPenalty": {"scale": 0 } 
+
+            elif self.model_provider == "ai21":  # AI21
+                self.model_kwargs = {  # AI21
+                    "maxTokens": 512,
+                    "temperature": 0,
+                    "topP": 0.5,
+                    "stopSequences": [],
+                    "countPenalty": {"scale": 0},
+                    "presencePenalty": {"scale": 0},
+                    "frequencyPenalty": {"scale": 0},
                 }
-            
-            else: #Amazon
-                self.model_kwargs = { 
-                    "maxTokenCount": 512, 
-                    "stopSequences": [], 
-                    "temperature": 0, 
-                    "topP": 0.9 
+
+            else:  # Amazon
+                self.model_kwargs = {
+                    "maxTokenCount": 512,
+                    "stopSequences": [],
+                    "temperature": 0,
+                    "topP": 0.9,
                 }

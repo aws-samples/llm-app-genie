@@ -70,11 +70,49 @@
               "type": "string",
               "description": "Optional endpoint url to access Amazon Bedrock."
             },
-            "profile": {
-              "type": "string",
-              "description": "Optional credentials profile name to use for access to Amazon Bedrock."
+            "iam": {
+              "$ref": "#/$defs/BotoIAM"
             }
           }
+        }
+      }
+    },
+    "BotoIAM": {
+      "title": "IAM",
+      "description": "Optional IAM configuration to access AWS resources. Supports profile or assuming an IAM role.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "BotoIAM"
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": ["profile"],
+              "additionalProperties": false,
+              "properties": {
+                "profile": {
+                  "type": "string",
+                  "description": "Optional credentials profile name to use for access."
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["roleARN"],
+              "additionalProperties": false,
+              "properties": {
+                "roleARN": {
+                  "type": "string",
+                  "description": "Optional IAM role to assume.",
+                  "pattern": "^arn:aws:iam::(?<Account>\\d{12}):role/(?<Rolename>[\\w+=,.@-]+)$"
+                }
+              }
+            }
+          ]
         }
       }
     },

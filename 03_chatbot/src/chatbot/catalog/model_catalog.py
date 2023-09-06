@@ -7,6 +7,7 @@ from typing import List
 import boto3
 import botocore
 from chatbot.config import AmazonBedrock
+from chatbot.helpers import get_boto_session
 
 from .bedrock_model_item import BedrockModelItem
 from .catalog import FRIENDLY_NAME_TAG, Catalog
@@ -38,11 +39,11 @@ class ModelCatalog(Catalog):
         for bedrock_config in self.bedrock_config:
             region = bedrock_config.parameters.region.value
             endpoint_url = bedrock_config.parameters.endpoint_url
-            profile = bedrock_config.parameters.profile
+            iam_config = bedrock_config.parameters.iam
+
+            session = get_boto_session(iam_config)
 
             try:
-                session = boto3.Session(profile_name=profile)
-
                 bedrock_client = session.client(
                     "bedrock", region, endpoint_url=endpoint_url
                 )
@@ -52,29 +53,17 @@ class ModelCatalog(Catalog):
 
                 # Filter out models that don't generate text (Stable Diffusion and Titan embeddings)
                 foundation_models = filter(
-                    lambda x: x["modelId"].find("stability") < 0 and x["modelId"].find("titan-e1t") < 0,
-                    foundation_models)
-                
-                models += [
-                    BedrockModelItem(
-                        model_id=fm["modelId"],
-                        endpoint_url=endpoint_url,
-                        region=region,
-                        chat_prompt_identifier="prompts/default_chat.yaml",
-                        rag_prompt_identifier="prompts/default_rag.yaml",
-                        bedrock_config=bedrock_config.parameters
-                    )
-                    for fm in foundation_models
-                ]
+                    lambda x: x["modelId"].find("stability") < 0
+                    and x["modelId"].find("titan-e1t") < 0,
+                    foundation_models,
+                )
 
-                logging.info(foundation_models)
                 models += [
                     BedrockModelItem(
                         model_id=fm["modelId"],
-                        bedrock_config=bedrock_config.parameters,
                         chat_prompt_identifier="prompts/default_chat.yaml",
                         rag_prompt_identifier="prompts/default_rag.yaml",
-                        model_kwargs={"max_tokens_to_sample": 800},
+                        bedrock_config=bedrock_config.parameters,
                     )
                     for fm in foundation_models
                 ]
