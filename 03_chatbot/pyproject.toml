@@ -19,10 +19,10 @@ babel = "^2.12.1"
 ansi2html = "^1.8.0"
 toml = "^0.10.2"
 sample-helper-aws-appconfig = "^2.0.3"
-boto3 = ">=1.28.21"
+#boto3 = ">=1.28.21"
 # Uncomment if you use Amazon Bedrock and comment the line above with boto3
-#boto3 = { path = "./bedrock-python-sdk/boto3-1.28.21-py3-none-any.whl" }
-#botocore = { path = "./bedrock-python-sdk/botocore-1.31.21-py3-none-any.whl" }
+boto3 = { path = "./bedrock-python-sdk/boto3-1.28.21-py3-none-any.whl" }
+botocore = { path = "./bedrock-python-sdk/botocore-1.31.21-py3-none-any.whl" }
 
 
 [build-system]

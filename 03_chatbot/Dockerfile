@@ -16,7 +16,9 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
         curl \
-        build-essential
+        build-essential \
+        wget \
+        unzip
 
 
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
@@ -65,17 +67,22 @@ RUN mkdir ${POETRY_CACHE_DIR} && chown python_application:docker ${POETRY_CACHE_
 
 # Allow execution and read by user and group
 COPY --chown=python_application:docker --chmod=550 entrypoint.sh ./
+COPY --chown=python_application:docker --chmod=550 download_bedrock_sdk.sh ./
 COPY --chown=python_application:docker --chmod=550 generate_secrets.py ./
 
 COPY --chown=python_application:docker poetry.lock pyproject.toml ./
+# Download the bedrock-python-sdk
+RUN ./download_bedrock_sdk.sh
+RUN chown python_application:docker ./bedrock-python-sdk/
+
 # activate after adding bedrock sdk
-#COPY --chown=python_application:docker bedrock-python-sdk ./bedrock-python-sdk
-COPY --chown=python_application:docker src ./src/
 RUN mkdir ${STREAMLIT_CONFIG_DIR} && chown python_application:docker ${STREAMLIT_CONFIG_DIR}
 
 # Project initialization:
 RUN poetry install --no-interaction --no-ansi --no-root
 
+# copy source code files
+COPY --chown=python_application:docker src ./src/
 
 HEALTHCHECK CMD curl --fail http://localhost:${LISTEN_PORT}/_stcore/health
 
