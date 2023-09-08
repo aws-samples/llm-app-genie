@@ -110,12 +110,19 @@ More information about Streamlit authentication can be found [here](https://docs
 
 Make sure that you have defined the [environment variables that the chatbot uses](#environment-variables).
 
-Go to the `03_chatbot` directory
+Go to the `03_chatbot` directory and run the following commands for the one time setup:
 
 ```bash
 cd <cloned-repository>/03_chatbot
 poetry install
 poetry shell
+source ./download_bedrock_sdk.sh
+source ./generate_internationalization.sh
+```
+
+To start the streamlit chatbot app run:
+
+```bash
 streamlit run src/run_module.py --server.enableCORS true --server.port 80 --browser.serverPort 80
 ```
 
@@ -425,7 +432,7 @@ After modifying or adding new translations they need to be compiled so that the 
 Run the following command to compile internationalixation in all languages.
 
 ```bash
-pybabel compile -d "./src/chatbot/i18n" --domain=chatbot
+source ./generate_internationalization.sh
 ```
 
 If you get a massage saying `catalog ./src/chatbot/i18n/de_DE/LC_MESSAGES/chatbot.po is marked as fuzzy, skipping` that means that there is an UI text in the `chatbot.po` file that only changed slighty. It is marked with `#, fuzzy`. A human should review if the translation need updating and then remove the flag in the `chatbot.po` file.

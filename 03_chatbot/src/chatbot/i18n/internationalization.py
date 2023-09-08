@@ -1,5 +1,6 @@
 """ Internationalization of text to other locals. """
 import gettext
+import logging
 import os
 
 
@@ -20,7 +21,11 @@ def install_language(locale: str):
         ```
     """
     i18n_dir = os.path.dirname(__file__)
-    lang = gettext.translation("chatbot", localedir=i18n_dir, languages=[locale])
-    lang.install()
+    try:
+        lang = gettext.translation("chatbot", localedir=i18n_dir, languages=[locale])
+        lang.install()
 
-    return lang.gettext
+        return lang.gettext
+    except:
+        logging.info("Running without internationalization")
+    return gettext.gettext

@@ -27,3 +27,6 @@ secrets.toml
 
 **/bedrock-python-sdk/
 **/logs/
+
+
+*.mo # binary internationalization files
