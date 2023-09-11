@@ -42,7 +42,6 @@ The core features of this implementation are:
 - End-to-end automated deployment using AWS CDK
 
 The following screenshot shows the application user interface:
-TODO [MALTE]: Update screenshot to latest version
 ![Gena application user interface](images/app-screenshot.png)
 
 <div class=“alert alert-info”> 💡 Note: this solution will incur AWS costs. You can find more information about these costs in the Costs section.
@@ -145,7 +144,6 @@ The most relevant app configuration parameters are being loaded from the [app co
 If required, you can change the used AWS account and region by setting the following env variables:
 `export CDK_DEFAULT_ACCOUNT=<your_account_id>`
 `export CDK_DEFAULT_REGION=<aws_region>`.
-TODO [ARLIND]: Include information about which environment is used by default
 
 ### Modular Deployment: Deploying individual components <a name="modular-deployment"> </a>
 
@@ -259,11 +257,15 @@ cdk deploy SageMakerStudioDomainStack --require-approval never
 
 ### Common Deployment Scenarios
 
+The solution is flexible and will [automatically discover the available resources](./03_chatbot/README.md#discovery-of-available-knowledge-bases-and-llms), including Amazon Bedrock models, knowledge bases (Amazon Kendra and Amazon OpenSearch), and available LLM endpoints.
+This means you can decide which knowledge base you combine with which LLM. 
+If you do not have access to Amazon Bedrock, or if it is not available in the AWS Region of your choice, you need to deploy an LLM on Amazon SageMaker.
+
 The most common scenarios are:
 
-- Amazon Kendra + Full LLM (Falcon 40B)
-- Amazon OpenSearch + Full LLM (Bedrock, Claude Instant 12K)
-- Amazon OpenSearch + Light LLM (e.g. Falcon 7B)
+- Amazon Kendra + Large LLM on Amazon SageMaker (Falcon 40B)
+- Amazon OpenSearch + Large LLM on Amazon Bedrock (Claude Instant 12K)
+- Amazon OpenSearch + Light LLM on Amazon SageMaker (e.g. Falcon 7B)
 
 ## I need help
 
@@ -296,19 +298,53 @@ The main options are:
 
 ### Costs
 
-This solution is going to generate costs on your AWS account. Components like Amazon OpenSearch, Amazon Kendra, and Amazon SageMaker synchronous endpoints will incur cost as long as they up and running in your AWS account.
+This solution is going to generate costs on your AWS account, depending on the used modules.
+The main cost drivers are expected to be the real-time Amazon SageMaker endpoints and the knowledge base (e.g. Amazon OpenSearch Service, Amazon Kendra), as these services will be always up and running. 
 
-The main cost drivers are the knowledge base and the LLM endpoint.
-You can decide which knowledge base you combine with which LLM.
-The solution is flexible and will [automatically discover the available resources](./03_chatbot/README.md#discovery-of-available-knowledge-bases-and-llms) like nowledge bases (Kendra and OpenSearch) as well as available LLM endpoints based on tagging.
+Amazon SageMaker endpoints can host the LLM for text generation, as well as the embeddings model used in combination with Amazon OpenSearch. Their pricing model is based on instance type, number of instances, and time running (billed per second). The default configuration uses (pricing in USD for the Ireland AWS Region as of September 2023):
+  - 1 x ml.g5.12xlarge for the LLM ($7.91/hour)
+  - 1 x ml.g4dn.xlarge for the embeddings ($0.821/hour)
 
-Example Pricing of the main components in USD for AWS region us-east-1 (N. Virginia) as of August 2023:
+Note that extra cost may apply when using commercial models through the AWS Marketplace (e.g.: AI21 Labs LLM models).
 
-| Item                               |                                     Description                                     | Costs monthly |
+You can delete the Amazon SageMaker endpoints during non-working hours to pause the cost for the LLM running on the Amazon SageMaker endpoint. For a pay-per-token pricing model use Amazon Bedrock which bills the number of input and output tokens. This means that, if you do not use the application, there is no cost from the LLM.
+
+With regards to the knowledge bases, you can choose between Amazon Kendra and Amazon OpenSearch Service. [Amazon Kendra pricing model](https://docs.aws.amazon.com/whitepapers/latest/how-aws-pricing-works/amazon-kendra.html) depends on the edition you choose (Developer or Enterprise). The Developer Edition is limited to a maximum of 10,000 documents, 4,000 queries per day, and 5 data sources. If you need more than that or you are running in production you should use the Enterprise Edition.
+
+Amazon OpenSearch Service pricing is based on instance type, number of instances, time running (billed per second), and EBS storage attached. The default configuration uses a single node cluster with 1 x t3.medium.search instance and 100 GB EBS storage (gp2).
+
+Finally, the application relies on an Amazon ECS task running on AWS Fargate and on an Amazon DynamoDB table. AWS Fargate pricing model is based on requested vCPU, memory, and CPU architecture, and billed per second. The default configuration uses 1 vCPU and 2 GB of memory, and uses Linux/x86_64 architecture. The default solution provisions a DynamoDB Standard table with on-demand capacity. DynamoDB pricing dimensions include read and write request units and storage.
+
+Pricing examples of LLM and knowledge base for four scenarios (prices in USD for Ireland AWS Region as of September 2023):
+
+**Amazon Bedrock + Amazon Kendra**
+  - See Amazon Bedrock console for model pricing
+  - Amazon Kendra Developer Edition: **$810/month**
+  - **Monthly total = $810 + Amazon Bedrock cost**
+
+**Work hours Large LLM on Amazon SageMaker + Amazon OpenSearch**
+  - Real-time endpoints, 8 hours/day, 20 days/month = 160 hours/month.
+  - Endpoint for LLM on 1 x ml.g5.12xlarge: $7.91 x 160 = **$1265.6**
+  - Endpoint for embeddings on 1 x ml.g4dn.xlarge: $0.821 x 160 = **$131.36**
+  - Amazon OpenSearch Service: t3.medium.search + 100 GB EBS (gp2) = 720 h/month x $0.078/hour + $0.11 GB/hour * 100 GB = **$67.16**
+  - **Monthly total = $1265.6 + $131.36 + $67.16 = $1464.12**
+
+**Work hours Large LLM on Amazon SageMaker + Amazon Kendra**
+  - Real-time endpoint based on 1 x ml.g5.12xlarge, 8 hours/day, 20 days/month: $7.91 x 8 x 20 = **$1265.6**
+  - Amazon Kendra Developer Edition: **$810**
+  - Monthly total = $810 + $1265.6 = **$2093.7457**
+
+**Always-on light LLM on Amazon SageMaker + Amazon Kendra**
+  - Real-time endpoint based on 1 x ml.g5.4xlarge, 24/7 (720 hours/month): $2.27 x 720 = **$1634.4**
+  - Amazon Kendra Developer Edition: **$810**
+  - **Monthly total = $810 + $1634.4  = $2462.5457**
+
+
+
+| Item                               |                                     Description                                     | Monthly Costs |
 | :--------------------------------- | :---------------------------------------------------------------------------------: | ------------: |
-| Ingestion                          |                                                                                     |               |
-| Knowledge Base - Amazon Kendra     |                                                                                     |               |
-| Knowledge Base - Amazon OpenSearch |                                                                                     |               |
+| Knowledge Base - Amazon Kendra     |  Developer Edition (maximum of 10,000 documents, 4,000 queries per day, and 5 data sources)      |  810.00 USD  |
+| Knowledge Base - Amazon OpenSearch | 1 x ml.g4dn.xlarge for embeddings pluc 1 x t3.medium.search instance with 100 GB EBS storage (gp2) |  198.52 USD |
 | Full LLM (Falcon 40B)              | ml.g5.12xlarge (CPU:48, 192 GiB, GPU: 4),<br> 8 hours/day x 20 days x 7.09 USD/hour |  1,134.40 USD |
 | Light LLM (Falcon 7B)              |  ml.g5.4xlarge (CPU:16, 64 GiB, GPU: 1),<br> 8 hours/day x 20 days x 2.03 USD/hour  |    324.80 USD |
 
