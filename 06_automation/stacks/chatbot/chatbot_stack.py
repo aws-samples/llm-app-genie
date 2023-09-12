@@ -1,18 +1,17 @@
 import json
 
-from aws_cdk import Duration, RemovalPolicy, Tags, CustomResource
+from aws_cdk import CustomResource, Duration, RemovalPolicy, Stack, Tags
+from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets
 from aws_cdk import aws_ecs as ecs
 from aws_cdk import aws_ecs_patterns as ecs_patterns
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_secretsmanager as sm
-from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_certificatemanager as acm
+from aws_cdk import aws_lambda_python_alpha as lambda_python
+from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import custom_resources as cr
-
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
@@ -28,49 +27,77 @@ class ChatbotStack(GenAiStack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
 
+        public_subnet = ec2.SubnetConfiguration(
+            name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+        )
+        private_subnet = ec2.SubnetConfiguration(
+            name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=24
+        )
+
+        vpc = ec2.Vpc(
+            scope=self,
+            id="ChatbotVPC",
+            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
+            max_azs=2,
+            nat_gateway_provider=ec2.NatProvider.gateway(),
+            nat_gateways=1,
+            subnet_configuration=[public_subnet, private_subnet],
+        )
+
+        self.vpc = vpc
+
+        # Do not use a port lower than 1024. The container image runs the app as non root user. Non root user cannot bind to port lower than 1024 in ECS.
+        self.container_port = 3001
+        self.port_mapping = ecs.PortMapping(
+            container_port=self.container_port,
+            host_port=self.container_port,
+            protocol=ecs.Protocol.TCP,
+        )
+
         cert_function = lambda_python.PythonFunction(
-            self, "RegisterSelfSignedCert",
+            self,
+            "RegisterSelfSignedCert",
             entry="./stacks/chatbot/cert_lambda",
             index="function.py",
             handler="lambda_handler",
             runtime=lambda_.Runtime.PYTHON_3_9,
-            timeout=Duration.seconds(amount=120)
+            timeout=Duration.seconds(amount=120),
         )
 
         cert_function.add_to_role_policy(
             statement=iam.PolicyStatement(
-                actions=["acm:ImportCertificate"],
-                resources=["*"]
+                actions=["acm:ImportCertificate"], resources=["*"]
             )
         )
 
-        # list_tags_keys = [t.key() for t in Tags.of(self)]
-        # print(list_tags_keys)
         cert_function.add_to_role_policy(
             statement=iam.PolicyStatement(
-                actions=["acm:AddTagsToCertificate"],
-                resources=["*"]
+                actions=["acm:AddTagsToCertificate"], resources=["*"]
             )
         )
 
         provider = cr.Provider(
-            self, "SelfSignedCertCustomResourceProvider",
-            on_event_handler=cert_function
+            self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
         )
 
         custom_resource = CustomResource(
-            self, "SelfSignedCertCustomResource",
+            self,
+            "SelfSignedCertCustomResource",
             service_token=provider.service_token,
             properties={
-                "email_address": config['self_signed_certificate']['email_address'],
-                "common_name": config['self_signed_certificate']['common_name'],
-                "city": config['self_signed_certificate']['city'],
-                "state": config['self_signed_certificate']['state'],
-                "country_code": config['self_signed_certificate']['country_code'],
-                "organization": config['self_signed_certificate']['organization'],
-                "organizational_unit": config['self_signed_certificate']['organizational_unit'],
-                "validity_seconds": config['self_signed_certificate']['validity_seconds']
-            }
+                "email_address": config["self_signed_certificate"]["email_address"],
+                "common_name": config["self_signed_certificate"]["common_name"],
+                "city": config["self_signed_certificate"]["city"],
+                "state": config["self_signed_certificate"]["state"],
+                "country_code": config["self_signed_certificate"]["country_code"],
+                "organization": config["self_signed_certificate"]["organization"],
+                "organizational_unit": config["self_signed_certificate"][
+                    "organizational_unit"
+                ],
+                "validity_seconds": config["self_signed_certificate"][
+                    "validity_seconds"
+                ],
+            },
         )
 
         cert_function.add_to_role_policy(
@@ -81,26 +108,7 @@ class ChatbotStack(GenAiStack):
         )
 
         certificate = acm.Certificate.from_certificate_arn(
-            self,
-            id="SelfSignedCert",
-            certificate_arn=custom_resource.ref
-        )
-
-        public_subnet = ec2.SubnetConfiguration(
-            name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-        )
-        private_subnet = ec2.SubnetConfiguration(
-            name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=24
-        )
-
-        vpc = ec2.Vpc(
-            scope=self,
-            id="vpc",
-            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
-            max_azs=2,
-            nat_gateway_provider=ec2.NatProvider.gateway(),
-            nat_gateways=1,
-            subnet_configuration=[public_subnet, private_subnet],
+            self, id="SelfSignedCert", certificate_arn=custom_resource.ref
         )
 
         memory_table = dynamodb.Table(
@@ -110,7 +118,7 @@ class ChatbotStack(GenAiStack):
                 name="SessionId", type=dynamodb.AttributeType.STRING
             ),
             removal_policy=RemovalPolicy.DESTROY,
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
         )
 
         Tags.of(memory_table).add(
@@ -124,7 +132,7 @@ class ChatbotStack(GenAiStack):
         cdk_streamlit_pw = sm.Secret(
             scope=self,
             id="StreamlitCredentials",
-            secret_name=config['appPrefix'] + "StreamlitCredentials",
+            secret_name=config["appPrefix"] + "StreamlitCredentials",
             generate_secret_string=sm.SecretStringGenerator(
                 secret_string_template=json.dumps({"username": "admin"}),
                 generate_string_key="password",
@@ -260,9 +268,7 @@ class ChatbotStack(GenAiStack):
         # ==================================================
         # =============== FARGATE SERVICE ==================
         # ==================================================
-        cluster = ecs.Cluster(
-            scope=self, id="Cluster", vpc=vpc
-        )
+        cluster = ecs.Cluster(scope=self, id="Cluster", vpc=self.vpc)
 
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
@@ -272,55 +278,65 @@ class ChatbotStack(GenAiStack):
             memory_limit_mib=4 * 1024,
         )
 
-        # Do not use a port lower than 1024. The container image runs the app as non root user. Non root user cannot bind to port lower than 1024 in ECS.
-        container_port = 3001
-
         container = task_definition.add_container(
             id=config["appPrefix"] + "StreamitContainer",
             image=ecs.ContainerImage.from_asset(
                 directory="../03_chatbot",
                 platform=aws_ecr_assets.Platform.LINUX_AMD64,
-                build_args={"LISTEN_PORT": str(container_port)},
+                build_args={"LISTEN_PORT": str(self.container_port)},
             ),
-            logging=ecs.LogDriver.aws_logs(stream_prefix=config["appPrefixLowerCase"] + "-ai-app"),
+            logging=ecs.LogDriver.aws_logs(
+                stream_prefix=config["appPrefixLowerCase"] + "-ai-app"
+            ),
             environment={
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
             },
             secrets={
-                "PASSWORD": ecs.Secret.from_secrets_manager(cdk_streamlit_pw, 'password'),
-                "USERNAME": ecs.Secret.from_secrets_manager(cdk_streamlit_pw, 'username')
+                "PASSWORD": ecs.Secret.from_secrets_manager(
+                    cdk_streamlit_pw, "password"
+                ),
+                "USERNAME": ecs.Secret.from_secrets_manager(
+                    cdk_streamlit_pw, "username"
+                ),
             },
             health_check=ecs.HealthCheck(
                 command=[
                     "CMD-SHELL",
-                    f"curl --fail http://localhost:{container_port}/_stcore/health",
+                    f"curl --fail http://localhost:{self.container_port}/_stcore/health",
                 ],
             ),
         )
 
-        port_mapping = ecs.PortMapping(
-            container_port=container_port,
-            host_port=container_port,
-            protocol=ecs.Protocol.TCP,
+        container.add_port_mappings(self.port_mapping)
+
+        fargate_service_sg = ec2.SecurityGroup(
+            self,
+            "ChatbotFargateServiceSecurityGroup",
+            vpc=vpc,
+            description="Chatbot service security group",
+            allow_all_outbound=False,
+            disable_inline_rules=True,
         )
-        container.add_port_mappings(port_mapping)
+
+        # Set up security group rules for chatbot service running on Fargate.
+        # Note the ApplicationLoadBalancedFargateService construct takes care
+        # of connectivity between the load balancer and service.
+        # Allow outbound connections to connect to AWS service like SecretsManager
+        fargate_service_sg.add_egress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(443),
+            description="Allow outbound HTTPS connections",
+        )
 
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             scope=self,
             id="Service",
-            # service_name=service_name,
             cluster=cluster,
             task_definition=task_definition,
-            certificate=certificate
-        )
-
-        # Setup security group
-        fargate_service.service.connections.security_groups[0].add_ingress_rule(
-            peer=ec2.Peer.ipv4(vpc.vpc_cidr_block),
-            connection=ec2.Port.tcp(container_port),
-            description=f"Allow inbound from VPC for {config['appPrefixLowerCase']}-ai-app",
+            certificate=certificate,
+            security_groups=[fargate_service_sg],
         )
 
         # Setup autoscaling policy

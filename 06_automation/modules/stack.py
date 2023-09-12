@@ -1,4 +1,4 @@
-from aws_cdk import App, Stack, Tags
+from aws_cdk import App, NestedStack, Stack, Tags
 from modules.config import config
 
 
@@ -8,10 +8,7 @@ class GenAiStack(Stack):
         # Call parent AWS Stack constructor with enhanced name and save the original id
         # ------------------------------------------------------------------------------
         super().__init__(
-            app,
-            config["appPrefix"] + id,
-            description=stack["description"],
-            **kwargs
+            app, config["appPrefix"] + id, description=stack["description"], **kwargs
         )
         self.original_id = id
 
@@ -20,3 +17,11 @@ class GenAiStack(Stack):
         # ------------------------------------------------------------------------------
         for key, value in stack["tags"].items():
             Tags.of(self).add(key, value)
+
+
+class GenAiNestedStack(GenAiStack, NestedStack):
+    def __init__(self, app: App, id: str, stack, **kwargs) -> None:
+        # ------------------------------------------------------------------------------
+        # Call parent AWS Stack constructor with enhanced name and save the original id
+        # ------------------------------------------------------------------------------
+        super().__init__(app, id, stack, **kwargs)

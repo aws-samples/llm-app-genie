@@ -68,31 +68,31 @@ typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "aws-cdk-aws-lambda-python-alpha"
-version = "2.93.0a0"
+version = "2.95.0a0"
 description = "The CDK Construct Library for AWS Lambda in Python"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "aws-cdk.aws-lambda-python-alpha-2.93.0a0.tar.gz", hash = "sha256:965db1a4d36953415e1c2dcf4901d4d44db99e574d570cfaedf2e4206f6e36fd"},
-    {file = "aws_cdk.aws_lambda_python_alpha-2.93.0a0-py3-none-any.whl", hash = "sha256:ba9ca1b3249e38c4ecc2e58f460b5e4604e5ba9a92e77d140819aeb7672b0bbe"},
+    {file = "aws-cdk.aws-lambda-python-alpha-2.95.0a0.tar.gz", hash = "sha256:c28f933166f4e670550e9e35c84f2561cfcbfe80bd553b5361a59a9ff3f26821"},
+    {file = "aws_cdk.aws_lambda_python_alpha-2.95.0a0-py3-none-any.whl", hash = "sha256:bd5e57253bfcf9d000e9e07dc03217173ea965a1976a274e5523ea20d26eced1"},
 ]
 
 [package.dependencies]
-aws-cdk-lib = "2.93.0"
+aws-cdk-lib = "2.95.0"
 constructs = ">=10.0.0,<11.0.0"
-jsii = ">=1.87.0,<2.0.0"
+jsii = ">=1.88.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "aws-cdk-lib"
-version = "2.93.0"
+version = "2.95.0"
 description = "Version 2 of the AWS Cloud Development Kit library"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "aws-cdk-lib-2.93.0.tar.gz", hash = "sha256:54252c8df547d2bd83584278529f47506fa2c27adcbfa623f00322b685f24c18"},
-    {file = "aws_cdk_lib-2.93.0-py3-none-any.whl", hash = "sha256:063e7c1f2588a254766229130347fb60e0bd7dd2a6d222d3ae2aa145a6059554"},
+    {file = "aws-cdk-lib-2.95.0.tar.gz", hash = "sha256:db87e5dc5cc2d7ea709f8618aa90fc815d43e750dc2e807b0a10801522d7a40b"},
+    {file = "aws_cdk_lib-2.95.0-py3-none-any.whl", hash = "sha256:10c276e889eb7d036cd34be9076cc5f92e0960763b14dc79f2600caf5af13c4b"},
 ]
 
 [package.dependencies]
@@ -100,23 +100,23 @@ files = [
 "aws-cdk.asset-kubectl-v20" = ">=2.1.2,<3.0.0"
 "aws-cdk.asset-node-proxy-agent-v6" = ">=2.0.1,<3.0.0"
 constructs = ">=10.0.0,<11.0.0"
-jsii = ">=1.87.0,<2.0.0"
+jsii = ">=1.88.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "boto3"
-version = "1.28.35"
+version = "1.28.43"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.28.35-py3-none-any.whl", hash = "sha256:d77415f22bbc14f3d72eaed2fc9f96d161f3ba7686922ad26d6bbc9d4985f3df"},
-    {file = "boto3-1.28.35.tar.gz", hash = "sha256:580b584e36967155abed7cc9b088b3bd784e8242ae4d8841f58cb50ab05520dc"},
+    {file = "boto3-1.28.43-py3-none-any.whl", hash = "sha256:4cd3e96900fb50bddc9f48007176c80d15396d08c5248b25a41220f3570e014f"},
+    {file = "boto3-1.28.43.tar.gz", hash = "sha256:c0211a3e830432851c73fa1e136b14dbb6d02b5c9a5e1272c557e63538620b88"},
 ]
 
 [package.dependencies]
-botocore = ">=1.31.35,<1.32.0"
+botocore = ">=1.31.43,<1.32.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -125,13 +125,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.31.35"
+version = "1.31.43"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.31.35-py3-none-any.whl", hash = "sha256:943e1465aad66db4933b06809134bd08c5b05e8eb18c19742ffec82f54769457"},
-    {file = "botocore-1.31.35.tar.gz", hash = "sha256:7e4534325262f43293a9cc9937cb3f1711365244ffde8b925a6ee862bcf30a83"},
+    {file = "botocore-1.31.43-py3-none-any.whl", hash = "sha256:d8b0c41c8c75d82f15fee57f7d54a852a99810faacbeb9d6f3f022558a2c330e"},
+    {file = "botocore-1.31.43.tar.gz", hash = "sha256:b4a3a1fcf75011351e2b0d3eb991f51f8d44a375d3e065f907dac67db232fc97"},
 ]
 
 [package.dependencies]
@@ -168,18 +168,36 @@ tomlkit = ["tomlkit (>=0.11.4,<0.12.0)"]
 ujson = ["ujson (>=5.4.0,<6.0.0)"]
 
 [[package]]
+name = "cdk-nag"
+version = "2.27.125"
+description = "Check CDK v2 applications for best practices using a combination on available rule packs."
+optional = false
+python-versions = "~=3.7"
+files = [
+    {file = "cdk-nag-2.27.125.tar.gz", hash = "sha256:9f6fd10a94bf59174edecc83926442e2e82add89c2b55fd461768cb915fa9433"},
+    {file = "cdk_nag-2.27.125-py3-none-any.whl", hash = "sha256:4fd27956dd2f714bef572ada341fa14cad3ee39ba040d809f8171a61de25c53e"},
+]
+
+[package.dependencies]
+aws-cdk-lib = ">=2.78.0,<3.0.0"
+constructs = ">=10.0.5,<11.0.0"
+jsii = ">=1.88.0,<2.0.0"
+publication = ">=0.0.3"
+typeguard = ">=2.13.3,<2.14.0"
+
+[[package]]
 name = "constructs"
-version = "10.2.69"
+version = "10.2.70"
 description = "A programming model for software-defined state"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "constructs-10.2.69-py3-none-any.whl", hash = "sha256:27a60f5ce4faa4d43c91c73f24e1a245c0a1ef67ea1c8a3df9ca6af9adf618df"},
-    {file = "constructs-10.2.69.tar.gz", hash = "sha256:520ddd665cc336df90be06bb1bd49f3a9a7400d886cad8aef7b0155593b4ffa4"},
+    {file = "constructs-10.2.70-py3-none-any.whl", hash = "sha256:ade1b5224830e78724ed50ce91ec2e6ce437c9983713c2b8ca541272283c5d37"},
+    {file = "constructs-10.2.70.tar.gz", hash = "sha256:f4ae2e0705baff188519e0233ad2129537c8eca40d68242873ca444a659549f8"},
 ]
 
 [package.dependencies]
-jsii = ">=1.84.0,<2.0.0"
+jsii = ">=1.88.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
@@ -341,4 +359,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10, <4.0"
-content-hash = "9b99aa69d0db8883c28983ef8c12559d9068d438abc8bc4236b3e68751550bbb"
+content-hash = "9252c758d79f578d8ccb2136df9c4c275b7a9b6c26f7945537462e7c5c3005c3"
