@@ -252,7 +252,7 @@ trunk check 06_automation/
 }
 ```
 
-- Setup the required configuration, the default configuration is **dev**, you can have many configuration files and update it with environment variable, **dev** is default value::
+- Setup the required configuration, the default configuration is **dev**, you can have many configuration files and use the `STAGE` environment variable to specify which configuration file to use, **dev** is default value::
 
 ```bash
 export STAGE=env_code
@@ -267,7 +267,7 @@ aws sts get-caller-identity --query Account --output text
 cat ~/.aws/config
 ```
 
--- There are 2 additional parameters to control the naming of the stacks, the final name will be: **CDK_ENV_CODE + CDK_PREFIX + StackId**
+-- There are 2 additional parameters to control the naming of the stacks, the final name will be: **CDK_APP_PREFIX + StackId**
 
 ```bash
 export CDK_APP_PREFIX=Gena # Application code will be added to stack names
