@@ -83,10 +83,10 @@ RUN mkdir ${STREAMLIT_CONFIG_DIR} && chown python_application:docker ${STREAMLIT
 # Project initialization:
 RUN poetry install --no-interaction --no-ansi --no-root
 
-RUN ./generate_internationalization.sh
-
 # copy source code files
 COPY --chown=python_application:docker src ./src/
+
+RUN ./generate_internationalization.sh
 
 HEALTHCHECK CMD curl --fail http://localhost:${LISTEN_PORT}/_stcore/health
 
