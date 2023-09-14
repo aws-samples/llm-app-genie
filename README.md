@@ -247,7 +247,7 @@ Amazon SageMaker Studio provides an environment where you experiment in the note
 The solution provides notebooks for experimentation. For example:
 
 - [./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb](./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb) to deploy a SageMaker endpoint to help create document embeddings with HuggingFace's Transformers.
-- [./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb](./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb) to deploy Falcon 40b Foundation Model.
+- [./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb](./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb) to deploy Falcon 40b Foundation Model, either real-time or asynchronous.
 
 Note than any modification iwhile we think that collaboration is key to success and synergies, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change the notebooks or the default configuration, needs to be reflected in the [app config](06_automation/configs/dev.json), otherwise the chatbot won't know about these.
 
@@ -307,7 +307,7 @@ Amazon SageMaker endpoints can host the LLM for text generation, as well as the 
 
 Note that extra cost may apply when using commercial models through the AWS Marketplace (e.g.: AI21 Labs LLM models).
 
-You can delete the Amazon SageMaker endpoints during non-working hours to pause the cost for the LLM running on the Amazon SageMaker endpoint. For a pay-per-token pricing model use Amazon Bedrock which bills the number of input and output tokens. This means that, if you do not use the application, there is no cost from the LLM.
+You can delete the Amazon SageMaker endpoints during non-working hours to pause the cost for the LLM running on the Amazon SageMaker endpoint, or use Asynchronous endpoints. For a pay-per-token pricing model use Amazon Bedrock which bills the number of input and output tokens. This means that, if you do not use the application, there is no cost from the LLM.
 
 With regards to the knowledge bases, you can choose between Amazon Kendra and Amazon OpenSearch Service. [Amazon Kendra pricing model](https://docs.aws.amazon.com/whitepapers/latest/how-aws-pricing-works/amazon-kendra.html) depends on the edition you choose (Developer or Enterprise). The Developer Edition is limited to a maximum of 10,000 documents, 4,000 queries per day, and 5 data sources. If you need more than that or you are running in production you should use the Enterprise Edition.
 

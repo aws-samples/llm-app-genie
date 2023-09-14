@@ -9,6 +9,7 @@ from langchain.llms.base import LLM
 from langchain.llms.sagemaker_endpoint import LLMContentHandler
 
 from .model_catalog_item import ModelCatalogItem
+from chatbot.helpers.sagemaker_async_endpoint import SagemakerAsyncEndpoint
 
 
 class SageMakerModelItem(ModelCatalogItem):
@@ -39,6 +40,8 @@ class SageMakerModelItem(ModelCatalogItem):
     """ SageMaker endpoint name """
     model_name: str
     """ SageMaker model name """
+    async_endpoint_s3: str | None
+    """S3 bucket used by the Asynchronous Sagemaker Endpoint"""
     model_kwargs: dict
     """ SageMaker model kwargs """
 
@@ -49,6 +52,7 @@ class SageMakerModelItem(ModelCatalogItem):
         chat_prompt_identifier: str = "prompts/falcon_chat.yaml",
         rag_prompt_identifier: str = "prompts/falcon_instruct_rag.yaml",
         region: str = "us-east-1",
+        async_endpoint_s3: str | None = None,
         **model_kwargs,
     ):
         super().__init__(
@@ -57,6 +61,7 @@ class SageMakerModelItem(ModelCatalogItem):
         self.region = region
         self.endpoint_name = endpoint_name
         self.model_name = model_name
+        self.async_endpoint_s3 = async_endpoint_s3
         self.model_kwargs = model_kwargs
 
     class ContentHandler(LLMContentHandler):
@@ -99,10 +104,21 @@ class SageMakerModelItem(ModelCatalogItem):
     )
 
     def get_instance(self) -> LLM:
-        llm_sagemaker = SagemakerEndpoint(
-            endpoint_name=self.endpoint_name,
-            region_name=self.region,
-            content_handler=self.content_handler,
-        )
+        if self.async_endpoint_s3 is None:
+            llm_sagemaker = SagemakerEndpoint(
+                endpoint_name=self.endpoint_name,
+                region_name=self.region,
+                content_handler=self.content_handler,
+            )
+        else:
+            inputs = (self.async_endpoint_s3).replace("s3://", "").split("/", 1)
+            input_bucket, input_prefix = inputs[0], inputs[1]
+            llm_sagemaker = SagemakerAsyncEndpoint(
+                    endpoint_name=self.endpoint_name,
+                    region_name=self.region,
+                    content_handler=self.content_handler,
+                    input_bucket=input_bucket,
+                    input_prefix=input_prefix
+            )
 
         return llm_sagemaker
