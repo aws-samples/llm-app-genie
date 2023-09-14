@@ -11,7 +11,7 @@ from modules.config import config
 from modules.stack import GenAiStack
 
 stack = {
-    "description": "MLOps Pipeline to deploy LLM to SageMaker inference endpoint",
+    "description": "Deploy Pipeline to deploy Gena full infrastructure",
     "tags": {},
 }
 
@@ -23,8 +23,8 @@ class DeploymentPipelineStack(GenAiStack):
 
         repo = codecommit.Repository(
             self,
-            "GenaMirror",
-            repository_name="gena-mirror"
+            config["appPrefix"] + "Repo",
+            repository_name=config["appPrefix"] + "-repo"
         )
 
         user = iam.User(self, 'mirror-user')
@@ -73,10 +73,8 @@ class DeploymentPipelineStack(GenAiStack):
                 iam.ServicePrincipal("codepipeline.amazonaws.com"),
             ),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AdministratorAccess"
-                ),
-            ],
+                iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
+            ]
         )
 
         cdk_deploy = codebuild.PipelineProject(
@@ -106,7 +104,7 @@ class DeploymentPipelineStack(GenAiStack):
 
         source_output = codepipeline.Artifact()
 
-        pipeline_name = config["appPrefix"]+"GenaDeploymentPipeline"
+        pipeline_name = config["appPrefix"]+"DeploymentPipeline"
         codepipeline.Pipeline(
             self,
             pipeline_name,
