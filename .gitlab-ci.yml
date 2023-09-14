@@ -1,0 +1,15 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+code commit mirror:
+  image: python:3.11
+  stage: deploy
+  before_script:
+    - pip install git-remote-codecommit
+    - echo $CODE_COMMIT_REPO
+    - git checkout main # checkout main to avoid deleting default branch
+    - git checkout develop # checkout develop to avoid deleting develop branch
+    - git checkout "$CI_COMMIT_REF_NAME"
+    - git status
+  script:
+    - git push --mirror $CODE_COMMIT_REPO
