@@ -14,6 +14,7 @@ from stacks.opensearch_domain.opensearch_domain_stack import OpenSearchStack
 from stacks.opensearch_ingestion_pipeline.opensearch_ingestion_pipeline_stack import (
     OpenSearchIngestionPipelineStack,
 )
+from stacks.deployment_pipeline.deployment_pipeline_stack import DeploymentPipelineStack
 
 # load the details from defaul AWS config
 env = Environment(
@@ -37,6 +38,11 @@ app = App()
 for key, value in config["globalTags"].items():
     Tags.of(app).add(key, value)
 
+deployment_pipeline = DeploymentPipelineStack(
+    app,
+    "DeploymentPipelineStack",
+    env=env
+)
 ## Basic Infrastructure
 llm_pipeline = LLMSageMakerStack(
     app,

@@ -1,2 +1,3 @@
 #!/bin/bash
-pybabel compile -d "./src/chatbot/i18n" --domain=chatbot
+set -e
+exec poetry run pybabel compile -d "./src/chatbot/i18n" --domain=chatbot

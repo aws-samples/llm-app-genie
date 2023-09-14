@@ -258,6 +258,32 @@ Note than any modification iwhile we think that collaboration is key to success 
 cdk deploy SageMakerStudioDomainStack --require-approval never
 ```
 
+### CICD Deployment
+
+We provide an alternative way to deploy the solution by setting up a CI/CD pipeline on your AWS account.
+We first deploy the infrastructure to for the deployment.
+We use:
+1. AWS CodeCommit to host the git repo
+2. AWS CodeBuild to deploy the full solution via cdk
+3. AWS CodePipeline to orchestrate the deployment
+
+In the default settings, the pipeline will trigger only for the `develop` branch, but this can be changed.
+
+```Bash
+cd <path-to-cloned-repo>/06_automation
+cdk deploy GenaDeploymentPipelineStack --require-approval never
+```
+
+You can configure your git to authenticate against AWS CodeCommit using your AWS credentials.
+See [here](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-git-remote-codecommit.html) for more information
+
+```Bash
+cd <path-to-cloned-repo>/
+pip install git-remote-codecommit
+git remote set-url origin codecommit://Gena-repo
+git push
+```
+
 ### Common Deployment Scenarios <a name="common-deployment-scenarios"></a>
 
 The solution is flexible and will [automatically discover the available resources](./03_chatbot/README.md#discovery-of-available-knowledge-bases-and-llms), including Amazon Bedrock models, knowledge bases (Amazon Kendra and Amazon OpenSearch), and available LLM endpoints.
@@ -349,7 +375,6 @@ Pricing examples of LLM and knowledge base for four scenarios (prices in USD for
   - Real-time endpoint based on 1 x ml.g5.4xlarge, 24/7 (720 hours/month): $2.27 x 720 = **$1634.4**
   - Amazon Kendra Developer Edition: **$810**
   - **Monthly total = $810 + $1634.4  = $2462.5457**
-
 
 
 | Item                               |                                     Description                                     | Monthly Costs |

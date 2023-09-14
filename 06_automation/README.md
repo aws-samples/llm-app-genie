@@ -6,7 +6,7 @@
 trunk check 06_automation/
 ```
 
-- Check and update if required the the environmnet parameters in _config/env_code.json_:
+- Check and update if required the environmnet parameters in _config/env_code.json_:
 
 ```python
 {
@@ -272,3 +272,4 @@ cat ~/.aws/config
 ```bash
 export CDK_APP_PREFIX=Gena # Application code will be added to stack names
 ```
+
