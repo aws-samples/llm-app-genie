@@ -119,6 +119,9 @@ class ModelCatalog(Catalog):
                     rag_prompt_identifier = "prompts/falcon_instruct_rag.yaml"
                     if "gena:prompt-rag" in tags_dict:
                         rag_prompt_identifier = tags_dict["gena:prompt-rag"]
+                    async_endpoint_s3 = None
+                    if "gena:async-endpoint-s3" in tags_dict:
+                        async_endpoint_s3 = tags_dict["gena:async-endpoint-s3"]
                     models.append(
                         SageMakerModelItem(
                             model_name=friendly_name,
@@ -126,6 +129,7 @@ class ModelCatalog(Catalog):
                             region=region,
                             chat_prompt_identifier=chat_prompt_identifier,
                             rag_prompt_identifier=rag_prompt_identifier,
+                            async_endpoint_s3=async_endpoint_s3
                         )
                     )
 
