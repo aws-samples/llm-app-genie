@@ -141,7 +141,7 @@ Note that if you deploy resources using the provided CDK stacks as described in 
 | gena:async-endpoint-s3  | (Optional for real-time, required for async endpoints) Amazon S3 URI to store messages sent to an asynchronous endpoint and retrieve the responses. | "s3://bucket-name/s3-path/" |
 
 Here is an example of how to tag an Amazon SageMaker inference endpoint to enable the use of that LLM in the app.
-![Amaxon SageMaker inference endpoint Add/Edit tags screenshot showing tag with gena:friendly-name as key and Falcon 40B Instruct as value.](/images/Amazon%20SageMaker%20endpoint%20tags%20dynamic%20discovery.png "Amazon SageMaker inference endpoint gena:friendly-name tag.")
+![Amazon SageMaker inference endpoint Add/Edit tags screenshot showing tag with gena:friendly-name as key and Falcon 40B Instruct as value.](./images/Amazon%20SageMaker%20endpoint%20tags%20dynamic%20discovery.png "Amazon SageMaker inference endpoint gena:friendly-name tag.")
 
 ### Amazon OpenSearch domain tags
 

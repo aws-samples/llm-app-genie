@@ -1,27 +1,30 @@
-# Gena - Generative Enterprise Assistant
+# Gena - Generative Enterprise Assistant <a name="gena---generative-enterprise-assistant"></a>
 
-## Table of contents
+## Table of contents <a name="table-of-contents"></a>
 
 - [Gena - Generative Enterprise Assistant](#gena---generative-enterprise-assistant)
   - [Table of contents](#table-of-contents)
-  - [Intro and Architecture ](#intro-and-architecture-)
+  - [Intro and Architecture](#introduction)
     - [Architecture Overview](#architecture-overview)
   - [Getting started](#getting-started)
-    - [Full deployment ](#full-deployment-)
-    - [Modular Deployment: Deploying individual components ](#modular-deployment-deploying-individual-components--)
+    - [Full deployment](#full-deployment)
+    - [Modular Deployment: Deploying individual components](#modular-deployment)
     - [Common Deployment Scenarios](#common-deployment-scenarios)
-  - [Usage Scenarios ](#usage-scenarios-)
-    - [How to populate knowledge bases ? ](#how-to-populate-knowledge-bases--)
-    - [How to fine-tune an LLM? ](#how-to-fine-tune-an-llm-)
-    - [How to customize the chatbot? ](#how-to-customize-the-chatbot-)
-  - [Costs and Clean up ](#costs-and-clean-up--)
+  - [I need help](#i-need-help)
+  - [Usage Scenarios](#usage-scenarios)
+    - [How to populate knowledge bases?](#populate-knowledgebase)
+    - [How to fine-tune a LLM?](#finetune)
+    - [How to customize the chatbot?](#customize-chatbot)
+  - [Costs and Clean up ](#costs-and-clean-up)
     - [Costs](#costs)
     - [Clean up](#clean-up)
   - [Setup development environment](#setup-development-environment)
-    - [Repository structure ](#repository-structure-)
-    - [Local Development Guide ](#local-development-guide--)
+    - [Pull Requests](#pull-requests)
+    - [Repository structure](#repo_structure)
+    - [Local Development Guide](#local-development-guide)
     - [Pre-requisites for Development](#pre-requisites-for-development)
   - [Troubleshooting/FAQ](#troubleshootingfaq)
+  - [Copyright information](#copyright)
 
 ## Intro and Architecture <a name="introduction"></a>
 
@@ -47,11 +50,11 @@ The following screenshot shows the application user interface:
 <div class=“alert alert-info”> 💡 Note: this solution will incur AWS costs. You can find more information about these costs in the Costs section.
 </div>
 
-### Architecture Overview
+### Architecture Overview <a name="architecture-overview"></a>
 
 ![](05_doc/companion_architecture_simple.drawio.png)
 
-## Getting started
+## Getting started <a name="getting-started"></a>
 
 We provide infrastructure as code for the solution in [AWS CDK](https://aws.amazon.com/cdk/).
 
@@ -255,7 +258,7 @@ Note than any modification iwhile we think that collaboration is key to success 
 cdk deploy SageMakerStudioDomainStack --require-approval never
 ```
 
-### Common Deployment Scenarios
+### Common Deployment Scenarios <a name="common-deployment-scenarios"></a>
 
 The solution is flexible and will [automatically discover the available resources](./03_chatbot/README.md#discovery-of-available-knowledge-bases-and-llms), including Amazon Bedrock models, knowledge bases (Amazon Kendra and Amazon OpenSearch), and available LLM endpoints.
 This means you can decide which knowledge base you combine with which LLM. 
@@ -267,7 +270,7 @@ The most common scenarios are:
 - Amazon OpenSearch + Large LLM on Amazon Bedrock (Claude Instant 12K)
 - Amazon OpenSearch + Light LLM on Amazon SageMaker (e.g. Falcon 7B)
 
-## I need help
+## I need help <a name="i-need-help"></a>
 
 If you want to report a bug please open an issue in this repository with the _Default bug_ issue template.
 Would you like to request a new feature then please open an issue with the _Feature Request_ template.
@@ -290,13 +293,21 @@ The main options are:
 
 3. Retrigger the ingestion pipeline by changing the codecommit repo created by the `GenaOpenSearchIngestionPipelineStack`.
 
-### How to fine-tune an LLM? <a name="finetune"></a>
+### How to fine-tune a LLM? <a name="finetune"></a>
+
+An example of LLM fine-tuning is provided in 2 steps for the model Falcon 40B, i.e. the [actual tuning](./04_finetuning/train_llms_with_qlora/fine-tune-falcon.ipynb) and the [deployment of the tuned model](./04_finetuning/deploy_llms_with_qlora/deploy_fine_tuned_falcon.ipynb). 
+
+The fine-tuning is performed using QLoRA, a technique that quantizes a model to 4 bits while keeping the performance of full-precision. This technique enables models with up to 65 billion parameters on a single GPU and achieves state-of-the-art results on language tasks.
+
+The deployment is done using the Hugging Face Text Generation Inference Container (TGI), which enables high-performance using Tensor Parallelism and dynamic batching.
 
 ### How to customize the chatbot? <a name="customize-chatbot"></a>
 
+In preparation
+
 ## Costs and Clean up <a name="costs-and-clean-up"> </a>
 
-### Costs
+### Costs <a name="costs"> </a>
 
 This solution is going to generate costs on your AWS account, depending on the used modules.
 The main cost drivers are expected to be the real-time Amazon SageMaker endpoints and the knowledge base (e.g. Amazon OpenSearch Service, Amazon Kendra), as these services will be always up and running. 
@@ -348,7 +359,7 @@ Pricing examples of LLM and knowledge base for four scenarios (prices in USD for
 | Full LLM (Falcon 40B)              | ml.g5.12xlarge (CPU:48, 192 GiB, GPU: 4),<br> 8 hours/day x 20 days x 7.09 USD/hour |  1,134.40 USD |
 | Light LLM (Falcon 7B)              |  ml.g5.4xlarge (CPU:16, 64 GiB, GPU: 1),<br> 8 hours/day x 20 days x 2.03 USD/hour  |    324.80 USD |
 
-### Clean up
+### Clean up <a name="clean-up"> </a>
 
 To clean up the resources, first you need to delete the SageMaker endpoints created by the two AWS CodePipeline pipelines since they are not managed by CDK.
 
@@ -371,7 +382,7 @@ You should follow the [local development guide](#local-development-guide), if yo
 - How to setup the development environment for the chatbot? <br> Follow the [chatbot Readme](./03_chatbot/README.md).
 - How to setup the development environment for the automation project? <br>Follow the [Full Deployment section](#full-deployment).
 
-### Pull Requests
+### Pull Requests <a name="pull-requests"></a>
 
 We appreciate your collaboration because it is key to success and synergies. However, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change
 
@@ -397,7 +408,9 @@ If you want to contribute a bug fix please use the _Default pull_ request templa
 
 ### Local Development Guide <a name="local-development-guide"> </a>
 
-### Pre-requisites for Development
+In preparation
+
+### Pre-requisites for Development <a name="pre-requisites-for-development"> </a>
 
 We use Trunk for security scans, code quality, and formatting. If you plan to contribute to this repository please install Trunk.
 
@@ -427,7 +440,13 @@ From the root of a git repo, run:
 trunk init
 ```
 
-## See also https://github.com/trunk-io/ for additional information on trunk.
+See also https://github.com/trunk-io/ for additional information on trunk.
+
+## Troubleshooting/FAQ <a name="troubleshootingfaq"> </a>
+
+In preparation
+
+## Copyright information <a name="copyright"> </a>
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0
