@@ -138,3 +138,53 @@ class DeploymentPipelineStack(GenAiStack):
                 ),
             ],
         )
+
+        prod_source_output = codepipeline.Artifact()
+        cdk_prod_chatbot = codebuild.PipelineProject(
+            self,
+            "Prod"+config["appPrefix"]+"ChatbotCodebuild",
+            build_spec=codebuild.BuildSpec.from_asset(
+                "stacks/deployment_pipeline/buildspec_chatbot_prod.yml"
+            ),
+            environment=codebuild.BuildEnvironment(build_image=build_image, privileged=True),
+            description="Deploy Gena Chatbot Prod",
+            timeout=Duration.minutes(180),  # 3h time limit
+            cache=codebuild.Cache.local(
+                codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
+            ),
+            role=iam_role,
+        )
+        pipeline_name = "Prod"+config["appPrefix"]+"ChatbotPipeline"
+        codepipeline.Pipeline(
+            self,
+            pipeline_name,
+            pipeline_name=pipeline_name,
+            role=iam_role,
+            artifact_bucket=s3_bucket,
+            stages=[
+                codepipeline.StageProps(
+                    stage_name="Source",
+                    actions=[
+                        codepipeline_actions.CodeCommitSourceAction(
+                            action_name="Source",
+                            output=prod_source_output,
+                            repository=repo,
+                            branch="main",
+                            role=iam_role,
+                        )
+                    ],
+                ),
+                codepipeline.StageProps(
+                    stage_name="DeployGenaProdChatbot",
+                    actions=[
+                        codepipeline_actions.CodeBuildAction(
+                            action_name="DeployProdChatbot",
+                            project=cdk_prod_chatbot,
+                            input=prod_source_output,
+                            outputs=[codepipeline.Artifact("Build")],
+                            role=iam_role,
+                        )
+                    ],
+                ),
+            ],
+        )

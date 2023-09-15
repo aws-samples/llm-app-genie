@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      # install cdk
+      - npm install -g aws-cdk
+      - cdk --version
+      # install poetry
+      - curl -sSL https://install.python-poetry.org | python3 -
+      - export PATH="/root/.local/bin:$PATH"
+      - cd 06_automation
+      - poetry install
+  build:
+    on-failure: ABORT
+    commands:
+      # Only deploys the chatbot stack from the main branch
+      - export CDK_APP_PREFIX=ProdGena
+      - poetry run cdk deploy ProdGenaChatBotStack --require-approval never
