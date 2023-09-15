@@ -81,7 +81,7 @@ class DeploymentPipelineStack(GenAiStack):
             self,
             config["appPrefix"] + "DeployInfrastructure",
             build_spec=codebuild.BuildSpec.from_asset(
-                "stacks/deployment_pipeline/buildspec.yml"
+                "stacks/deployment_pipeline/buildspec-develop.yml"
             ),
             environment=codebuild.BuildEnvironment(build_image=build_image, privileged=True),
             environment_variables=(
@@ -144,7 +144,7 @@ class DeploymentPipelineStack(GenAiStack):
             self,
             "Prod"+config["appPrefix"]+"ChatbotCodebuild",
             build_spec=codebuild.BuildSpec.from_asset(
-                "stacks/deployment_pipeline/buildspec_chatbot_prod.yml"
+                "stacks/deployment_pipeline/buildspec-main.yml"
             ),
             environment=codebuild.BuildEnvironment(build_image=build_image, privileged=True),
             description="Deploy Gena Chatbot Prod",
