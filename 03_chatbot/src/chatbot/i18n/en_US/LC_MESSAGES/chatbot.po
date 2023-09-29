@@ -1,10 +1,10 @@
-# English (United States) translations for genaiax.
+# English (United States) translations for LLM App Genie.
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# This file is distributed under the same license as the genaiax project.
+# This file is distributed under the same license as the LLM App Genie project.
 # Malte Reimann malterei@amazon.com, 2023.
 msgid ""
 msgstr ""
-"Project-Id-Version: genaiax 0.0.1\n"
+"Project-Id-Version: LLM App Genie 0.0.1\n"
 "Report-Msgid-Bugs-To: malterei@amazon.com\n"
 "POT-Creation-Date: 2023-08-17 20:02+0200\n"
 "PO-Revision-Date: 2023-08-17 20:15+0200\n"

@@ -1,12 +1,11 @@
 {
   "$ref": "#/$defs/AppConfig",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://genai-accelerator.aws.amazon.com/aws_awsomechat_app_config.schema.json",
+  "$id": "https://llm-app-accelerator.aws.amazon.com/aws_awsomechat_app_config.schema.json",
   "$defs": {
     "AppConfig": {
       "title": "AWS AWSomeChat Config",
       "description": "App configuration for the AWSomeChat application.",
-      "required": [],
       "type": "object",
       "properties": {
         "appearance": {
@@ -19,6 +18,9 @@
           },
           "default": [],
           "minItems": 0
+        },
+        "llmConfig": {
+          "$ref": "#/$defs/LLMConfigMap"
         }
       }
     },
@@ -44,6 +46,68 @@
               "type": "string",
               "description": "URL or path to image that is the logo for your chat application. Relative to the 03_chatbot directory.",
               "default": "chatbot/aws.png"
+            }
+          }
+        }
+      }
+    },
+    "LLMConfigMap": {
+      "title": "LLM Config Map",
+      "description": "Maps large language models identifiers to their configuration.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "LLMConfigMap"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/LLMConfig"
+          }
+        }
+      }
+    },
+    "LLMConfig": {
+      "title": "LLM Config",
+      "description": "Configuration for a large language model.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "LLMConfig"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "chatPrompt": {
+              "type": "string",
+              "description": "Local path, S3 URI or LangChainHub path that contains prompt template to use when chatting with this model."
+            },
+            "ragPrompt": {
+              "type": "string",
+              "description": "Local path, S3 URI or LangChainHub path that contains prompt template to use when asking questions based on documents to this model."
+            },
+            "maxTokenCount": {
+              "type": "integer",
+              "description": "Configures the max number of tokens to use in the generated response."
+            },
+            "stopSequence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Make the model stop at a desired word or character, such as the end of a sentence or a list."
+            },
+            "topP": {
+              "type": "number",
+              "description": "Controls token choices, based on the probability of the potential choices. If you set Top P below 1.0, the model considers only the most probable options and ignores less probable options. The result is more stable and repetitive completions."
+            },
+            "temperature": {
+              "type": "number",
+              "description": "A lower value results in more deterministic responses, whereas a higher value results in more random responses."
             }
           }
         }

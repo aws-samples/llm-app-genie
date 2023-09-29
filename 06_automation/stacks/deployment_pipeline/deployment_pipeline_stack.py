@@ -11,7 +11,7 @@ from modules.config import config
 from modules.stack import GenAiStack
 
 stack = {
-    "description": "Deploy Pipeline to deploy Gena full infrastructure",
+    "description": "Deploy Pipeline to deploy Genie full infrastructure",
     "tags": {},
 }
 
@@ -40,7 +40,7 @@ class DeploymentPipelineStack(GenAiStack):
             )
         )
 
-        access_key = iam.AccessKey(self, 'gena-mirror-user-access-key', user=user)
+        access_key = iam.AccessKey(self, 'genie-mirror-user-access-key', user=user)
 
         sm.Secret(
             self,
@@ -94,7 +94,7 @@ class DeploymentPipelineStack(GenAiStack):
                     )
                 }
             ),
-            description="Deploy Gena Infrastructure",
+            description="Deploy Genie Infrastructure",
             timeout=Duration.minutes(180), # 3h time limit
             cache=codebuild.Cache.local(
                 codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
@@ -125,7 +125,7 @@ class DeploymentPipelineStack(GenAiStack):
                     ],
                 ),
                 codepipeline.StageProps(
-                    stage_name="DeployGenaFullInfrastructure",
+                    stage_name="DeployGenieFullInfrastructure",
                     actions=[
                         codepipeline_actions.CodeBuildAction(
                             action_name="DeployInfrastructure",
@@ -147,7 +147,7 @@ class DeploymentPipelineStack(GenAiStack):
                 "stacks/deployment_pipeline/buildspec-main.yml"
             ),
             environment=codebuild.BuildEnvironment(build_image=build_image, privileged=True),
-            description="Deploy Gena Chatbot Prod",
+            description="Deploy Genie Chatbot Prod",
             timeout=Duration.minutes(180),  # 3h time limit
             cache=codebuild.Cache.local(
                 codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
@@ -175,7 +175,7 @@ class DeploymentPipelineStack(GenAiStack):
                     ],
                 ),
                 codepipeline.StageProps(
-                    stage_name="DeployGenaProdChatbot",
+                    stage_name="DeployGenieProdChatbot",
                     actions=[
                         codepipeline_actions.CodeBuildAction(
                             action_name="DeployProdChatbot",

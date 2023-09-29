@@ -3,7 +3,7 @@
   "appearance": {
     "type": "AWSomeChatAppearance",
     "parameters": {
-      "name": "Genie",
+      "name": "My Chatbot",
       "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
     }
   },
@@ -13,7 +13,8 @@
         "type": "LLMConfig",
         "parameters": {
           "chatPrompt": "prompts/anthropic_claude_chat.yaml",
-          "ragPrompt": "prompts/anthropic_claude_rag.yaml"
+          "ragPrompt": "prompts/anthropic_claude_rag.yaml",
+          "temperature": 0.5
         }
       }
     },

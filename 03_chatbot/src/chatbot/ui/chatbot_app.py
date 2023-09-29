@@ -156,9 +156,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
                 ChatbotEnvironmentVariables.AmazonBedrockRegion
             )
             if bedrock_region:
-                app_config.config.amazon_bedrock.append(
-                    AmazonBedrock(AmazonBedrockParameters(AWSRegion(bedrock_region)))
-                )
+                app_config.config.add_amazon_bedrock(bedrock_region)
 
         except Exception:
             logger.error(
@@ -177,6 +175,8 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         favicon_url,
         regions,
         gettext=gettext,
+        aws_config=aws_config,
+        logger=logger,
         show_llm_debug_messages=show_llm_debug_messages,
         app_config=app_config.config,
     )
@@ -186,7 +186,11 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     prompt_catalog: Dict[PromptCatalogItem] = st.session_state["prompt_catalog"]
 
     if "memory_catalog" not in st.session_state:
-        st.session_state["memory_catalog"] = MemoryCatalog(regions)
+        memory_catalog = MemoryCatalog(
+            account_id=aws_config.account_id, regions=regions, logger=logger
+        )
+        st.session_state["memory_catalog"] = memory_catalog
+        memory_catalog.bootstrap()
     memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
 
     # Refresh button callback

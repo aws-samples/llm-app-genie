@@ -273,3 +273,11 @@ cat ~/.aws/config
 export CDK_APP_PREFIX=Gena # Application code will be added to stack names
 ```
 
+- To deploy chatbot into an existing VPC set `"existing_vpc_id"` property in the config json file.
+
+```json
+{
+  // ... other config
+  "existing_vpc_id": "vpc-1234567890abcdefg"
+}
+```

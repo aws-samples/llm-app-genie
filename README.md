@@ -1,8 +1,8 @@
-# Gena - Generative Enterprise Assistant <a name="gena---generative-enterprise-assistant"></a>
+# LLM App Genie - Get started building generative AI into your apps <a name="genie---generative-enterprise-assistant"></a>
 
 ## Table of contents <a name="table-of-contents"></a>
 
-- [Gena - Generative Enterprise Assistant](#gena---generative-enterprise-assistant)
+- [LLM App Genie - Get started building generative AI into your apps](#genie---generative-enterprise-assistant)
   - [Table of contents](#table-of-contents)
   - [Intro and Architecture](#introduction)
     - [Architecture Overview](#architecture-overview)
@@ -28,7 +28,9 @@
 
 ## Intro and Architecture <a name="introduction"></a>
 
-Gena is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
+LLM App Genie is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
+
+Genie is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
 
 This solution provides a reference implementation of a dialog-based search bot using the retrieval augmented generation (RAG) approach with interchangeable large language models (LLMs) and knowledge bases (KBs).
 
@@ -45,7 +47,7 @@ The core features of this implementation are:
 - End-to-end automated deployment using AWS CDK
 
 The following screenshot shows the application user interface:
-![Gena application user interface](images/app-screenshot.png)
+![Genie application user interface](05_doc/app-screenshot.png)
 
 <div class=“alert alert-info”> 💡 Note: this solution will incur AWS costs. You can find more information about these costs in the Costs section.
 </div>
@@ -67,7 +69,7 @@ There are two main deployment types:
 
 You can deploy all the components (stacks) of the solution at once.
 
-The simplest way is to use Launch Stack (to be added), which uses a cloudformation template to bootstrap a codecommit repo from the github repository and triggers a full deployment using codepipeline.
+The simplest way is to use Launch Stack (to be added), which uses a AWS CloudFormation template to bootstrap an AWS CodeCommit repo from the GitHub repository and triggers a full deployment using AWS CodePipeline.
 
 Alternatively, you can use the next steps to deploy the full solution with CDK.
 
@@ -135,7 +137,7 @@ poetry shell
 
 Make sure your current working directory is `06_automation`.
 The following command will check for available stack and deploy the whole solution.
-CDK will add the Application Prefix to all stack (**Gena** by default)
+CDK will add the Application Prefix to all stack (**Genie** by default)
 
 ```bash
 cdk ls
@@ -150,41 +152,41 @@ If required, you can change the used AWS account and region by setting the follo
 
 ### Modular Deployment: Deploying individual components <a name="modular-deployment"> </a>
 
-You can also deploy individual components only. Gena will automatically detect which components are available based on resource tags (defined in [app config](./06_automation/configs/dev.json)) and use them accordingly. Check [automation readme](./06_automation/README.md) for more details.
+You can also deploy individual components only. Genie will automatically detect which components are available based on resource tags (defined in [app config](./06_automation/configs/dev.json)) and use them accordingly. Check [automation readme](./06_automation/README.md) for more details.
 
-The Gena components are:
+The Genie components are:
 
 1. A large language model (LLM).
-2. A knowledge base (KB) with a search index over ingested documents. Gena, using the LLM, queries the KB and uses returned documents to enhance the LLM prompt and provide document links in the response. The knowledge base and the search capabilities are provided by Amazon Kendra or Amazon OpenSearch.
-3. A Chatbot frontend which orchestrates the conversation with langchain.
-4. Sagemaker Studio domain for experimentation
+2. A knowledge base (KB) with a search index over ingested documents. Genie queries the KB and uses returned documents to enhance the LLM prompt and provide document links in the response. Amazon Kendra or Amazon OpenSearch are the knowledge base and provide the search capabilities
+3. A Chatbot front-end which orchestrates the conversation with langchain.
+4. Amazon SageMaker Studio domain for experimentation
 
-❗ **Gena is default application Prefix, if case you change it make sure to modify the commands below**
+❗ **Genie is default application Prefix, if case you change it make sure to modify the commands below**
 
 **Step 1: Deploying the LLM**  
 The solution deploys by default the [Falcon 40b instruct](https://huggingface.co/tiiuae/falcon-40b-instruct) LLM.
 
 ```bash
-cdk deploy GenaLlmPipelineStack --require-approval never
+cdk deploy GenieLlmPipelineStack --require-approval never
 ```
 
-After the deployment is completed, you can navigate to CodePipeline to monitor how the deployment is proceeding (it takes between 10 and 15 minutes).
+After the deployment is completed, you can navigate to AWS CodePipeline to monitor how the deployment is proceeding (it takes between 10 and 15 minutes).
 
 **Step 2: Deploying the knowledge base**
 
-To deploy the OpenSearch index, follow the instructions below.
+To deploy the Amazon OpenSearch index, follow the instructions below.
 
 ```bash
-cdk deploy GenaOpenSearchDomainStack GenaOpenSearchIngestionPipelineStack --require-approval never
+cdk deploy GenieOpenSearchDomainStack GenieOpenSearchIngestionPipelineStack --require-approval never
 ```
 
-`GenaOpenSearchDomainStack` deploys an OpenSearch domain with Direct Internet Access, protected by an IAM role.
-Similarly you can also deploy `GenaOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`buildspec.yml`](06_automation/code/llm_setup/buildspec.yml). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
+`GenieOpenSearchDomainStack` deploys an OpenSearch domain with Direct Internet Access, protected by an IAM role.
+Similarly you can also deploy `GenieOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`buildspec.yml`](06_automation/code/llm_setup/buildspec.yml). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
 
 To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)\*\*
 
 ```bash
-cdk deploy KendraIndexStack KendraDataSourcesStack --require-approval never
+cdk deploy GenieKendraIndexStack GenieKendraDataSourcesStack --require-approval never
 ```
 
 `KendraIndexStack` creates an Amazon Kendra Index and a `WEBCRAWLERV2` data source pointing at the website you specified in the [app config](06_automation/configs/dev.json).
@@ -209,11 +211,11 @@ The chatbot dynamically detects the available resources based on these tags.
 If you want to personalize the chatbot icons, you can do so by updating the configuration in the [./03_chatbot/chatbot/appconfig.json](03_chatbot/chatbot/appconfig.json) file.
 
 ```bash
-cdk deploy GenaChatBotStack --require-approval never
+cdk deploy GenieChatBotStack --require-approval never
 ```
 
 The chatbot UI interface is protected by a login form. The credentials are automatically generated and stored in AWS Secret Manager.
-The Streamlit credentials can be retrieved either by navigating in the console to the AWS Secret Manager, or by using the aws cli.
+The Streamlit credentials can be retrieved either by navigating in the console to the AWS Secret Manager, or by using the AWS CLI.
 
 ```bash
 # username
@@ -252,13 +254,13 @@ The solution provides notebooks for experimentation. For example:
 - [./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb](./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb) to deploy a SageMaker endpoint to help create document embeddings with HuggingFace's Transformers.
 - [./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb](./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb) to deploy Falcon 40b Foundation Model, either real-time or asynchronous.
 
-Note than any modification iwhile we think that collaboration is key to success and synergies, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change the notebooks or the default configuration, needs to be reflected in the [app config](06_automation/configs/dev.json), otherwise the chatbot won't know about these.
+
 
 ```bash
 cdk deploy SageMakerStudioDomainStack --require-approval never
 ```
 
-### CICD Deployment
+### CI/CD Deployment
 
 We provide an alternative way to deploy the solution by setting up a CI/CD pipeline on your AWS account.
 We first deploy the infrastructure to for the deployment.
@@ -271,7 +273,7 @@ In the default settings, the pipeline will trigger only for the `develop` branch
 
 ```Bash
 cd <path-to-cloned-repo>/06_automation
-cdk deploy GenaDeploymentPipelineStack --require-approval never
+cdk deploy GenieDeploymentPipelineStack --require-approval never
 ```
 
 You can configure your git to authenticate against AWS CodeCommit using your AWS credentials.
@@ -280,7 +282,7 @@ See [here](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gi
 ```Bash
 cd <path-to-cloned-repo>/
 pip install git-remote-codecommit
-git remote set-url origin codecommit://Gena-repo
+git remote set-url origin codecommit://Genie-repo
 git push
 ```
 
@@ -317,7 +319,7 @@ The main options are:
 - [running the crawler](01_crawler/README.md) and
 - [ingesting crawling results](02_ingestion/04_ingest_html_embeddings_to_opensearch.ipynb)
 
-3. Retrigger the ingestion pipeline by changing the codecommit repo created by the `GenaOpenSearchIngestionPipelineStack`.
+3. Retrigger the ingestion pipeline by changing the CodeCommit repo created by the `GenieOpenSearchIngestionPipelineStack`.
 
 ### How to fine-tune a LLM? <a name="finetune"></a>
 
@@ -329,7 +331,7 @@ The deployment is done using the Hugging Face Text Generation Inference Containe
 
 ### How to customize the chatbot? <a name="customize-chatbot"></a>
 
-In preparation
+If you want to dive deeper beyond the default configuration of the chatbot please read the [03_chatbot/README.md](/03_chatbot/README.md).
 
 ## Costs and Clean up <a name="costs-and-clean-up"> </a>
 
@@ -389,8 +391,8 @@ Pricing examples of LLM and knowledge base for four scenarios (prices in USD for
 To clean up the resources, first you need to delete the SageMaker endpoints created by the two AWS CodePipeline pipelines since they are not managed by CDK.
 
 ```bash
-aws cloudformation delete-stack --stack-name GenaLLMSageMakerDeployment
-aws cloudformation delete-stack --stack-name GenaEmbeddingsSageMakerDeployment
+aws cloudformation delete-stack --stack-name GenieLLMSageMakerDeployment
+aws cloudformation delete-stack --stack-name GenieEmbeddingsSageMakerDeployment
 ```
 
 Then, you can remove the stacks created by CDK
@@ -409,7 +411,7 @@ You should follow the [local development guide](#local-development-guide), if yo
 
 ### Pull Requests <a name="pull-requests"></a>
 
-We appreciate your collaboration because it is key to success and synergies. However, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change
+We appreciate your collaboration because it is key to success and synergies. However, we want to make sure that the contributions can be maintained in the future, thus create an issue with the proposed improvements and get feedback before you put in the effort to implement the change.
 
 If you want to contribute a bug fix please use the _Default pull_ request template.
 

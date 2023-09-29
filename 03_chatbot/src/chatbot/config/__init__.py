@@ -5,3 +5,4 @@ from .app_config import AppConfig, AppConfigProvider
 from .appearance import AWSsomeChatAppearance, AWSsomeChatAppearanceParameters
 from .aws_config import AWSConfig
 from .iam import Iam, IamParameters
+from .llm_config import LLMConfig, LLMConfigMap, LLMConfigParameters

@@ -12,7 +12,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseChatMessageHistory, BaseMemory, BaseRetriever
 
-GLOBAL_LOGGER_NAME = "GenaAx"
+GLOBAL_LOGGER_NAME = "Genie"
 
 
 @dataclass

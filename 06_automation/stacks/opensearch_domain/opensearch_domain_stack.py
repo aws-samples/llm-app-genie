@@ -16,10 +16,10 @@ from modules.stack import GenAiStack
 stack = {
     "description": "OpenSearch Domain", 
     "tags": {
-        f"{config['appPrefixLowerCase']}:secrets-id": f"{config['appPrefix']}OpenSearchCredentials",
-        f"{config['appPrefixLowerCase']}:index-name": config['opensearch']['index'],
-        f"{config['appPrefixLowerCase']}:sagemaker-embedding-endpoint-name": f"{config['appPrefix']}{config['sagemaker']['embeddings_endpoint_name']}",
-        f"{config['appPrefixLowerCase']}:friendly-name": f"OpenSearch Index: {config['customer']['name']}"
+        "genie:secrets-id": f"{config['appPrefix']}OpenSearchCredentials",
+        "genie:index-name": config['opensearch']['index'],
+        "genie:sagemaker-embedding-endpoint-name": f"{config['appPrefix']}{config['sagemaker']['embeddings_endpoint_name']}",
+        "genie:friendly-name": f"OpenSearch Index: {config['customer']['name']}"
     }
 }
 

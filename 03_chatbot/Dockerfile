@@ -67,15 +67,10 @@ RUN mkdir ${POETRY_CACHE_DIR} && chown python_application:docker ${POETRY_CACHE_
 
 # Allow execution and read by user and group
 COPY --chown=python_application:docker --chmod=550 entrypoint.sh ./
-COPY --chown=python_application:docker --chmod=550 download_bedrock_sdk.sh ./
 COPY --chown=python_application:docker --chmod=550 generate_internationalization.sh ./
 COPY --chown=python_application:docker --chmod=550 generate_secrets.py ./
 
 COPY --chown=python_application:docker poetry.lock pyproject.toml ./
-# Download the bedrock-python-sdk
-RUN ./download_bedrock_sdk.sh
-RUN chown python_application:docker ./bedrock-python-sdk/
-
 
 # activate after adding bedrock sdk
 RUN mkdir ${STREAMLIT_CONFIG_DIR} && chown python_application:docker ${STREAMLIT_CONFIG_DIR}

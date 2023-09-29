@@ -79,7 +79,7 @@ You can investigate the playwright actions by starting the automation recorder
             "name": "Python: Scrapy",
             "type": "python",
             "request": "launch",
-            "python": "/Users/mimuta/Library/Caches/pypoetry/virtualenvs/crawly-Jev9Dqh4-py3.11/bin/python",
+            "python": "<YOUR_PYTHON_PATH>",
             "module": "scrapy",
             "args": [
                 "crawl",

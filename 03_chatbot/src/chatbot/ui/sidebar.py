@@ -1,5 +1,6 @@
 """ Chatbot UI side panel. """
 from io import BytesIO
+from logging import Logger
 from typing import Callable, Generic, List, Tuple, TypeVar, Union
 
 import streamlit as st
@@ -9,7 +10,7 @@ from chatbot.catalog import (
     RetrieverCatalog,
     RetrieverCatalogItem,
 )
-from chatbot.config import AppConfig
+from chatbot.config import AppConfig, AWSConfig
 from numpy import ndarray
 from streamlit.type_util import OptionSequence, T
 
@@ -19,6 +20,8 @@ def write_sidebar(
     app_icon: Union[ndarray, List[ndarray], BytesIO, str, List[str]],
     regions: List[str],
     app_config: AppConfig,
+    aws_config: AWSConfig,
+    logger: Logger,
     show_llm_debug_messages: bool = False,
     gettext: Callable[[str], str] = lambda x: x,
 ) -> Tuple[RetrieverCatalogItem, ModelCatalogItem, bool]:
@@ -29,6 +32,7 @@ def write_sidebar(
         chatbot_name: Name of the chatbot.
         app_icon: Icon to be displayed in the sidebar.
         regions: List of AWS regions that the chatbot should rely on.
+        logger: logging
         show_llm_debug_messages: Whether to show debug messages for LLM.
         gettext: Translation function.
 
@@ -75,7 +79,10 @@ def write_sidebar(
 
         retriever_state_name = "retriever_catalog"
         if retriever_state_name not in st.session_state:
-            st.session_state[retriever_state_name] = RetrieverCatalog(regions)
+            retriever_catalog = RetrieverCatalog(aws_config.account_id, regions, logger)
+            st.session_state[retriever_state_name] = retriever_catalog
+            retriever_catalog.bootstrap()
+
         retriever_options = st.session_state[retriever_state_name]
         knowledgebase_label = _("Knowledge Base")
         retriever, retriever_changed = __render_dropdown(
@@ -117,9 +124,14 @@ def write_sidebar(
 
         model_state_name = "model_catalog"
         if model_state_name not in st.session_state:
-            st.session_state[model_state_name] = ModelCatalog(
-                regions, bedrock_config=app_config.amazon_bedrock or []
+            model_catalog = ModelCatalog(
+                regions,
+                bedrock_config=app_config.amazon_bedrock or [],
+                logger=logger,
+                llm_config=app_config.llm_config.parameters,
             )
+            st.session_state[model_state_name] = model_catalog
+            model_catalog.bootstrap()
         model_options = st.session_state[model_state_name]
         language_model_label = _("Language Model")
         model, model_changed = __render_dropdown(

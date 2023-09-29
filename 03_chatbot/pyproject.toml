@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chatbot"
-version = "0.1.0"
+version = "1.0.3"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
@@ -10,7 +10,7 @@ python = ">=3.10, <4.0"
 streamlit = "^1.25.0"
 streamlit-chat = "^0.1.1"
 streamlit-extras = "^0.3.0"
-langchain = "0.0.266"
+langchain = "0.0.305"
 gradio = "^3.36.1"
 opensearch-py = "^2.2.0"
 sagemaker = "^2.173.0"
@@ -19,11 +19,8 @@ babel = "^2.12.1"
 ansi2html = "^1.8.0"
 toml = "^0.10.2"
 sample-helper-aws-appconfig = "^2.0.3"
-#boto3 = ">=1.28.21"
-# Uncomment if you use Amazon Bedrock and comment the line above with boto3
-boto3 = { path = "./bedrock-python-sdk/boto3-1.28.21-py3-none-any.whl" }
-botocore = { path = "./bedrock-python-sdk/botocore-1.31.21-py3-none-any.whl" }
-
+boto3 = "^1.28.57"
+botocore = "1.31.57"
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,12 +1,13 @@
 """ Module that contains a model catalog. """
-import logging
+import re
 import time
 from dataclasses import dataclass
-from typing import List
+from logging import Logger, getLogger
+from typing import Dict, List, Optional
 
 import boto3
 import botocore
-from chatbot.config import AmazonBedrock
+from chatbot.config import AmazonBedrock, LLMConfig
 from chatbot.helpers import get_boto_session
 
 from .bedrock_model_item import BedrockModelItem
@@ -22,47 +23,62 @@ class ModelCatalog(Catalog):
 
     bedrock_config: List[AmazonBedrock]
 
-    def __init__(self, regions: list, bedrock_config: List[AmazonBedrock]) -> None:
-        # Regions are initialized before the superclass initialization because
-        # the superclass initialization will call the _bootstrap method which
-        # requires the regions to be initialized
+    llm_config: Dict[str, LLMConfig]
+
+    logger: Logger
+
+    def __init__(
+        self,
+        regions: list,
+        bedrock_config: List[AmazonBedrock],
+        llm_config: Dict[str, LLMConfig],
+        logger: Logger = getLogger("ModelCatalogLogger"),
+    ) -> None:
         self.regions = regions
         self.bedrock_config = bedrock_config
+        self.logger = logger
+        self.llm_config = llm_config
         super().__init__()
 
-    def _get_bedrock_models(self):
+    def get_llm_config(
+        self, model_id, config_model_id_regexs: List[re.Pattern]
+    ) -> Optional[LLMConfig]:
+        if model_id in self.llm_config:
+            return self.llm_config[model_id]
+
+        for regex in config_model_id_regexs:
+            if regex.match(model_id):
+                return self.llm_config[regex.pattern]
+
+        return None
+
+    def _get_bedrock_models(self, config_model_id_regexs: List[re.Pattern]):
         """Get list of Bedrock models available in the account."""
 
         start_time = time.time()
-        logging.info("Retrieving Bedrock models in...")
+        self.logger.info("Retrieving Bedrock models in...")
         models = []
         for bedrock_config in self.bedrock_config:
             region = bedrock_config.parameters.region.value
             endpoint_url = bedrock_config.parameters.endpoint_url
             iam_config = bedrock_config.parameters.iam
 
-            session = get_boto_session(iam_config)
+            session = get_boto_session(iam_config, region)
 
             try:
                 bedrock_client = session.client(
                     "bedrock", region, endpoint_url=endpoint_url
                 )
-                foundation_models = bedrock_client.list_foundation_models()[
-                    "modelSummaries"
-                ]
-
-                # Filter out models that don't generate text (Stable Diffusion and Titan embeddings)
-                foundation_models = filter(
-                    lambda x: x["modelId"].find("stability") < 0
-                    and x["modelId"].find("titan-e1t") < 0,
-                    foundation_models,
-                )
+                foundation_models = bedrock_client.list_foundation_models(
+                    byOutputModality="TEXT"
+                )["modelSummaries"]
 
                 models += [
                     BedrockModelItem(
                         model_id=fm["modelId"],
-                        chat_prompt_identifier="prompts/default_chat.yaml",
-                        rag_prompt_identifier="prompts/default_rag.yaml",
+                        llm_config=self.get_llm_config(
+                            fm["modelId"], config_model_id_regexs
+                        ),
                         bedrock_config=bedrock_config.parameters,
                     )
                     for fm in foundation_models
@@ -71,18 +87,19 @@ class ModelCatalog(Catalog):
             except (
                 botocore.exceptions.EndpointConnectionError,
                 botocore.exceptions.NoCredentialsError,
+                botocore.exceptions.ConnectTimeoutError,
             ) as err:
-                logging.info(
+                self.logger.info(
                     "No Amazon Bedrock models retrieved in %s.\n%s", region, err
                 )
             except botocore.exceptions.ClientError as err:
-                logging.error(
+                self.logger.error(
                     "There was an error while retrieving models from Amazon Bedrock.\n%s",
                     err,
                 )
             except botocore.exceptions.UnknownServiceError as err:
-                logging.info("Running without Amazon Bedrock.\n%s", err)
-        logging.info(
+                self.logger.info("Running without Amazon Bedrock.\n%s", err)
+        self.logger.info(
             "%s Bedrock models retrieved in %s seconds",
             len(models),
             time.time() - start_time,
@@ -90,9 +107,9 @@ class ModelCatalog(Catalog):
         self += models
 
     def _get_sagemaker_models(self):
-        """Get list of SageMaker models available in the account that are part of Gena."""
+        """Get list of SageMaker models available in the account that are part of Genie."""
         start_time = time.time()
-        logging.info("Retrieving SageMaker models...")
+        self.logger.info("Retrieving SageMaker models...")
 
         models = []
 
@@ -114,14 +131,14 @@ class ModelCatalog(Catalog):
                     friendly_name = tags_dict[FRIENDLY_NAME_TAG]
 
                     chat_prompt_identifier = "prompts/falcon_chat.yaml"
-                    if "gena:prompt-chat" in tags_dict:
-                        chat_prompt_identifier = tags_dict["gena:prompt-chat"]
+                    if "genie:prompt-chat" in tags_dict:
+                        chat_prompt_identifier = tags_dict["genie:prompt-chat"]
                     rag_prompt_identifier = "prompts/falcon_instruct_rag.yaml"
-                    if "gena:prompt-rag" in tags_dict:
-                        rag_prompt_identifier = tags_dict["gena:prompt-rag"]
+                    if "genie:prompt-rag" in tags_dict:
+                        rag_prompt_identifier = tags_dict["genie:prompt-rag"]
                     async_endpoint_s3 = None
-                    if "gena:async-endpoint-s3" in tags_dict:
-                        async_endpoint_s3 = tags_dict["gena:async-endpoint-s3"]
+                    if "genie:async-endpoint-s3" in tags_dict:
+                        async_endpoint_s3 = tags_dict["genie:async-endpoint-s3"]
                     models.append(
                         SageMakerModelItem(
                             model_name=friendly_name,
@@ -129,20 +146,21 @@ class ModelCatalog(Catalog):
                             region=region,
                             chat_prompt_identifier=chat_prompt_identifier,
                             rag_prompt_identifier=rag_prompt_identifier,
-                            async_endpoint_s3=async_endpoint_s3
+                            async_endpoint_s3=async_endpoint_s3,
                         )
                     )
 
-        logging.info(
+        self.logger.info(
             "%s SageMaker models retrieved in %s seconds",
             len(models),
             time.time() - start_time,
         )
-        logging.info(models)
+        self.logger.info(models)
 
         self += models
 
-    def _bootstrap(self) -> None:
+    def bootstrap(self) -> None:
         """Bootstraps the catalog."""
-        self._get_bedrock_models()
+        model_id_regex = list(map(re.compile, self.llm_config.keys()))
+        self._get_bedrock_models(model_id_regex)
         self._get_sagemaker_models()

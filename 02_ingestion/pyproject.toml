@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "02-ingestion"
-version = "0.1.0"
+version = "1.0.3"
 description = ""
 authors = ["Arlind Nocaj <arlnocaj@amazon.com>"]
 readme = "README.md"

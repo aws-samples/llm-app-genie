@@ -116,7 +116,6 @@ Go to the `03_chatbot` directory and run the following commands for the one time
 cd <cloned-repository>/03_chatbot
 poetry install
 poetry shell
-source ./download_bedrock_sdk.sh
 source ./generate_internationalization.sh
 ```
 
@@ -130,18 +129,18 @@ streamlit run src/run_module.py --server.enableCORS true --server.port 80 --brow
 
 The application uses [tags](https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html) to discover the available AWS resources for information retrieval and LLMs you are running.
 
-The application looks for resources with tag key `gena:friendly-name` in the `AWS_DEFAULT_REGION` you configured. You should set the value of the `gena:friendly-name` tag to a human-readable string that the app shows to the users. The gena friendly name needs to be unique.
+The application looks for resources with tag key `genie:friendly-name` in the `AWS_DEFAULT_REGION` you configured. You should set the value of the `genie:friendly-name` tag to a human-readable string that the app shows to the users. The genie friendly name needs to be unique.
 Note that if you deploy resources using the provided CDK stacks as described in [Deploy the foundational infrastructure](../README.md#deploy-the-foundational-infrastructure).
 
-| Tag Key            | Tag Value                                                                                                                                                                                                                                                                                                                                                                                        | Example Value                           |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| gena:friendly-name | (Required) Pick a human-readable name that you want the index or LLM to show up in the front-end | Falcon 40B Instruct |
-| gena:prompt-rag    | (Optional) Amazon S3 URI, local path, or [LangChainHub](https://github.com/hwchase17/langchain-hub) path that contains prompt template to use when asking questions based on documents to this model. See also [LangChain Serialization](https://python.langchain.com/docs/modules/model_io/prompts/prompt_templates/prompt_serialization) documentation to learn what format a prompt template file needs. | prompts/falcon_chat.yaml |
-| gena:prompt-chat   | (Optional) Amazon S3 URI, local path, or [LangChainHub](https://github.com/hwchase17/langchain-hub) path that contains prompt template to use when chatting with this model. See also [LangChain Serialization](https://python.langchain.com/docs/modules/model_io/prompts/prompt_templates/prompt_serialization) documentation to learn what format a prompt template file needs. | s3://DOC-EXAMPLE-BUCKET/prompt_key.json |
-| gena:async-endpoint-s3  | (Optional for real-time, required for async endpoints) Amazon S3 URI to store messages sent to an asynchronous endpoint and retrieve the responses. | "s3://bucket-name/s3-path/" |
+| Tag Key                | Tag Value                                                                                                                                                                                                                                                                                                                                                                                                   | Example Value                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| genie:friendly-name     | (Required) Pick a human-readable name that you want the index or LLM to show up in the front-end                                                                                                                                                                                                                                                                                                            | Falcon 40B Instruct                     |
+| genie:prompt-rag        | (Optional) Amazon S3 URI, local path, or [LangChainHub](https://github.com/hwchase17/langchain-hub) path that contains prompt template to use when asking questions based on documents to this model. See also [LangChain Serialization](https://python.langchain.com/docs/modules/model_io/prompts/prompt_templates/prompt_serialization) documentation to learn what format a prompt template file needs. | prompts/falcon_chat.yaml                |
+| genie:prompt-chat       | (Optional) Amazon S3 URI, local path, or [LangChainHub](https://github.com/hwchase17/langchain-hub) path that contains prompt template to use when chatting with this model. See also [LangChain Serialization](https://python.langchain.com/docs/modules/model_io/prompts/prompt_templates/prompt_serialization) documentation to learn what format a prompt template file needs.                          | s3://DOC-EXAMPLE-BUCKET/prompt_key.json |
+| genie:async-endpoint-s3 | (Optional for real-time, required for async endpoints) Amazon S3 URI to store messages sent to an asynchronous endpoint and retrieve the responses.                                                                                                                                                                                                                                                         | "s3://bucket-name/s3-path/"             |
 
 Here is an example of how to tag an Amazon SageMaker inference endpoint to enable the use of that LLM in the app.
-![Amazon SageMaker inference endpoint Add/Edit tags screenshot showing tag with gena:friendly-name as key and Falcon 40B Instruct as value.](./images/Amazon%20SageMaker%20endpoint%20tags%20dynamic%20discovery.png "Amazon SageMaker inference endpoint gena:friendly-name tag.")
+![Amazon SageMaker inference endpoint Add/Edit tags screenshot showing tag with genie:friendly-name as key and Falcon 40B Instruct as value.](./images/Amazon%20SageMaker%20endpoint%20tags%20dynamic%20discovery.png "Amazon SageMaker inference endpoint genie:friendly-name tag.")
 
 ### Amazon OpenSearch domain tags
 
@@ -149,33 +148,22 @@ For the app to dynamically discovery your Amazon OpenSearch index you need to ad
 
 | Tag Key                                | Tag Value                                                                                                                                                              | Example Value                     |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| gena:friendly-name                     | Pick a human readable name that you want the index to show up in the front-end as                                                                                      | My OpenSearch movie reviews index |
-| gena:index-name                        | The name of your OpenSearch index which contains your documents                                                                                                        | movies                            |
-| gena:sagemaker-embedding-endpoint-name | The name of your Amazon SageMaker inference endpoint that is running the embedding model that you used to create embeddings for the documents in your OpenSearch index | embeddings-e5-large-v2            |
-| gena:secrets-id                        | The name of your secret in AWS Secrets Manager that stores the username and password to connect to your OpenSearch index                                               | opensearch_pw                     |
+| genie:friendly-name                     | Pick a human readable name that you want the index to show up in the front-end as                                                                                      | My OpenSearch movie reviews index |
+| genie:index-name                        | The name of your OpenSearch index which contains your documents                                                                                                        | movies                            |
+| genie:sagemaker-embedding-endpoint-name | The name of your Amazon SageMaker inference endpoint that is running the embedding model that you used to create embeddings for the documents in your OpenSearch index | embeddings-e5-large-v2            |
+| genie:secrets-id                        | The name of your secret in AWS Secrets Manager that stores the username and password to connect to your OpenSearch index                                               | opensearch_pw                     |
 
 ### Amazon DynamoDB table for memory tags
 
-The app needs an Amazon DynamoDB table to keep the chat history across sessions. The app finds the Amazon DynamoDB tables with `gena:memory-table` as a resource tag. The app uses the first table with that tag that it discovers.
+The app needs an Amazon DynamoDB table to keep the chat history across sessions. The app finds the Amazon DynamoDB tables with `genie:memory-table` as a resource tag. The app uses the first table with that tag that it discovers.
 
 When creating the Amazon DynamoDB table use `SessionId` with type `String` as the partition key.
 
 | Tag Key           | Tag Value | Example (Key, Value)               |
 | ----------------- | --------- | ---------------------------------- |
-| gena:memory-table | Not used  | (gena:memory-table, "MemoryTable") |
+| genie:memory-table | Not used  | (genie:memory-table, "MemoryTable") |
 
 ## Amazon Bedrock
-
-To use Amazon Bedrock, you need the Amazon Bedrock SDK.
-If you want to run the chatbot locally, you need to download the Amazon Bedrock SDK locally into the [`03_chatbot/bedrock-python-sdk`](../03_chatbot/bedrock-python-sdk/) directory.
-We provide a [script (download_bedrock_sdk)](./download_bedrock_sdk.sh) to download and unzip the Amazon Bedrock SDK.
-
-```Bash
-cd 03_chatbot/
-./download_bedrock_sdk.sh
-```
-
-If you deploy the chatbot to AWS using `cdk`, you dont need to do anything as it gets automatically installed in the Docker image.
 
 The easy configuration for the app to use Amazon Bedrock is to set the `BEDROCK_REGION` environment variable (see also [Environment Variables](#environment-variables)). The app will discover the Amazon Bedrock models in that region.
 
@@ -205,104 +193,16 @@ Here is an example `appconfig.json`:
 
 ### Optional Amazon Bedrock config
 
-To get started with Amazon Bedrock follow the [Amazon Bedrock](#amazon-bedrock) section.
-
 If you want to configure Amazon Bedrock in multiple regions, use a different endpoint, or want to configure the chatbot IAM access to Amazon Bedrock then you can use `appconfig.json`.
 
-Here is an example `appconfig.json` with Amazon Bedrock in multiple regions:
+Take a look at the [example_app_configs](./example_app_configs/) folder it contains example app configs.
 
-```json
-{
-  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
-  "appearance": {
-    "type": "AWSomeChatAppearance",
-    "parameters": {
-      "name": "My Chatbot",
-      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
-    }
-  },
-  "amazonBedrock": [
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-east-1"
-      }
-    },
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-west-2"
-      }
-    }
-  ]
-}
-```
+You can ...
 
-Here is an example `appconfig.json` specifing the Amazon Bedrock endpoint:
-
-```json
-{
-  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
-  "appearance": {
-    "type": "AWSomeChatAppearance",
-    "parameters": {
-      "name": "My Chatbot",
-      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
-    }
-  },
-  "amazonBedrock": [
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-east-1",
-        "endpointURL": "https://bedrock.us-east-1.amazonaws.com"
-      }
-    }
-  ]
-}
-```
-
-Here is an example `appconfig.json` specifying the [profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) or a second one specifying the IAM role to use for Amazon Bedrock access:
-
-```json
-{
-  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
-  "appearance": {
-    "type": "AWSomeChatAppearance",
-    "parameters": {
-      "name": "My Chatbot",
-      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
-    }
-  },
-  "amazonBedrock": [
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-east-1",
-        "iam": {
-          "type": "BotoIAM",
-          "parameters": {
-            "profile": "<YOUR_PROFILE_NAME>"
-          }
-        }
-      }
-    },
-    {
-      "type": "AmazonBedrock",
-      "parameters": {
-        "region": "us-east-1",
-        "endpointURL": "https://bedrock.us-east-1.amazonaws.com",
-        "iam": {
-          "type": "BotoIAM",
-          "parameters": {
-            "profile": "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/<YOUR_ROLE_NAME>"
-          }
-        }
-      }
-    }
-  ]
-}
-```
+- use Amazon Bedrock in multiple regions ([example_app_configs/bedrock_multi_region.appconfig.json](./example_app_configs/bedrock_multi_region.appconfig.json)).
+- specify the Amazon Bedrock endpoint ([example_app_configs/bedrock_endpoint.appconfig.json](./example_app_configs/bedrock_endpoint.appconfig.json)).
+- specify the [profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) and a second one specifying the IAM role to use for Amazon Bedrock access ([example_app_configs/bedrock_iam.appconfig.json](./example_app_configs/bedrock_iam.appconfig.json)).
+- change the prompts or model parameters for a model or group of models ([example_app_configs/bedrock_prompts.appconfig.json](./example_app_configs/bedrock_prompts.appconfig.json)).
 
 If you are a developer and want to add more configuration options to this application then you should read the [Readme in the json_schema directory](src/chatbot/json_schema/Readme).
 
@@ -365,10 +265,10 @@ Add yourself as an author in the `--header-comment`.
 pybabel extract ./src -o "./src/chatbot/i18n/chatbot.pot" \
 --msgid-bugs-address=malterei@amazon.com \
 --version=0.0.1 \
---project=gena \
---header-comment=$'# Translations template for gena. \
+--project=genie \
+--header-comment=$'# Translations template for genie. \
 \n# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. \
-\n# This file is distributed under the same license as the gena project. \
+\n# This file is distributed under the same license as the LLM App Genie project. \
 \n# Malte Reimann malterei@amazon.com, 2023.\n'
 ```
 

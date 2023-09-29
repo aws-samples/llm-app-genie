@@ -18,5 +18,5 @@ phases:
     on-failure: ABORT
     commands:
       # Only deploys the chatbot stack from the main branch
-      - export CDK_APP_PREFIX=ProdGena
-      - poetry run cdk deploy ProdGenaChatBotStack --require-approval never
+      - export CDK_APP_PREFIX=ProdGenie
+      - poetry run cdk deploy ProdGenieChatBotStack --require-approval never

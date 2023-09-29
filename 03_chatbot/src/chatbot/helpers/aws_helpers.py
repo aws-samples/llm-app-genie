@@ -1,9 +1,16 @@
 """ Module that contains helper functions for common AWS operations.
 """
+import datetime
 from typing import Union
 
 import boto3
+import botocore
+from botocore.credentials import (
+    AssumeRoleCredentialFetcher,
+    DeferredRefreshableCredentials,
+)
 from chatbot.config import Iam
+from dateutil.tz import tzlocal
 
 
 def get_current_account_id():
@@ -12,7 +19,31 @@ def get_current_account_id():
     return account
 
 
-def get_boto_session(iam_config: Union[Iam, None]):
+def _get_client_creator(session):
+    def client_creator(service_name, **kwargs):
+        return session.client(service_name, **kwargs)
+
+    return client_creator
+
+
+def assume_role_session(
+    role_arn: str, region: str, base_session: botocore.session.Session = None
+):
+    session = base_session or boto3.Session()
+    fetcher = AssumeRoleCredentialFetcher(
+        client_creator=_get_client_creator(session),
+        source_credentials=session.get_credentials(),
+        role_arn=role_arn,
+    )
+    botocore_session = botocore.session.Session()
+    botocore_session._credentials = DeferredRefreshableCredentials(
+        method="assume-role", refresh_using=fetcher.fetch_credentials
+    )
+
+    return boto3.Session(botocore_session=botocore_session)
+
+
+def get_boto_session(iam_config: Union[Iam, None], region: str):
     if not iam_config:
         return boto3.Session()
     iam_profile_name = iam_config.parameters.profile or None
@@ -22,25 +53,5 @@ def get_boto_session(iam_config: Union[Iam, None]):
         return boto3.Session(profile_name=iam_profile_name)
 
     if iam_role_arn:
-        # session = boto3.Session(profile_name=profile)
-        sts_client = boto3.client("sts")
-
-        assumed_role_object = sts_client.assume_role(
-            RoleArn=iam_role_arn, RoleSessionName="ChatbotSession"
-        )
-
-        # From the response that contains the assumed role, get the temporary
-        # credentials that can be used to make subsequent API calls
-        credentials = assumed_role_object["Credentials"]
-
-        # session = boto3.Session(
-        #     profile_name=profile
-        # )
-
-        return boto3.Session(
-            aws_access_key_id=credentials["AccessKeyId"],
-            aws_secret_access_key=credentials["SecretAccessKey"],
-            aws_session_token=credentials["SessionToken"],
-        )
-
+        return assume_role_session(iam_role_arn, region=region)
     return boto3.Session()

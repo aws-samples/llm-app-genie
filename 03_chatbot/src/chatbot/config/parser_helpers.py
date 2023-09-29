@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Generic, List, Type, TypeVar, cast
+from typing import Any, Callable, Dict, Generic, List, Type, TypeVar, cast
 
 T = TypeVar("T")
 EnumT = TypeVar("EnumT", bound=Enum)
@@ -30,7 +30,7 @@ def from_union(fs, x):
     for f in fs:
         try:
             return f(x)
-        except Exception:
+        except Exception as e:
             pass
     assert False
 
@@ -50,3 +50,23 @@ class Defaultable(ABC, Generic[T]):
     @abstractmethod
     def from_default(x: Any) -> T:
         pass
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
+
+
+def from_float(x: Any) -> float:
+    assert isinstance(x, (float, int)) and not isinstance(x, bool)
+    return float(x)
+
+
+def to_float(x: Any) -> float:
+    assert isinstance(x, float)
+    return x
+
+
+def from_dict(f: Callable[[Any], T], x: Any) -> Dict[str, T]:
+    assert isinstance(x, dict)
+    return {k: f(v) for (k, v) in x.items()}

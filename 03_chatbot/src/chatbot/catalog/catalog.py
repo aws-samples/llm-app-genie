@@ -7,7 +7,7 @@ from .catalog_item import CatalogItem
 
 T = TypeVar("T", bound=CatalogItem)
 
-FRIENDLY_NAME_TAG = "gena:friendly-name"
+FRIENDLY_NAME_TAG = "genie:friendly-name"
 
 
 @dataclass
@@ -20,10 +20,8 @@ class Catalog(ABC, List[T]):
     def __init__(self) -> None:
         super().__init__()
 
-        self._bootstrap()
-
     @abstractmethod
-    def _bootstrap(self) -> None:
+    def bootstrap(self) -> None:
         """
         Bootstraps the catalog.
         """

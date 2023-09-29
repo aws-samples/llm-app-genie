@@ -3,12 +3,12 @@
 import logging
 import time
 from dataclasses import dataclass
+from logging import Logger, getLogger
 from operator import itemgetter
 from typing import List
 
 import boto3
 import botocore
-from chatbot.helpers import get_current_account_id
 
 from .catalog import FRIENDLY_NAME_TAG, Catalog
 from .kendra_retriever_item import KendraRetrieverItem
@@ -22,18 +22,26 @@ class RetrieverCatalog(Catalog):
 
     regions: List[str]
 
-    def __init__(self, regions: list) -> None:
-        # Regions are initialized before the superclass initialization because
-        # the superclass initialization will call the _bootstrap method which
-        # requires the regions to be initialized
+    account_id: str
+
+    logger: Logger
+
+    def __init__(
+        self,
+        account_id,
+        regions: list,
+        logger: Logger = getLogger("RetrieverCatalogLogger"),
+    ) -> None:
         self.regions = regions
+        self.account_id = account_id
+        self.logger = logger
         super().__init__()
 
     def _get_kendra_indices(self, account):
         """Get list of kendra indices that contain a "friendly-name" tag."""
 
         start_time = time.time()
-        logging.info("Retrieving Kendra indices...")
+        self.logger.info("Retrieving Kendra indices...")
         index_summary_items = []
 
         for region in self.regions:
@@ -79,7 +87,7 @@ class RetrieverCatalog(Catalog):
                             )
                         )
 
-        logging.info(
+        self.logger.info(
             "%s Kendra indices retrieved in %s seconds",
             len(self),
             time.time() - start_time,
@@ -88,17 +96,41 @@ class RetrieverCatalog(Catalog):
     def _get_open_search_indices(self, account):
         """Get list of OpenSearch indices that contain a "friendly-name" tag."""
         start_time = time.time()
-        logging.info("Retrieving OpenSearch indices...")
+        self.logger.info("Retrieving OpenSearch indices...")
         opensearch_indices = []
 
         for region in self.regions:
             # Get OpenSearch domains
+            self.logger.info("OpenSearch region: %s", region)
             open_search_client = boto3.client("opensearch", region)
-            response = open_search_client.list_domain_names(EngineType="OpenSearch")
+            try:
+                response = open_search_client.list_domain_names(EngineType="OpenSearch")
+            except (
+                botocore.exceptions.ClientError,
+                botocore.exceptions.ConnectTimeoutError,
+            ):
+                self.logger.info(
+                    f"Not using OpenSearch in region {region}. Cannot connect to OpenSearch to list domains."
+                )
+                continue
+            self.logger.info("OpenSearch response: %s", response)
+
             domain_names = [
                 name_dict["DomainName"] for name_dict in response["DomainNames"]
             ]
-            response = open_search_client.describe_domains(DomainNames=domain_names)
+            self.logger.info("OpenSearch domain names: %s", domain_names)
+
+            self.logger.info("describe_domains...")
+            try:
+                response = open_search_client.describe_domains(DomainNames=domain_names)
+            except (
+                botocore.exceptions.ClientError,
+                botocore.exceptions.ConnectTimeoutError,
+            ):
+                self.logger.info(
+                    f"Not using OpenSearch in region {region}. Cannot connect to OpenSearch to describe domains."
+                )
+                continue
             domains = response["DomainStatusList"]
 
             sagemaker_client = boto3.client("sagemaker", region)
@@ -109,13 +141,23 @@ class RetrieverCatalog(Catalog):
             )
             for domain in filter(active_domain_filter, domains):
                 domain_arn = domain["ARN"]
-                tags = open_search_client.list_tags(ARN=domain_arn)["TagList"]
+                self.logger.info("domain: %s", domain_arn)
+                try:
+                    tags = open_search_client.list_tags(ARN=domain_arn)["TagList"]
+                except (
+                    botocore.exceptions.ClientError,
+                    botocore.exceptions.ConnectTimeoutError,
+                ):
+                    self.logger.info(
+                        f"Cannot connect to OpenSearch to list tags for {domain_arn}."
+                    )
+                    continue
                 tags_keys = list(map(itemgetter("Key"), tags))
                 genai_friendly_tag_present = FRIENDLY_NAME_TAG in tags_keys
-                genai_index_name_present = "gena:index-name" in tags_keys
-                genai_secret_tag_present = "gena:secrets-id" in tags_keys
+                genai_index_name_present = "genie:index-name" in tags_keys
+                genai_secret_tag_present = "genie:secrets-id" in tags_keys
                 genai_embedding_tag_present = (
-                    "gena:sagemaker-embedding-endpoint-name" in tags_keys
+                    "genie:sagemaker-embedding-endpoint-name" in tags_keys
                 )
 
                 if (
@@ -134,19 +176,25 @@ class RetrieverCatalog(Catalog):
                         tags, FRIENDLY_NAME_TAG
                     )
                     secrets_tag_value = get_genai_tag_value_by_key(
-                        tags, "gena:secrets-id"
+                        tags, "genie:secrets-id"
                     )
                     embedding_sagemaker_name = get_genai_tag_value_by_key(
                         tags,
-                        "gena:sagemaker-embedding-endpoint-name",
+                        "genie:sagemaker-embedding-endpoint-name",
                     )
-                    index_name = get_genai_tag_value_by_key(tags, "gena:index-name")
+                    index_name = get_genai_tag_value_by_key(tags, "genie:index-name")
 
                     try:
                         embedding_endpoint = sagemaker_client.describe_endpoint(
                             EndpointName=embedding_sagemaker_name
                         )
-                    except botocore.exceptions.ClientError:
+                    except (
+                        botocore.exceptions.ClientError,
+                        botocore.exceptions.ConnectTimeoutError,
+                    ):
+                        self.logger.info(
+                            f"Cannot connect to embeddings endpoint {embedding_sagemaker_name} on Amazon SageMaker for OpenSearch domain {domain_arn}."
+                        )
                         continue
 
                     if (
@@ -154,6 +202,9 @@ class RetrieverCatalog(Catalog):
                         or "EndpointStatus" not in embedding_endpoint
                         or embedding_endpoint["EndpointStatus"] != "InService"
                     ):
+                        self.logger.info(
+                            f"Ignoring OpenSearch domain {domain_arn} because embeddings endpoint {embedding_sagemaker_name} on Amazon SageMaker is not in service."
+                        )
                         continue
 
                     try:
@@ -171,11 +222,17 @@ class RetrieverCatalog(Catalog):
                                     secret_id=secrets_tag_value,
                                 )
                             )
-                    except botocore.exceptions.ClientError:
+                    except (
+                        botocore.exceptions.ClientError,
+                        botocore.exceptions.ConnectTimeoutError,
+                    ):
+                        self.logger.info(
+                            f"Cannot get credentials for OpenSearch domain from AWS Secrets Manager. Ignoring OpenSearch domain {domain_arn}."
+                        )
                         continue
 
         self += opensearch_indices
-        logging.info(
+        self.logger.info(
             "%s OpenSearch indices retrieved in %s seconds",
             len(opensearch_indices),
             time.time() - start_time,
@@ -184,9 +241,8 @@ class RetrieverCatalog(Catalog):
     def _add_no_retrieval_option(self) -> None:
         self.append(NoRetrieverItem())
 
-    def _bootstrap(self) -> None:
+    def bootstrap(self) -> None:
         """Bootstraps the catalog."""
-        account = get_current_account_id()
-        self._get_kendra_indices(account)
-        self._get_open_search_indices(account)
+        self._get_kendra_indices(self.account_id)
+        self._get_open_search_indices(self.account_id)
         self._add_no_retrieval_option()

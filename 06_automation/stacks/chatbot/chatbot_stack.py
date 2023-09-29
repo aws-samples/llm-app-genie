@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 from aws_cdk import CustomResource, Duration, RemovalPolicy, Stack, Tags
 from aws_cdk import aws_certificatemanager as acm
@@ -24,25 +25,37 @@ stack = {
 
 class ChatbotStack(GenAiStack):
     # def __init__(self, scope: Construct, construct_id: str, config: Config, **kwargs) -> None:
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        existing_vpc_id: Union[None, str] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
 
-        public_subnet = ec2.SubnetConfiguration(
-            name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-        )
-        private_subnet = ec2.SubnetConfiguration(
-            name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=24
-        )
+        
 
-        vpc = ec2.Vpc(
-            scope=self,
-            id="ChatbotVPC",
-            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
-            max_azs=2,
-            nat_gateway_provider=ec2.NatProvider.gateway(),
-            nat_gateways=1,
-            subnet_configuration=[public_subnet, private_subnet],
-        )
+        if existing_vpc_id:
+            vpc = ec2.Vpc.from_lookup(
+                self, "ChatbotExistingVPCLookup", vpc_id=existing_vpc_id
+            )
+        else:
+            public_subnet = ec2.SubnetConfiguration(
+                name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+            )
+            private_subnet = ec2.SubnetConfiguration(
+                name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=24
+            )
+            vpc = ec2.Vpc(
+                scope=self,
+                id="ChatbotVPC",
+                ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
+                max_azs=2,
+                nat_gateway_provider=ec2.NatProvider.gateway(),
+                nat_gateways=1,
+                subnet_configuration=[public_subnet, private_subnet],
+            )
 
         self.vpc = vpc
 
@@ -122,7 +135,7 @@ class ChatbotStack(GenAiStack):
         )
 
         Tags.of(memory_table).add(
-            f"{config['appPrefixLowerCase']}:memory-table",
+            f"genie:memory-table",
             "Use this table to store the history",
         )
 
@@ -165,7 +178,7 @@ class ChatbotStack(GenAiStack):
                     f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
                 ],
                 conditions={
-                    "StringEquals": {"aws:ResourceTag/gena:deployment": "True"}
+                    "StringEquals": {"aws:ResourceTag/genie:deployment": "True"}
                 },
             )
         )
@@ -194,21 +207,29 @@ class ChatbotStack(GenAiStack):
                 resources=["*"],
             )
         )
-        # Policy statement to allow querying the Kendra indices that have the gena:deployment tag
+        # Policy statement to allow querying the Kendra indices that have the genie:deployment tag
         role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["kendra:Query", "kendra:Retrieve"],
                 resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
                 conditions={
-                    "StringEquals": {"aws:ResourceTag/gena:deployment": "True"}
+                    "StringEquals": {"aws:ResourceTag/genie:deployment": "True"}
                 },
             )
         )
         # Policy statement to grant access to Amazon Bedrock
         role.add_to_policy(
             iam.PolicyStatement(
-                effect=iam.Effect.ALLOW, actions=["bedrock:*"], resources=["*"]
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:ListFoundationModels",
+                    "bedrock:GetFoundationModel",
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                    "bedrock:ListTagsForResource",
+                ],
+                resources=["*"],
             )
         )
         role.add_to_policy(

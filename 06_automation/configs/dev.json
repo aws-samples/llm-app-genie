@@ -2,7 +2,7 @@
   "globalTags": {
     "version": "1.0",
     "app": "demo",
-    "owner": "gena-team",
+    "owner": "genie-team",
     "deployment": "True"
   },
   "bedrock_region": "us-west-2",

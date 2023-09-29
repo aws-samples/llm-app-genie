@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
 from appconfig_helper import AppConfigHelper
@@ -9,6 +9,7 @@ from appconfig_helper import AppConfigHelper
 from .amazon_bedrock import AmazonBedrock, AmazonBedrockParameters
 from .appearance import AWSsomeChatAppearance
 from .aws_region import AWSRegion
+from .llm_config import LLMConfigMap
 from .parser_helpers import from_list, from_none, from_union, to_class
 
 # This code is used to parse the configuration file for this application.
@@ -32,20 +33,27 @@ class AppConfig:
 
     _amazon_bedrock: Optional[List[AmazonBedrock]] = None
     appearance: AWSsomeChatAppearance = None
+    _llm_config: LLMConfigMap = field(default_factory=LLMConfigMap({}))
 
     def __init__(
         self,
         appearance: AWSsomeChatAppearance,
         amazon_bedrock: Optional[List[AmazonBedrock]] = None,
+        llm_config: LLMConfigMap = LLMConfigMap({}),
     ):
         self.appearance = appearance
         self._amazon_bedrock = amazon_bedrock
+        self._llm_config = llm_config
 
     @property
     def amazon_bedrock(self) -> Optional[List[AmazonBedrock]]:
         return self._amazon_bedrock
 
-    def add_amazon_bedrock(self, region: AWSRegion, endpoint_url: str = None):
+    @property
+    def llm_config(self) -> LLMConfigMap:
+        return self._llm_config
+
+    def add_amazon_bedrock(self, region: str, endpoint_url: str = None):
         """Adds an AWS Region for Amazon Bedrock usage to the config.
 
         If the region is already configured, it will be ignored.
@@ -54,12 +62,12 @@ class AppConfig:
         :param endpoint_url: Optional endpoint URL for Amazon Bedrock usage.
         """
         new_bedrock_config = AmazonBedrock(
-            AmazonBedrockParameters(region, endpoint_url)
+            AmazonBedrockParameters(AWSRegion(region), endpoint_url)
         )
         if self._amazon_bedrock is None:
             self._amazon_bedrock = [new_bedrock_config]
         elif not any(
-            existing_bedrock.parameters.region == region
+            existing_bedrock.parameters.region == new_bedrock_config.parameters.region
             for existing_bedrock in self._amazon_bedrock
         ):
             # Only append if Amazon Bedrock region has not already been configured.
@@ -76,7 +84,12 @@ class AppConfig:
             [lambda x: from_list(AmazonBedrock.from_dict, x), from_none],
             obj.get("amazonBedrock", []),
         )
-        return AppConfig(appearance=appearance, amazon_bedrock=amazon_bedrock)
+        llm_config = from_union(
+            [LLMConfigMap.from_dict, from_none], obj.get("llmConfig")
+        )
+        return AppConfig(
+            appearance=appearance, amazon_bedrock=amazon_bedrock, llm_config=llm_config
+        )
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -84,6 +97,9 @@ class AppConfig:
         result["amazonBedrock"] = from_union(
             [lambda x: from_list(lambda x: to_class(AmazonBedrock, x), x), from_none],
             self.amazon_bedrock,
+        )
+        result["llmConfig"] = from_union(
+            [lambda x: to_class(LLMConfigMap, x), from_none], self.llm_config
         )
 
         return result

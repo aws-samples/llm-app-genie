@@ -14,7 +14,7 @@ with open(
     config = json.load(file)
 
 # Adding environment and prefix
-config["appPrefix"] = os.environ["CDK_APP_PREFIX"] if "CDK_APP_PREFIX" in os.environ else "Gena"
+config["appPrefix"] = os.environ["CDK_APP_PREFIX"] if "CDK_APP_PREFIX" in os.environ else "Genie"
 config["appPrefixLowerCase"] = config["appPrefix"].lower()
 
 

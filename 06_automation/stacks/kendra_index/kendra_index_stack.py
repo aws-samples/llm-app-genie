@@ -80,7 +80,7 @@ class KendraIndexStack(GenAiStack):
             description=f"Knowledge base for {customer_name}",
             tags=[
                 CfnTag(
-                    key=f"{config['appPrefixLowerCase']}:friendly-name",
+                    key="genie:friendly-name",
                     value=f"Amazon Kendra index - {customer_name}",
                 )
             ],

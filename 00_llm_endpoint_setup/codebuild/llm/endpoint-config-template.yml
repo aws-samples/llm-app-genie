@@ -51,11 +51,11 @@ Resources:
       EndpointName: !Ref EndpointName
       EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
       Tags:
-        - Key: gena:friendly-name
+        - Key: genie:friendly-name
           Value: Falcon 40B Instruct
-        - Key: gena:prompt-rag
+        - Key: genie:prompt-rag
           Value: prompts/falcon_fine_tuned_greetings_rag.yaml
-        - Key: gena:prompt-chat
+        - Key: genie:prompt-chat
           Value: prompts/falcon_chat.yaml
-        - Key: gena:deployment
+        - Key: genie:deployment
           Value: 'True'

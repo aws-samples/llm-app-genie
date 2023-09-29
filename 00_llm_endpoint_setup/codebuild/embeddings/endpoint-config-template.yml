@@ -50,5 +50,5 @@ Resources:
       EndpointName: !Ref EndpointName
       EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
       Tags:
-        - Key: gena:deployment
+        - Key: genie:deployment
           Value: 'True'
