@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "crawly"
+version = "1.0.3"
+description = ""
+authors = ["Arlind Nocaj <arlnocaj@amazon.com>"]
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+scrapy-playwright = "^0.0.30"
+scrapy = "^2.9.0"
+scrapy-user-agents = "^0.1.1"
+jupyter = "^1.0.0"
+pandas = "^2.0.3"
+itables = "^1.5.3"
+playwright = "^1.36.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

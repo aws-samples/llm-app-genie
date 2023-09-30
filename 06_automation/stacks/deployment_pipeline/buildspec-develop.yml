@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      # install cdk
+      - npm install -g aws-cdk
+      - cdk --version
+      # install poetry
+      - curl -sSL https://install.python-poetry.org | python3 -
+      - export PATH="/root/.local/bin:$PATH"
+      - cd 06_automation
+      - poetry install
+  pre_build:
+    # FIXME: Delete pipeline that do not get updatedon underlaying code changes
+    on-failure: ABORT
+    commands:
+      - poetry run cdk destroy $LLM_STACK_NAME $INGESTION_STACK_NAME --force
+  build:
+    on-failure: ABORT
+    commands:
+      - poetry run cdk deploy --all --require-approval never

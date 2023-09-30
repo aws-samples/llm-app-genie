@@ -1,0 +1,54 @@
+Description: Template to deploy an embedding endpoint to sagemaker
+Parameters:
+  ModelExecutionRoleArn:
+    Type: String
+    Description: Execution role used for deploying the model.
+  EndpointInstanceType:
+    Type: String
+    Description: The ML compute instance type for the endpoint.
+  EndpointName:
+    Type: String
+    Description: The endpoint name for the embeddings for SageMaker hosting
+  Image:
+    Type: String
+    Description: ECR image for the serving container
+  Region:
+    Type: String
+    Description: AWS Region where to deploy
+  ModelDataUrl:
+    Type: String
+    Description: S3 bucket where the model.tar.gz is stored
+
+Resources:
+  Model:
+    Type: AWS::SageMaker::Model
+    Properties:
+      PrimaryContainer:
+        Image: !Ref Image
+        Mode: SingleModel
+        ModelDataUrl: !Ref ModelDataUrl
+        Environment:
+          SAGEMAKER_CONTAINER_LOG_LEVEL: 20
+          SAGEMAKER_REGION: !Ref Region
+      EnableNetworkIsolation: false
+      ExecutionRoleArn: !Ref ModelExecutionRoleArn
+
+  EndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      ProductionVariants:
+        - InitialInstanceCount: 1
+          InitialVariantWeight: 1.0
+          InstanceType: !Ref EndpointInstanceType
+          ModelName: !GetAtt Model.ModelName
+          VariantName: AllTraffic
+          ContainerStartupHealthCheckTimeoutInSeconds: 600
+
+  Endpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: !Ref EndpointName
+      EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+      Tags:
+        - Key: genie:deployment
+          Value: 'True'

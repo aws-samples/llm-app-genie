@@ -1,0 +1,61 @@
+# German (Germany) translations for LLM App Genie.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# This file is distributed under the same license as the LLM App Genie project.
+# Malte Reimann malterei@amazon.com, 2023.
+msgid ""
+msgstr ""
+"Project-Id-Version: v1.3.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2023-08-17 20:02+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: de_DE\n"
+"Language-Team: de_DE <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: src/chatbot/__main__.py:53
+msgid "{chatbot_name} - An LLM-powered app for your custom data"
+msgstr "{chatbot_name} - Eine LLM-powered App für Ihre Daten"
+
+#: src/chatbot/__main__.py:54
+msgid ""
+"Made with ❤️ by your AWS WWSO AIML EMEA and Swiss SA Team (and Amazon "
+"CodeWhisperer 🤫)"
+msgstr "Entwickelt mit ❤️ von Ihrem AWS WWSO AIML EMEA und Swiss SA Team (und Amazon CodeWhisperer 🤫)"
+
+#: src/chatbot/__main__.py:55
+msgid "LLM-powered app built using:"
+msgstr "LLM-powered App entickelt mit:"
+
+#: src/chatbot/__main__.py:155
+msgid "Reset Session"
+msgstr "Session Zürücksetzen"
+
+#: src/chatbot/__main__.py:176
+msgid "Ask a question or prompt the LLM"
+msgstr "Stelle eine Frage oder gebe Anweisungen an das LLM"
+
+#: src/chatbot/ui/chat_messages.py:55
+msgid "Hi, I'm {chatbot_name}. How may I help you?"
+msgstr "Hallo, ich bin {chatbot_name}. Wie kann ich Ihnen helfen?"
+
+#: src/chatbot/ui/chat_messages.py:58
+msgid "The information source is {retriever_name}."
+msgstr "Die Informationsquelle ist {retriever_name}."
+
+#: src/chatbot/ui/chat_messages.py:59
+msgid "You are chatting with {model_name}."
+msgstr "Sie chatten mit {model_name}."
+
+#: src/chatbot/ui/sidebar.py:50
+msgid "Knowledge Base"
+msgstr "Informationsquelle"
+
+#: src/chatbot/ui/sidebar.py:54
+msgid "Language Model"
+msgstr ""
+

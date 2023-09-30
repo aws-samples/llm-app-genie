@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "llm-app-genie-automation"
+version = "1.0.3"
+description = ""
+authors = [
+  "Arlind Nocaj <arlnocaj@amazon.com>",
+  "Paolo Di Francesco <frpaolo@amazon.com>",
+]
+readme = "README.md"
+packages = [{ include = "modules" }, { include = "stacks" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10, <4.0"
+aws-cdk-lib = "^2.88.0"
+boto3 = "^1.28.9"
+"aws-cdk.aws-lambda-python-alpha" = "^2.88.0a0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.test.dependencies]
+cdk-nag = ">=2.27.0"

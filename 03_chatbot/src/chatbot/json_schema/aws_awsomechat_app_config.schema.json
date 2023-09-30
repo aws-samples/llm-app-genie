@@ -1,0 +1,218 @@
+{
+  "$ref": "#/$defs/AppConfig",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-app-accelerator.aws.amazon.com/aws_awsomechat_app_config.schema.json",
+  "$defs": {
+    "AppConfig": {
+      "title": "AWS AWSomeChat Config",
+      "description": "App configuration for the AWSomeChat application.",
+      "type": "object",
+      "properties": {
+        "appearance": {
+          "$ref": "#/$defs/AWSomeChatAppearance"
+        },
+        "amazonBedrock": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AmazonBedrock"
+          },
+          "default": [],
+          "minItems": 0
+        },
+        "llmConfig": {
+          "$ref": "#/$defs/LLMConfigMap"
+        }
+      }
+    },
+    "AWSomeChatAppearance": {
+      "title": "AWSsomeChat Appearance",
+      "description": "Personalize how the app looks like to your use case.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "AWSomeChatAppearance"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of your chatbot.",
+              "default": "AWSomeChat"
+            },
+            "faviconUrl": {
+              "type": "string",
+              "description": "URL or path to image that is the logo for your chat application. Relative to the 03_chatbot directory.",
+              "default": "chatbot/aws.png"
+            }
+          }
+        }
+      }
+    },
+    "LLMConfigMap": {
+      "title": "LLM Config Map",
+      "description": "Maps large language models identifiers to their configuration.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "LLMConfigMap"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/LLMConfig"
+          }
+        }
+      }
+    },
+    "LLMConfig": {
+      "title": "LLM Config",
+      "description": "Configuration for a large language model.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "LLMConfig"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "chatPrompt": {
+              "type": "string",
+              "description": "Local path, S3 URI or LangChainHub path that contains prompt template to use when chatting with this model."
+            },
+            "ragPrompt": {
+              "type": "string",
+              "description": "Local path, S3 URI or LangChainHub path that contains prompt template to use when asking questions based on documents to this model."
+            },
+            "maxTokenCount": {
+              "type": "integer",
+              "description": "Configures the max number of tokens to use in the generated response."
+            },
+            "stopSequence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Make the model stop at a desired word or character, such as the end of a sentence or a list."
+            },
+            "topP": {
+              "type": "number",
+              "description": "Controls token choices, based on the probability of the potential choices. If you set Top P below 1.0, the model considers only the most probable options and ignores less probable options. The result is more stable and repetitive completions."
+            },
+            "temperature": {
+              "type": "number",
+              "description": "A lower value results in more deterministic responses, whereas a higher value results in more random responses."
+            }
+          }
+        }
+      }
+    },
+    "AmazonBedrock": {
+      "title": "Amazon Bedrock",
+      "description": "Optional Configuration for Amazon Bedrock.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "AmazonBedrock"
+        },
+        "parameters": {
+          "required": ["region"],
+          "type": "object",
+          "properties": {
+            "region": {
+              "$ref": "#/$defs/AWSRegion"
+            },
+            "endpointURL": {
+              "type": "string",
+              "description": "Optional endpoint url to access Amazon Bedrock."
+            },
+            "iam": {
+              "$ref": "#/$defs/BotoIAM"
+            }
+          }
+        }
+      }
+    },
+    "BotoIAM": {
+      "title": "IAM",
+      "description": "Optional IAM configuration to access AWS resources. Supports profile or assuming an IAM role.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "BotoIAM"
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": ["profile"],
+              "additionalProperties": false,
+              "properties": {
+                "profile": {
+                  "type": "string",
+                  "description": "Optional credentials profile name to use for access."
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["roleARN"],
+              "additionalProperties": false,
+              "properties": {
+                "roleARN": {
+                  "type": "string",
+                  "description": "Optional IAM role to assume.",
+                  "pattern": "^arn:aws:iam::(?<Account>\\d{12}):role/(?<Rolename>[\\w+=,.@-]+)$"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AWSRegion": {
+      "title": "AWS Region",
+      "description": "Represents an AWS Region",
+      "type": "string",
+      "enum": [
+        "ap-south-2",
+        "ap-south-1",
+        "eu-south-1",
+        "eu-south-2",
+        "me-central-1",
+        "ca-central-1",
+        "eu-central-1",
+        "eu-central-2",
+        "us-west-1",
+        "us-west-2",
+        "af-south-1",
+        "eu-north-1",
+        "eu-west-3",
+        "eu-west-2",
+        "eu-west-1",
+        "ap-northeast-3",
+        "ap-northeast-2",
+        "me-south-1",
+        "ap-northeast-1",
+        "sa-east-1",
+        "ap-east-1",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "ap-southeast-4",
+        "us-east-1",
+        "us-east-2"
+      ]
+    }
+  }
+}

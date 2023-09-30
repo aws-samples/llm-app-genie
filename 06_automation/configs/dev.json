@@ -1,0 +1,137 @@
+{
+  "globalTags": {
+    "version": "1.0",
+    "app": "demo",
+    "owner": "genie-team",
+    "deployment": "True"
+  },
+  "bedrock_region": "us-west-2",
+  "customer": {
+    "name": "SwissGov"
+  },
+  "opensearch": {
+    "domain": "KB",
+    "instance_type": "t3.medium.search",
+    "index":"press-releases-en"
+  },
+  "sagemaker": {
+    "embeddings_instance_type": "ml.g4dn.xlarge",
+    "embeddings_endpoint_name": "EmbeddingsE5Large",
+    "llm_instance_type": "ml.g5.12xlarge",
+    "llm_endpoint_name": "Falcon40bInstruct12xlarge"
+  },
+  "kendra": {
+    "edition": "DEVELOPER_EDITION",
+    "index": "KnowledgeBase",
+    "data_sources": [
+      {
+        "name": "press-releases-en",
+        "TemplateConfiguration": {
+          "Template": {
+            "connectionConfiguration": {
+              "repositoryEndpointMetadata": {
+                "s3SeedUrl": null,
+                "seedUrlConnections": [
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=0"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=1"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=2"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=3"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=4"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=5"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=6"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=7"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=8"
+                  },
+                  {
+                    "seedUrl": "https://www.admin.ch/gov/en/start/documentation/media-releases.html?dyn_pageIndex=9"
+                  }
+                ],
+                "siteMapUrls": [],
+                "s3SiteMapUrl": null,
+                "authentication": "NoAuthentication"
+              }
+            },
+            "enableIdentityCrawler": false,
+            "syncMode": "FULL_CRAWL",
+            "additionalProperties": {
+              "inclusionFileIndexPatterns": [],
+              "rateLimit": "100",
+              "maxFileSize": "50",
+              "crawlDepth": "1",
+              "crawlAllDomain": false,
+              "crawlSubDomain": true,
+              "inclusionURLIndexPatterns": [],
+              "exclusionFileIndexPatterns": [],
+              "proxy": {},
+              "exclusionURLCrawlPatterns": [],
+              "exclusionURLIndexPatterns": [],
+              "crawlAttachments": true,
+              "honorRobots": true,
+              "inclusionURLCrawlPatterns": [],
+              "maxLinksPerUrl": "150"
+            },
+            "type": "WEBCRAWLERV2",
+            "version": "1.0.0",
+            "repositoryConfigurations": {
+              "attachment": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              },
+              "webPage": {
+                "fieldMappings": [
+                  {
+                    "dataSourceFieldName": "category",
+                    "indexFieldName": "_category",
+                    "indexFieldType": "STRING"
+                  },
+                  {
+                    "dataSourceFieldName": "sourceUrl",
+                    "indexFieldName": "_source_uri",
+                    "indexFieldType": "STRING"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "self_signed_certificate": {
+    "email_address": "customer@example.com",
+    "common_name": "example.com",
+    "city": ".",
+    "state": ".",
+    "country_code": "AT",
+    "organization": ".",
+    "organizational_unit": ".",
+    "validity_seconds": 157680000
+  }
+}

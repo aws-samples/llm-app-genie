@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "chatbot"
+version = "1.0.3"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10, <4.0"
+streamlit = "^1.25.0"
+streamlit-chat = "^0.1.1"
+streamlit-extras = "^0.3.0"
+langchain = "0.0.305"
+gradio = "^3.36.1"
+opensearch-py = "^2.2.0"
+sagemaker = "^2.173.0"
+pyfiglet = "^0.8.post1"
+babel = "^2.12.1"
+ansi2html = "^1.8.0"
+toml = "^0.10.2"
+sample-helper-aws-appconfig = "^2.0.3"
+boto3 = "^1.28.57"
+botocore = "1.31.57"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

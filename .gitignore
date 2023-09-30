@@ -1,0 +1,32 @@
+**/.crawls/
+**/.idea
+**/*.pyc
+**/node_modules
+*.ipynb_checkpoints
+**/.DS_Store
+*.swp
+**/package-lock.json
+**/__pycache__
+**/.pytest_cache
+.venv
+**/*.egg-info
+# CDK asset staging directory
+**/.cdk.staging
+**/cdk.out
+!**/*.schema.json
+!appconfig.json
+infrastructure/genaiax.code-workspace
+*/~*.pptx
+.vscode/launch.json
+**/launch.json
+**/cdk.context.json
+**/web-content/
+env.list
+.vscode/
+secrets.toml
+
+**/bedrock-python-sdk/
+**/logs/
+
+
+*.mo # binary internationalization files

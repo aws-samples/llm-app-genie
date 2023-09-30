@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      - pip install pandas s3fs sagemaker --quiet
+      - pip install transformers --quiet
+      - pip install langchain==0.0.218 --quiet
+      - pip install opensearch-py==2.2.0 --quiet
+      - pip install beautifulsoup4 --quiet
+      - pip install awswrangler[opensearch] --quiet
+      - pip install requests_aws4auth --quiet
+      - pip install jsonpath_ng --quiet
+      - export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+  build:
+    on-failure: ABORT
+    commands:
+      - python scripts/ingest.py

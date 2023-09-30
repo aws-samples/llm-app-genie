@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "02-ingestion"
+version = "1.0.3"
+description = ""
+authors = ["Arlind Nocaj <arlnocaj@amazon.com>"]
+readme = "README.md"
+packages = [{ include = "02_ingestion" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10, <3.11"
+jupyter = "^1.0.0"
+pandas = "^2.0.3"
+datasets = "^2.14.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

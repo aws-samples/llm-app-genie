@@ -1,0 +1,24 @@
+{
+  "$schema": "./json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "My Chatbot",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
+    }
+  },
+  "amazonBedrock": [
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-west-2"
+      }
+    }
+  ]
+}

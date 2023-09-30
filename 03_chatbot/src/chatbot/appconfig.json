@@ -1,0 +1,22 @@
+{
+  "$schema": "json_schema/aws_awsomechat_app_config.schema.json",
+  "appearance": {
+    "type": "AWSomeChatAppearance",
+    "parameters": {
+      "name": "Genie",
+      "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
+    }
+  },
+  "llmConfig": {
+    "parameters": {
+      "anthropic.claude*": {
+        "type": "LLMConfig",
+        "parameters": {
+          "chatPrompt": "prompts/anthropic_claude_chat.yaml",
+          "ragPrompt": "prompts/anthropic_claude_rag.yaml"
+        }
+      }
+    },
+    "type": "LLMConfigMap"
+  }
+}

@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      - python -m pip install --upgrade pip
+      - apt update -y
+      - curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+      - apt install git-lfs git -y
+      - git lfs install
+      - export MODEL_ID=e5-large-v2
+      - git clone https://huggingface.co/intfloat/${MODEL_ID}
+      - export S3_PREFIX="custom_inference/${MODEL_ID}/model.tar.gz"
+      - cp -r code/ ${MODEL_ID}/code/
+      - pip install sagemaker
+  build:
+    on-failure: ABORT
+    commands:
+      - cd $MODEL_ID
+      - git lfs pull
+      - tar zcvf model.tar.gz *
+      - aws s3 cp model.tar.gz "${S3_BUCKET}/${S3_PREFIX}"
+      - export S3_LOCATION="${S3_BUCKET}/${S3_PREFIX}"
+      - cd ../
+      - python scripts/build.py --model-execution-role "${MODEL_EXECUTION_ROLE_ARN}" --s3-bucket "${S3_BUCKET}" --instance-type "${INSTANCE_TYPE}" --export-config "${EXPORT_CONFIG}" --region "${REGION}" --s3-model-data-url "${S3_LOCATION}" --endpoint-name "${ENDPOINT_NAME}"
+      - aws cloudformation package --template endpoint-config-template.yml --s3-bucket "$ARTIFACT_BUCKET" --output-template "$EXPORT_TEMPLATE_NAME"
+      - cat "$EXPORT_TEMPLATE_NAME"
+      - cat "$EXPORT_CONFIG"
+artifacts:
+  files:
+    - "${EXPORT_TEMPLATE_NAME}"
+    - "${EXPORT_CONFIG}"

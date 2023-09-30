@@ -1,0 +1,13 @@
+_type: prompt
+input_variables:
+  - chat_history
+  - question
+template: |
+  Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question. Summarize the question into one sentence.
+
+  Chat History:
+  {chat_history}
+
+  Follow up question: {question}
+
+  Here is the summary of the standalone question:

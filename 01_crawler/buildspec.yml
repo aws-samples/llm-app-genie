@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: 3.11
+    commands:
+      # install poetry
+      - curl -sSL https://install.python-poetry.org | python3 -
+      - export PATH="/root/.local/bin:$PATH"
+      - poetry install
+      - poetry run playwright install-deps
+      - poetry run playwright install
+  build:
+    on-failure: ABORT
+    commands:
+      - cd crawly
+      - poetry run scrapy crawl webpage -o admin_ch_press_releases-en.json -a filename=configs/admin-ch-press-releases-en.json
+      - export S3_PREFIX=crawler_results/file.json
+      - aws s3 cp admin_ch_press_releases-en.json "${S3_BUCKET}/${S3_PREFIX}"
+  post_build:
+    on-failure: ABORT
+    commands:
+      # upload customer .json file to s3
+      - aws ssm put-parameter --name "${APP_PREFIX}CrawledFileLocation" --value "${S3_BUCKET}/${S3_PREFIX}" --type String --overwrite
