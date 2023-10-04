@@ -6,13 +6,16 @@ from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
+from aws_cdk import Stack
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
+import logging
 
 stack = {
     "description": "MLOps Pipeline to deploy LLM to SageMaker inference endpoint",
     "tags": {},
 }
+
 
 
 class LLMSageMakerStack(GenAiStack):
@@ -27,9 +30,8 @@ class LLMSageMakerStack(GenAiStack):
             QuotaCode=quotas[config["sagemaker"]["llm_instance_type"]],
         )
         if response["Quota"]["Value"] == 0.0:
-            raise (
-                f"Please adjust your quota for the LLM Endpoint for type {config['sagemaker']['llm_instance_type']}"
-            )
+            logging.fatal(f"{Stack.of(self).stack_name} will not deploy successful. If you want to deploy this stack please adjust your quota for the LLM Endpoint for type {config['sagemaker']['llm_instance_type']}")
+            return
         else:
             print(
                 f"You have enough instances quotas for the LLM Endpoint of type {config['sagemaker']['llm_instance_type']}"

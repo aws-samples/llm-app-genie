@@ -10,8 +10,10 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
+from aws_cdk import Stack
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
+import logging
 
 stack = {"description": "OpenSearch Ingestion Pipeline", "tags": {}}
 
@@ -29,9 +31,8 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         # check for required instance quate in account
         if response["Quota"]["Value"] == 0.0:
-            raise (
-                f"Please adjust your quota for the Embeddings Endpoint for type {config['sagemaker']['embeddings_instance_type']}"
-            )
+            logging.fatal(f"{Stack.of(self).stack_name} will not deploy successful. If you want to deploy this stack please adjust your quota for the Embeddings Endpoint for type {config['sagemaker']['embeddings_instance_type']}")
+            return
         else:
             print(
                 f"You have enough instances quotas for the Embeddings Endpoint of type {config['sagemaker']['embeddings_instance_type']}"
