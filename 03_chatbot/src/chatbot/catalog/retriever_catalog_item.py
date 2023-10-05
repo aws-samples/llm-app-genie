@@ -20,6 +20,10 @@ class RetrieverCatalogItem(CatalogItem[BaseRetriever]):
         return None
 
     @property
+    def enable_file_upload(self) -> bool:
+        return False
+
+    @property
     def current_filter(self) -> List[Tuple[str, Any]]:
         return []
 
@@ -47,30 +51,3 @@ class RetrieverCatalogItem(CatalogItem[BaseRetriever]):
             condense_question_prompt_template=condense_question_prompt,
             retriever=retriever,
         )
-
-
-NO_DOCUMENT_SEARCH = "No document search"
-
-
-@dataclass
-class NoRetrieverItem(RetrieverCatalogItem):
-    """
-    Class that represents using a LLM without a retriever.
-    """
-
-    def __init__(self):
-        super().__init__(NO_DOCUMENT_SEARCH)
-
-    def get_instance(self) -> BaseRetriever:
-        return None
-
-    def llm_app_factory(
-        self, model: ModelCatalogItem, prompt_catalog: CatalogById
-    ) -> LLMApp:
-        """
-        Returns the llm app to use for this retriever.
-        """
-        llm = model.get_instance()
-        chat_prompt = prompt_catalog[model.chat_prompt_identifier].get_instance()
-
-        return BaseLLMApp(prompt=chat_prompt, llm=llm)

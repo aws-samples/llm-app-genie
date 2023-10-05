@@ -6,7 +6,7 @@ from typing import Callable, Union
 
 import streamlit as st
 from ansi2html import Ansi2HTMLConverter
-from chatbot.catalog import NO_DOCUMENT_SEARCH, ModelCatalogItem, RetrieverCatalogItem
+from chatbot.catalog import NO_DOCUMENT_SEARCH, UPLOAD_DOCUMENT_SEARCH, ModelCatalogItem, RetrieverCatalogItem
 
 
 class ChatParticipant(Enum):
@@ -152,7 +152,7 @@ class ChatHistory:
 
         document_search_msg = (
             ""
-            if retriever_name == NO_DOCUMENT_SEARCH
+            if retriever_name == NO_DOCUMENT_SEARCH or retriever_name == UPLOAD_DOCUMENT_SEARCH
             else " "
             + _("The information source is {retriever_name}.").format(
                 retriever_name=retriever_name

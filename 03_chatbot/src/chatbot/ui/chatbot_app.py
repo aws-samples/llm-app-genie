@@ -170,7 +170,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     regions = [aws_config.region]
 
-    retriever, model, retriever_or_model_changed = write_sidebar(
+    retriever, model, retriever_or_model_changed, uploaded_file_content = write_sidebar(
         chatbot_name,
         favicon_url,
         regions,
@@ -205,7 +205,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         chat_history.add_chat_message(
             chat_history.create_system_message(model, retriever)
         )
-
+    
     # Layout of input/response containers
     response_container = st.container()
     empty_input_text = _("Ask a question or prompt the LLM")
@@ -222,6 +222,9 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
             )
 
             app = retriever.llm_app_factory(model, prompt_catalog)
+
+            # add the content of an uploaded file content, if available
+            prompt = uploaded_file_content + "\n" + prompt
 
             chat_history.add_chat_message(ChatMessage(ChatParticipant.USER, prompt))
             response = app.generate_response(

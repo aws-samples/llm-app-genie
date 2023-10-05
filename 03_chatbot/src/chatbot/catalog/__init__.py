@@ -6,6 +6,8 @@ from .dynamodb_table_memory_item import (  # noqa
     MemoryCatalogItem,
 )
 from .kendra_retriever_item import KendraRetrieverItem, RetrieverCatalogItem
+from .no_search_retriever_item import NoRetrieverItem, NO_DOCUMENT_SEARCH
+from .upload_file_retriever_item import DocUploadItem, UPLOAD_DOCUMENT_SEARCH
 from .memory_catalog import DynamoDBTableMemoryItem, MemoryCatalog
 from .memory_catalog_item import CatalogItem, MemoryCatalogItem
 from .model_catalog import BedrockModelItem, Catalog, ModelCatalog, SageMakerModelItem
@@ -17,11 +19,11 @@ from .retriever_catalog import (
     Catalog,
     KendraRetrieverItem,
     NoRetrieverItem,
+    DocUploadItem,
     OpenSearchRetrieverItem,
     RetrieverCatalog,
 )
 from .retriever_catalog_item import (
-    NO_DOCUMENT_SEARCH,
     CatalogItem,
     RetrieverCatalogItem,
 )

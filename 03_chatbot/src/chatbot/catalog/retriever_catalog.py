@@ -13,7 +13,8 @@ import botocore
 from .catalog import FRIENDLY_NAME_TAG, Catalog
 from .kendra_retriever_item import KendraRetrieverItem
 from .open_search_retriever_item import OpenSearchRetrieverItem
-from .retriever_catalog_item import NoRetrieverItem
+from .no_search_retriever_item import NoRetrieverItem
+from .upload_file_retriever_item import DocUploadItem
 
 
 @dataclass
@@ -241,8 +242,13 @@ class RetrieverCatalog(Catalog):
     def _add_no_retrieval_option(self) -> None:
         self.append(NoRetrieverItem())
 
+    def _add_doc_upload_option(self) -> None:
+        self.enable_file_upload = True
+        self.append(DocUploadItem())
+
     def bootstrap(self) -> None:
         """Bootstraps the catalog."""
         self._get_kendra_indices(self.account_id)
         self._get_open_search_indices(self.account_id)
         self._add_no_retrieval_option()
+        self._add_doc_upload_option()

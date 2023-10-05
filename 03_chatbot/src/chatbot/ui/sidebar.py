@@ -3,6 +3,7 @@ from io import BytesIO
 from logging import Logger
 from typing import Callable, Generic, List, Tuple, TypeVar, Union
 
+from io import StringIO
 import streamlit as st
 from chatbot.catalog import (
     ModelCatalog,
@@ -16,15 +17,15 @@ from streamlit.type_util import OptionSequence, T
 
 
 def write_sidebar(
-    chatbot_name: str,
-    app_icon: Union[ndarray, List[ndarray], BytesIO, str, List[str]],
-    regions: List[str],
-    app_config: AppConfig,
-    aws_config: AWSConfig,
-    logger: Logger,
-    show_llm_debug_messages: bool = False,
-    gettext: Callable[[str], str] = lambda x: x,
-) -> Tuple[RetrieverCatalogItem, ModelCatalogItem, bool]:
+        chatbot_name: str,
+        app_icon: Union[ndarray, List[ndarray], BytesIO, str, List[str]],
+        regions: List[str],
+        app_config: AppConfig,
+        aws_config: AWSConfig,
+        logger: Logger,
+        show_llm_debug_messages: bool = False,
+        gettext: Callable[[str], str] = lambda x: x,
+    ) -> Tuple[RetrieverCatalogItem, ModelCatalogItem, bool]:
     """
     Functional UI component that renders the sidebar.
 
@@ -93,6 +94,7 @@ def write_sidebar(
         current_filter_options = retriever.current_filter
 
         filter_disabled = filter_options is None
+        enable_file_upload = retriever.enable_file_upload
 
         filter_options = [] if filter_options is None else filter_options
 
@@ -138,10 +140,25 @@ def write_sidebar(
             language_model_label, "model", model_options, params
         )
 
+        # upload file button
+        uploaded_file_content = ""
+        if enable_file_upload:
+            uploaded_file = st.sidebar.file_uploader(
+                                "Upload a file", 
+                                type=["txt", "json"], 
+                                key=model_options,
+                                # disabled=not enable_file_upload
+                                )
+            if uploaded_file is not None:
+                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+                uploaded_file_content = "=== BEGIN FILE ===\n"
+                uploaded_file_content += stringio.read()
+                uploaded_file_content += "\n=== END FILE ===\n"
+
         st.checkbox(
             label=_("Language Model X-Ray ") + "🩻",
             value=show_llm_debug_messages,
             key="show_llm_debug_messages",
         )
 
-        return retriever, model, retriever_changed | model_changed
+        return retriever, model, retriever_changed | model_changed, uploaded_file_content
