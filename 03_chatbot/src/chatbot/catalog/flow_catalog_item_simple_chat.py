@@ -1,35 +1,41 @@
 """ Module that contains a class that represents No search retriever catalog item. """
 from dataclasses import dataclass
 
-from langchain.schema import BaseRetriever
+from langchain.chains.base import Chain
 
+from .flow_catalog_item import FlowCatalogItem
 from .retriever_catalog_item import RetrieverCatalogItem
 from .catalog import CatalogById
 from .model_catalog_item import ModelCatalogItem
 from chatbot.llm_app import BaseLLMApp, LLMApp
 
 
-NO_DOCUMENT_SEARCH = "No document search"
+SIMPLE_CHATBOT = "Only Chat"
 
 
 @dataclass
-class NoRetrieverItem(RetrieverCatalogItem):
+class SimpleChatFlowItem(FlowCatalogItem):
     """
     Class that represents using a LLM without a retriever.
     """
 
     def __init__(self):
-        super().__init__(NO_DOCUMENT_SEARCH)
+        super().__init__(SIMPLE_CHATBOT)
 
-    def get_instance(self) -> BaseRetriever:
+    def enable_file_upload(self) -> bool:
+        return False
+
+    def get_instance(self) -> Chain:
         return None
 
     def llm_app_factory(
-        self, model: ModelCatalogItem, prompt_catalog: CatalogById
+        self, model: ModelCatalogItem, retriever: RetrieverCatalogItem, prompt_catalog: CatalogById
     ) -> LLMApp:
         """
-        Returns the llm app to use for this retriever.
+        Returns the llm app to use without retriever.
         """
+        # print("model.model_kwargs:",model.model_kwargs)
+
         llm = model.get_instance()
         chat_prompt = prompt_catalog[model.chat_prompt_identifier].get_instance()
 

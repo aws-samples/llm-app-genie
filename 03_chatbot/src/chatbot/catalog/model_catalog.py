@@ -10,9 +10,9 @@ import botocore
 from chatbot.config import AmazonBedrock, LLMConfig
 from chatbot.helpers import get_boto_session
 
-from .bedrock_model_item import BedrockModelItem
+from .model_catalog_item_bedrock import BedrockModelItem
 from .catalog import FRIENDLY_NAME_TAG, Catalog
-from .sagemaker_model_item import SageMakerModelItem
+from .model_catalog_item_sagemaker import SageMakerModelItem
 
 
 @dataclass

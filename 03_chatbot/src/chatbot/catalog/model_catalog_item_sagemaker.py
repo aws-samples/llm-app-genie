@@ -25,11 +25,11 @@ class SageMakerModelItem(ModelCatalogItem):
 
     Example:
         ```python
-        sagemaker_model_item = SageMakerModelItem(
+        model_catalog_item_sagemaker = SageMakerModelItem(
             "falcon-40B-endpoint-name", "Falcon 40B", region="eu-west-1"
         )
 
-        sagemaker_endpoint = sagemaker_model_item.get_instance()
+        sagemaker_endpoint = model_catalog_item_sagemaker.get_instance()
         // use sagemaker_endpoint with langchain
         ```
     """

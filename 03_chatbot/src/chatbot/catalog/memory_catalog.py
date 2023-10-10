@@ -9,7 +9,7 @@ from typing import List
 import boto3
 
 from .catalog import Catalog
-from .dynamodb_table_memory_item import DynamoDBTableMemoryItem
+from .memory_catalog_item_dynamodb_table import DynamoDBTableMemoryItem
 
 
 @dataclass

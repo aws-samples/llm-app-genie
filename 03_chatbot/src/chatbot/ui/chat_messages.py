@@ -6,7 +6,7 @@ from typing import Callable, Union
 
 import streamlit as st
 from ansi2html import Ansi2HTMLConverter
-from chatbot.catalog import NO_DOCUMENT_SEARCH, UPLOAD_DOCUMENT_SEARCH, ModelCatalogItem, RetrieverCatalogItem
+from chatbot.catalog import SIMPLE_CHATBOT, UPLOAD_DOCUMENT_SEARCH, ModelCatalogItem, RetrieverCatalogItem, FlowCatalogItem
 
 
 class ChatParticipant(Enum):
@@ -134,7 +134,7 @@ class ChatHistory:
         )
 
     def create_system_message(
-        self, model: ModelCatalogItem, retriever: RetrieverCatalogItem
+        self, model: ModelCatalogItem, retriever: RetrieverCatalogItem, flow: FlowCatalogItem
     ) -> InfoMessage:
         """Creates a system message without storing it in the chat history.
             A system message is informs the human about the LLM and information
@@ -148,11 +148,11 @@ class ChatHistory:
             A system message that informs about the document source and LLM.
         """
         _ = self.gettext
-        retriever_name = retriever.friendly_name
+        retriever_name = retriever.friendly_name if retriever is not None else "No Retriever"
 
         document_search_msg = (
             ""
-            if retriever_name == NO_DOCUMENT_SEARCH or retriever_name == UPLOAD_DOCUMENT_SEARCH
+            if retriever_name == SIMPLE_CHATBOT or retriever_name == UPLOAD_DOCUMENT_SEARCH
             else " "
             + _("The information source is {retriever_name}.").format(
                 retriever_name=retriever_name
