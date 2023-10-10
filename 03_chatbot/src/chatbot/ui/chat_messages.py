@@ -143,11 +143,18 @@ class ChatHistory:
         Args:
             model: The current model that the chatbot uses.
             retriever: The current document source that the chatbot uses.
+            flow: The current flow that the chatbot uses
 
         Returns:
-            A system message that informs about the document source and LLM.
+            A system message that informs about the flow, document source and LLM.
         """
         _ = self.gettext
+        flow_name = flow.friendly_name # can't be undefined!
+        flow_search_msg = (
+                _("The chosen flow is {flow_name}.").format(
+                    flow_name=flow_name
+                )
+            )
         retriever_name = retriever.friendly_name if retriever is not None else "No Retriever"
 
         document_search_msg = (
@@ -158,13 +165,15 @@ class ChatHistory:
                 retriever_name=retriever_name
             )
         )
+
         if model:
             model_msg = _("You are chatting with {model_name}.").format(
                 model_name=model.friendly_name
             )
         else:
             model_msg = ""
-        return InfoMessage(ChatParticipant.BOT, model_msg + document_search_msg)
+        
+        return InfoMessage(ChatParticipant.BOT, model_msg + document_search_msg + " " + flow_search_msg)
 
     def clear(self):
         """Resets the chat history to welcome message from bot."""
