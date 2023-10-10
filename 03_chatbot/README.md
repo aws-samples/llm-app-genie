@@ -11,7 +11,7 @@ You can run locally the ChatBot Streamlit app in two ways:
 1. [build and run the streamlit container via Docker](#running-the-streamlit-chatbot-app-using-docker), or
 2. [running the streamlit app locally](#running-the-chatbot-app-using-streamlit)
 
-The application uses the AWS Region configured through the `AWS_DEFAULT_REGION` environment variable. For Amazon Bedrock, it uses the AWS Region defined in the `BEDROCK_REGION` environment variable.
+The application uses the AWS Region configured through the `AWS_DEFAULT_REGION` environment variable. For Amazon Bedrock, it uses the AWS Region defined in the `BEDROCK_REGION` environment variable. Remember that although Amazon Bedrock is now Generally Available, the models need to be activated in the console!
 
 To set these environment variables in Linux/MacOS run the following commands in the terminal where you plan to execute the application from or define them in the container.
 

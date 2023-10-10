@@ -65,22 +65,30 @@ There are two main deployment types:
 - [Full deployment](#full-deployment): Deploy all components (stacks) of the solution.
 - [Modular deployment](#modular-deployment): Deploy each component (stack) individually.
 
-### Full deployment <a name="full-deployment"></a>
+**Step 0**: Pre-requisites <a name="pre_requisites"></a>
 
-You can deploy all the components (stacks) of the solution at once.
-
-The simplest way is to use Launch Stack (to be added), which uses a AWS CloudFormation template to bootstrap an AWS CodeCommit repo from the GitHub repository and triggers a full deployment using AWS CodePipeline.
-
-Alternatively, you can use the next steps to deploy the full solution with CDK.
-
-**Step 1**: Pre-requisites <a name="pre_requisites"></a>
-
-You need the following frameworks on your local computer. You can also use the [AWS Cloud9](https://aws.amazon.com/cloud9/) IDE for deployment and testing.
+You need the following frameworks on your local computer. You can also use the [AWS Cloud9](https://aws.amazon.com/cloud9/) IDE for deployment and testing (choose the Ubuntu OS to have more dependencies already installed).
 
 - Node version 18 or higher
-  - [AWS CDK](https://aws.amazon.com/cdk/) version `2.91.0` or higher (latest tested CDK version is `2.91.0`)
+- [AWS CDK](https://aws.amazon.com/cdk/) version `2.91.0` or higher (latest tested CDK version is `2.91.0`)
+- Python 3.10
 - [Python Poetry](https://python-poetry.org/)
 - [Docker](https://www.docker.com/)
+
+If using Cloud9, first increase the disk space to allow CDK to use `docker` and pull images without problems:
+```
+curl -o resize.sh https://raw.githubusercontent.com/aws-samples/semantic-search-aws-docs/main/cloud9/resize.sh
+chmod +x ./resize.sh
+./resize.sh 50
+
+```
+
+To install Node 18 or higher:
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+nvm install 18.18.1
+```
 
 To install the latest AWS CDK version:
 
@@ -99,24 +107,7 @@ To install `Python Poetry`, or see [poetry installation details](https://python-
   (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
   ```
 
-To install the project dependencies with poetry:
-
-```sh
-poetry install
-```
-
-You can review the [CDK Deployment Flow](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#:~:text=expects%20to%20exist.-,Deployment%20Flow,-This%20guide%20will) to understand what roles and access rights for each role are being used.
-In a nutshell, you can bootstrap CDK using e.g. Administrator access, which creates a set of scoped roles (`cdk-file-publishing-role, cdk-image-publishing-role, cdk-deploy-role, cdk-exec-role`).
-
-You can trigger the deployment through CDK which assumes the file, image publishing and deployment role to initiate the deployment through AWS CloudFormation which then can use the passed `cdk-exec-role` IAM role to create the required resources.
-
-Note that the deployment user does not need to have the rights to directly create the resources.
-
-❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution**
-
-**Step 2:** Deploying with CDK
-
-Clone the GitHub repository:
+To clone the GitHub repository:
 
 ```sh
 git clone <repo-path>.git
@@ -134,6 +125,33 @@ Change to the infrastructure as code directory and install the dependencies:
 poetry install
 poetry shell
 ```
+If required, you can change the used AWS account and region by setting the following env variables, after having logged in with your credentials:
+```bash
+aws configure
+export CDK_DEFAULT_ACCOUNT=<your_account_id>
+export AWS_DEFAULT_REGION=<aws_region>
+```
+When providing a role different than the AWS managed one in Cloud9 (necessary to adapt to the CDK required permissions), remember to delete the file `~/.aws/credentials` first, then execute `aws configure`.
+
+You can review the [CDK Deployment Flow](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#:~:text=expects%20to%20exist.-,Deployment%20Flow,-This%20guide%20will) to understand what roles and access rights for each role are being used.
+In a nutshell, you can bootstrap CDK (`cdk boostrap`) using e.g. credentials with Administrator access, which creates a set of scoped roles (`cdk-file-publishing-role, cdk-image-publishing-role, cdk-deploy-role, cdk-exec-role`).
+
+You can trigger the deployment through CDK which assumes the file, image publishing and deployment role to initiate the deployment through AWS CloudFormation which then can use the passed `cdk-exec-role` IAM role to create the required resources.
+
+Note that the deployment user does not need to have the rights to directly create the resources.
+
+❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution. Alternatively you can comment the [llm_pipeline](06_automation/app.py#L43-47) and enable Amazon Bedrock in your preferred region.**
+
+
+### Full deployment <a name="full-deployment"></a>
+
+You can deploy all the components (stacks) of the solution at once.
+
+The simplest way is to use Launch Stack (to be added), which uses a AWS CloudFormation template to bootstrap an AWS CodeCommit repo from the GitHub repository and triggers a full deployment using AWS CodePipeline.
+
+Alternatively, you can use the next steps to deploy the full solution with CDK.
+
+**Step 1:** Deploying with CDK
 
 Make sure your current working directory is `06_automation`.
 The following command will check for available stack and deploy the whole solution.
@@ -145,10 +163,6 @@ cdk deploy --all --require-approval never
 ```
 
 The most relevant app configuration parameters are being loaded from the [app config](./06_automation/configs/dev.json)
-
-If required, you can change the used AWS account and region by setting the following env variables:
-`export CDK_DEFAULT_ACCOUNT=<your_account_id>`
-`export CDK_DEFAULT_REGION=<aws_region>`.
 
 ### Modular Deployment: Deploying individual components <a name="modular-deployment"> </a>
 
@@ -204,7 +218,10 @@ The chatbot requires the following configuration:
 
 [Optional] Use chatbot with Amazon Bedrock:
 
-- To use Amazon Bedrock you have to update the chatbot according to the **Amazon Bedrock** section in [03_chatbot/README.md](./03_chatbot/README.md#amazon-bedrock).
+- To use Amazon Bedrock you have to update the chatbot according to the **Amazon Bedrock** section in [03_chatbot/README.md](./03_chatbot/README.md#amazon-bedrock). 
+
+❗ **When using Amazon Bedrock remember that although the service is now Generally Available, the models need to be activated in the console.**
+
 
 These configurations are identified by specific resource tags deployed alongside the resources.
 The chatbot dynamically detects the available resources based on these tags.
@@ -219,9 +236,9 @@ The Streamlit credentials can be retrieved either by navigating in the console t
 
 ```bash
 # username
-aws secretsmanager get-secret-value --secret-id streamlit_credentials | jq -r '.SecretString' | jq -r '.username'
+aws secretsmanager get-secret-value --secret-id GenieStreamlitCredentials | jq -r '.SecretString' | jq -r '.username'
 # password
-aws secretsmanager get-secret-value --secret-id streamlit_credentials | jq -r '.SecretString' | jq -r '.password'
+aws secretsmanager get-secret-value --secret-id GenieStreamlitCredentials | jq -r '.SecretString' | jq -r '.password'
 ```
 
 By default, we deploy a self-signed certificate to enable encrypted communication between the browser and the chatbot.
