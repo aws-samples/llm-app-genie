@@ -31,7 +31,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
 
         # check for required instance quate in account
         if response["Quota"]["Value"] == 0.0:
-            logging.fatal(f"{Stack.of(self).stack_name} will not deploy successful. If you want to deploy this stack please adjust your quota for the Embeddings Endpoint for type {config['sagemaker']['embeddings_instance_type']}")
+            logging.fatal(f"Please adjust your quota for the Embeddings Endpoint for type {config['sagemaker']['embeddings_instance_type']}")
             return
         else:
             print(

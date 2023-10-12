@@ -30,7 +30,7 @@ class LLMSageMakerStack(GenAiStack):
             QuotaCode=quotas[config["sagemaker"]["llm_instance_type"]],
         )
         if response["Quota"]["Value"] == 0.0:
-            logging.fatal(f"{Stack.of(self).stack_name} will not deploy successful. If you want to deploy this stack please adjust your quota for the LLM Endpoint for type {config['sagemaker']['llm_instance_type']}")
+            logging.fatal(f"Please adjust your quota for the LLM Endpoint for type {config['sagemaker']['llm_instance_type']}")
             return
         else:
             print(
