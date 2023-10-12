@@ -85,6 +85,7 @@ class SageMakerModelItem(ModelCatalogItem):
                         "repetition_penalty": 1.1,
                         "return_full_text": False,
                         "max_new_tokens": 148,
+                        "temperature": 0.1,
                         "stop": self.stop_words,
                     },
                 }
@@ -109,6 +110,7 @@ class SageMakerModelItem(ModelCatalogItem):
                 endpoint_name=self.endpoint_name,
                 region_name=self.region,
                 content_handler=self.content_handler,
+                model_kwargs=self.model_kwargs,
             )
         else:
             inputs = (self.async_endpoint_s3).replace("s3://", "").split("/", 1)

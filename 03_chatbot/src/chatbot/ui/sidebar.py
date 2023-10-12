@@ -209,7 +209,7 @@ def write_sidebar(
             temperature = st.slider("Temperature",
                                     min_value=0.0,
                                     max_value=1.0,
-                                    value=float(model.model_kwargs["temperature"]),
+                                    value=float(model.model_kwargs.get("temperature", 0.1)),
                                     step=0.1
                                     )
             model.model_kwargs["temperature"] = temperature
