@@ -18,6 +18,8 @@ class BedrockModelItem(ModelCatalogItem):
     """Amazon Bedrock configuration"""
     model_id: str
     """ Model ID """
+    display_model_name: str
+    """ Model Name to be displayed in the frontend"""
     model_provider: str
     """ Model provider.
      At the moment, this value is within the following set:
@@ -41,19 +43,19 @@ class BedrockModelItem(ModelCatalogItem):
         if llm_config.parameters.rag_prompt is None:
             llm_config.parameters.rag_prompt = "prompts/default_rag.yaml"
 
-        super().__init__(
-            f"Bedrock - {model_id} - ({bedrock_config.region.value})",
-            chat_prompt_identifier=llm_config.parameters.chat_prompt,
-            rag_prompt_identifier=llm_config.parameters.rag_prompt,
-        )
         self.llm_config = llm_config
         self.config = bedrock_config
         self.model_kwargs = model_kwargs
         self.model_id = model_id
         self.model_provider = model_id.split(".")[0]
-
         self._set_default_model_kwargs()
+        self._set_default_display_model_name()
 
+        super().__init__(
+            self.display_model_name,
+            chat_prompt_identifier=llm_config.parameters.chat_prompt,
+            rag_prompt_identifier=llm_config.parameters.rag_prompt,
+        )
     def get_instance(self) -> LLM:
         region = self.config.region.value
         endpoint_url = self.config.endpoint_url
@@ -99,3 +101,9 @@ class BedrockModelItem(ModelCatalogItem):
                     "temperature": llm_config.temperature or 0,
                     "topP": llm_config.top_p or 0.9,
                 }
+
+    def _set_default_display_model_name(self):
+        if self.model_provider == "amazon":
+            self.display_model_name = f"(limited preview) Bedrock - {self.model_id} - ({self.config.region.value})"
+        else:
+            self.display_model_name = f"Bedrock - {self.model_id} - ({self.config.region.value})"

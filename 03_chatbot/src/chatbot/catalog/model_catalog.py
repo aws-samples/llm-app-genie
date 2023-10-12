@@ -73,6 +73,16 @@ class ModelCatalog(Catalog):
                     byOutputModality="TEXT"
                 )["modelSummaries"]
 
+                def sort_list_by_string(matching_str = "", model_list = []):
+                    for i, model in enumerate(model_list):
+                        if(matching_str in model["modelId"]):
+                            model_list = [model_list[i]] + model_list[:i] + model_list[i+1:]
+                    return model_list
+                
+                # surface anthropic models first, then ai21, then others
+                foundation_models = sort_list_by_string("ai21", foundation_models)
+                foundation_models = sort_list_by_string("anthropic", foundation_models)
+
                 models += [
                     BedrockModelItem(
                         model_id=fm["modelId"],
