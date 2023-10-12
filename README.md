@@ -140,7 +140,7 @@ You can trigger the deployment through CDK which assumes the file, image publish
 
 Note that the deployment user does not need to have the rights to directly create the resources.
 
-❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution. Alternatively you can comment the [llm_pipeline](06_automation/app.py#L43-47) and enable Amazon Bedrock in your preferred region.**
+❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution. Alternatively you can [enable your favorite models in Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html), in your preferred region.**
 
 
 ### Full deployment <a name="full-deployment"></a>
