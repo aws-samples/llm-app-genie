@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 from langchain.chains.base import Chain
 
+from chatbot.catalog.flow_catalog_item_simple_chat import SimpleChatFlowItem
+
 from .flow_catalog_item import FlowCatalogItem
 from .retriever_catalog_item import RetrieverCatalogItem
 from .catalog import CatalogById
@@ -37,6 +39,11 @@ class RagItem(FlowCatalogItem):
         """
         Returns the llm app to use for this retriever.
         """
+        if retriever is None:
+            # Fallback
+            chat_flow = SimpleChatFlowItem()
+            return chat_flow.llm_app_factory(model, retriever, prompt_catalog)
+        
         rag_prompt = prompt_catalog[model.rag_prompt_identifier].get_instance()
         llm = model.get_instance()
         condense_question_prompt = prompt_catalog[
@@ -44,6 +51,7 @@ class RagItem(FlowCatalogItem):
         ].get_instance()
 
         retriever = retriever.get_instance()
+
 
         return RAGApp(
             prompt=rag_prompt,

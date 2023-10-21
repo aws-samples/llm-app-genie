@@ -148,38 +148,39 @@ def write_sidebar(
                 )
 
             # print("\nretriever:",retriever,"\n")
-            filter_options = retriever.available_filter_options
-            current_filter_options = retriever.current_filter
+            if retriever:
+                filter_options = retriever.available_filter_options
+                current_filter_options = retriever.current_filter
 
-            filter_disabled = filter_options is None
+                filter_disabled = filter_options is None
 
-            filter_options = [] if filter_options is None else filter_options
+                filter_options = [] if filter_options is None else filter_options
 
-            filter_query_param_name = "filter"
-            if (
-                filter_query_param_name in params
-                and len(params[filter_query_param_name]) > 0
-                ):
-                option_names = [option[0] for option in filter_options]
-                filtered_names = list(
-                    set(option_names) & set(params[filter_query_param_name])
+                filter_query_param_name = "filter"
+                if (
+                    filter_query_param_name in params
+                    and len(params[filter_query_param_name]) > 0
+                    ):
+                    option_names = [option[0] for option in filter_options]
+                    filtered_names = list(
+                        set(option_names) & set(params[filter_query_param_name])
+                        )
+                    filter_options = [
+                        option for option in filter_options if option[0] in filtered_names
+                        ]
+
+                options = st.multiselect(
+                    _("Optional: Filter {knowledge_base_name}").format(
+                        knowledge_base_name=retriever.friendly_name
+                    ),
+                    filter_options,
+                    disabled=filter_disabled,
+                    default=current_filter_options,
+                    placeholder=_("Full search. Choose a filter."),
+                    format_func=lambda x: x[0],
                     )
-                filter_options = [
-                    option for option in filter_options if option[0] in filtered_names
-                    ]
 
-            options = st.multiselect(
-                _("Optional: Filter {knowledge_base_name}").format(
-                    knowledge_base_name=retriever.friendly_name
-                ),
-                filter_options,
-                disabled=filter_disabled,
-                default=current_filter_options,
-                placeholder=_("Full search. Choose a filter."),
-                format_func=lambda x: x[0],
-                )
-
-            retriever.current_filter = options
+                retriever.current_filter = options
 
         ########### MODEL STUFF ###############
         model_state_name = "model_catalog"
