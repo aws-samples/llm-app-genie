@@ -30,8 +30,6 @@
 
 LLM App Genie is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
 
-Genie is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
-
 This solution provides a reference implementation of a dialog-based search bot using the retrieval augmented generation (RAG) approach with interchangeable large language models (LLMs) and knowledge bases (KBs).
 
 It combines intelligent search with generative AI to give factual answers based on the private knowledge base. The search is based on [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/) and [Amazon Kendra](https://aws.amazon.com/kendra/) services. The solution also leverages [Streamlit](https://streamlit.io/) for the frontend and [Langchain](https://github.com/hwchase17/langchain) for the conversation flow to implement an interactive chat application.
