@@ -8,6 +8,7 @@ from .retriever_catalog_item import RetrieverCatalogItem
 from .catalog import CatalogById
 from .model_catalog_item import ModelCatalogItem
 from chatbot.llm_app import BaseLLMApp, LLMApp
+from .agent_chain_catalog_item import AgentChainCatalogItem
 
 
 UPLOAD_DOCUMENT_SEARCH = "Upload a document and search it"
@@ -29,7 +30,13 @@ class DocUploadItem(FlowCatalogItem):
         return None
 
     def llm_app_factory(
-        self, model: ModelCatalogItem, retriever: RetrieverCatalogItem, prompt_catalog: CatalogById
+        self, 
+        model: ModelCatalogItem, 
+        retriever: RetrieverCatalogItem, 
+        agent_chain: AgentChainCatalogItem,
+        prompt_catalog: CatalogById,
+        sql_connection_uri: str,
+        sql_model: ModelCatalogItem,
     ) -> LLMApp:
         """
         Returns the llm app to use without a retriever, but using an uploaded document.

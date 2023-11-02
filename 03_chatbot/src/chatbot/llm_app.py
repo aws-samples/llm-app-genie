@@ -2,8 +2,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import final
-
+import warnings
 import pandas as pd
+
+import langchain
 from langchain.callbacks.base import Callbacks
 from langchain.chains import ConversationalRetrievalChain, ConversationChain
 from langchain.chains.base import Chain
@@ -11,9 +13,11 @@ from langchain.llms.base import LLM
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseChatMessageHistory, BaseMemory, BaseRetriever
+from langchain.agents import Tool, AgentType, initialize_agent
+from langchain.sql_database import SQLDatabase
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 
 GLOBAL_LOGGER_NAME = "Genie"
-
 
 @dataclass
 class LLMApp(ABC):
@@ -23,7 +27,7 @@ class LLMApp(ABC):
     """ The prompt template to use when chatting with the LLM."""
     llm: LLM
     """ The LLM this app uses."""
-
+    
     @abstractmethod
     def get_chain(self, memory: BaseMemory, callbacks: Callbacks = None) -> Chain:
         """Get the langchain chain that this LLMApp uses.
@@ -94,6 +98,9 @@ class LLMApp(ABC):
         )
         return self.get_output(response)
 
+# =========================================================
+# BASE CHATBOT CHAINS
+# =========================================================
 
 class BaseLLMApp(LLMApp):
     """Conversational interaction with an LLM."""
@@ -112,6 +119,10 @@ class BaseLLMApp(LLMApp):
     def get_input(self, input_text: str):
         """See base class."""
         return {"input": input_text}
+
+# =========================================================
+# RAG CHAINS
+# =========================================================
 
 
 @dataclass
@@ -169,3 +180,85 @@ class RAGApp(LLMApp):
                 text = text[:pos]
             text = text + resources
         return text
+
+
+# =========================================================
+# AGENT CHAINS
+# =========================================================
+
+@dataclass
+class MRKLApp(LLMApp):
+    """Retrieval augmented generation interacts with an LLM uses agents to elaborate information from 
+    different tools/sources."""
+
+    agent_chain: Tool
+    """ The Agent Tool Chain this app uses."""
+
+    def _handle_error(self, error) -> str:
+        # Fix the "Could not parse LLM output:  Based on my search,..." error
+        return str(error).removeprefix("Could not parse LLM output: `").removesuffix("`")
+
+    def get_input(self, input_text: str):
+        """See base class."""
+        return {"input": input_text}
+
+    def get_chain(self, memory, callbacks=None):
+        import warnings
+        warnings.filterwarnings("ignore")
+
+        langchain.debug = True
+        
+        # Initialize Tools based agent
+        mrkl = initialize_agent(
+            self.agent_chain,
+            self.llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+            handle_parsing_errors=self._handle_error,
+            max_iterations=50,
+            return_intermediate_steps=True,
+        )
+
+        return mrkl
+        
+@dataclass
+class SQLMRKLApp(LLMApp):
+    """Retrieval augmented generation interacts with an LLM uses agents to elaborate information from 
+    different tools/sources."""
+
+    sql_connection_uri: str
+    """ The SQL DB connection URI, in the form {db_type}://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}."""
+
+    sql_llm: LLM
+    """ The LLM this app uses to create an SQL query."""
+
+    def _handle_error(self, error) -> str:
+        # Fix the "Could not parse LLM output:  Based on my search,..." error
+        return str(error).removeprefix("Could not parse LLM output: `").removesuffix("`")
+
+    def get_input(self, input_text: str):
+        """See base class."""
+        return {"input": input_text}
+
+    def get_chain(self, memory, callbacks=None):
+        warnings.filterwarnings("ignore")
+
+        langchain.debug = True
+        
+        # print("self.sql_connection_uri",self.sql_connection_uri, f"{self.sql_connection_uri}")
+        agent_chain_obj = SQLDatabase.from_uri(f"{self.sql_connection_uri}")
+        
+        toolkit = SQLDatabaseToolkit(db=agent_chain_obj, llm=self.sql_llm)
+        
+        from langchain.agents import create_sql_agent
+        agent_executor = create_sql_agent(
+            llm=self.llm,
+            toolkit=toolkit,
+            verbose=True,
+            handle_parsing_errors=self._handle_error,
+            # handle_parsing_errors=True,
+            return_intermediate_steps=True,
+            max_iterations=50,
+        )
+        
+        return agent_executor

@@ -14,6 +14,7 @@ from .catalog import FRIENDLY_NAME_TAG, Catalog
 from .flow_catalog_item_simple_chat import SimpleChatFlowItem
 from .flow_catalog_item_upload_file import DocUploadItem
 from .flow_catalog_item_rag import RagItem
+from .flow_catalog_item_agent import AgentsItem
 
 @dataclass
 class FlowCatalog(Catalog):
@@ -44,10 +45,15 @@ class FlowCatalog(Catalog):
         
     def _add_rag_option(self) -> None:
         self.append(RagItem())
+
+    def _add_agent_option(self) -> None:
+        self.append(AgentsItem())
         
+
 
     def bootstrap(self) -> None:
         """Bootstraps the catalog."""
         self._add_simple_chat_flow_option()
         self._add_doc_upload_flow_option()
         self._add_rag_option()
+        self._add_agent_option()

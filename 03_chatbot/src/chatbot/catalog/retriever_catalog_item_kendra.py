@@ -20,20 +20,22 @@ class KendraRetrieverItem(RetrieverCatalogItem):
     index_id: str
     """ Kendra Index ID """
 
+    top_k: int
+    """ Number of documents to be retrieved """
+
     _data_sources: Any
     """ Kendra Data Sources in this index """
 
     _selected_data_sources: List[Tuple[str, Any]]
-
     """ Kendra Data Source IDs that the retriever is supposed to use at the moment. """
 
-    def __init__(self, friendly_name, index_id, data_sources, region=None):
+    def __init__(self, friendly_name, index_id, data_sources, region=None, top_k=3):
         super().__init__(friendly_name)
         self._data_sources = data_sources
         self._selected_data_sources = []
-        # self.select_data_sources = self.data_source_ids
         self.index_id = index_id
         self.region = region
+        self.top_k = top_k
 
     @property
     def available_filter_options(self) -> Union[List[Tuple[str, Any]], None]:
@@ -85,5 +87,5 @@ class KendraRetrieverItem(RetrieverCatalogItem):
             index_id=self.index_id,
             region_name=self.region,
             attribute_filter=filter,
-            top_k=3
+            top_k=self.top_k
         )

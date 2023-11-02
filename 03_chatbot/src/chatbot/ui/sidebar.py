@@ -10,6 +10,8 @@ from chatbot.catalog import (
     ModelCatalogItem,
     RetrieverCatalog,
     RetrieverCatalogItem,
+    AgentChainCatalog,
+    AgentChainCatalogItem,
     FlowCatalog,
     FlowCatalogItem,
 )
@@ -17,14 +19,19 @@ from chatbot.config import AppConfig, AWSConfig
 from numpy import ndarray
 from streamlit.type_util import OptionSequence, T
 
+from chatbot.catalog.agent_chain_catalog_item_sql_generator import AGENT_CHAIN_SQL_GENERATOR_NAME
 
 class SidebarObj():
     def init(self):
         self.flow = None
         self.retriever = None
         self.model = None
-        self.flow_or_retriever_or_model_changed = False
+        self.agents_chains = None
+        self.sql_model = None
+        self.flow_or_retriever_or_model_or_agent_changed = False
         self.uploaded_file_content = ""
+        self.sql_connection_uri = ""
+        self.retriever_top_k = 3
 
 
 def write_sidebar(
@@ -62,7 +69,6 @@ def write_sidebar(
     def __render_dropdown(
         label: str, selected_state_name: str, options: OptionSequence[T], params
     ) -> Tuple[T, bool]:
-        # print("__render_dropdown",label,selected_state_name,options,params)
         default_index = 0
         if selected_state_name in params and len(params[selected_state_name]) > 0:
             option_names = [str(option) for option in options]
@@ -110,7 +116,6 @@ def write_sidebar(
             )
         
         enable_file_upload = flow.enable_file_upload()
-        # print("\nflow:",flow,"\n","enable_file_upload:",enable_file_upload)
 
         # upload file button
         uploaded_file_content = ""
@@ -119,14 +124,77 @@ def write_sidebar(
                                 "Upload a file", 
                                 type=["txt", "json"], 
                                 key=flow_options,
-                                # disabled=not enable_file_upload
                                 )
             if uploaded_file is not None:
                 stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                 uploaded_file_content = "=== BEGIN FILE ===\n"
                 uploaded_file_content += stringio.read()
                 uploaded_file_content += "\n=== END FILE ===\n"
-        
+
+        ########### AGENTS STUFF ###############
+        agents_chains = None
+        agents_chains_changed = False
+        sql_connection_uri = ""
+        sql_model = None
+        sql_model_changed = False
+        if flow.enable_agents_chains:
+            agents_chains_state_name = "agents_chains_catalog"
+            if agents_chains_state_name not in st.session_state:
+                agents_chains_catalog = AgentChainCatalog(
+                    regions, 
+                    logger
+                    )
+                st.session_state[agents_chains_state_name] = agents_chains_catalog
+                agents_chains_catalog.bootstrap()
+
+            agents_chains_options = st.session_state[agents_chains_state_name]
+            agents_chains_label = _("Agent Chains")
+            agents_chains, agents_chains_changed = __render_dropdown(
+                agents_chains_label, "agents_chains", agents_chains_options, params
+                )
+
+            filter_options = agents_chains.available_filter_options
+            current_filter_options = agents_chains.current_filter
+
+            filter_disabled = filter_options is None
+            filter_options = [] if filter_options is None else filter_options
+
+            filter_query_param_name = "filter"
+            if (
+                filter_query_param_name in params
+                and len(params[filter_query_param_name]) > 0
+                ):
+                option_names = [option[0] for option in filter_options]
+                filtered_names = list(
+                    set(option_names) & set(params[filter_query_param_name])
+                    )
+                filter_options = [
+                    option for option in filter_options if option[0] in filtered_names
+                    ]
+
+            if str(agents_chains) == AGENT_CHAIN_SQL_GENERATOR_NAME:
+                sql_connection_uri = st.text_input(label="SQL DB connection URI", 
+                                                key="sql_connection_uri"
+                                                )
+
+                ########### SQL TOOL MODEL STUFF ###############
+                sql_model_state_name = "sql_model_catalog"
+                if sql_model_state_name not in st.session_state:
+                    sql_model_catalog = ModelCatalog(
+                        regions,
+                        bedrock_config=app_config.amazon_bedrock or [],
+                        logger=logger,
+                        llm_config=app_config.llm_config.parameters,
+                    )
+                    st.session_state[sql_model_state_name] = sql_model_catalog
+                    sql_model_catalog.bootstrap()
+                    print("sql_model_catalog",sql_model_catalog)
+                sql_model_options = st.session_state[sql_model_state_name]
+                sql_language_model_label = _("SQL Tool Language Model")
+                sql_model, sql_model_changed = __render_dropdown(
+                    sql_language_model_label, "sql_model", sql_model_options, params
+                    )
+
         ########### RETRIEVER STUFF ###############
         retriever = None
         retriever_changed = False
@@ -147,7 +215,6 @@ def write_sidebar(
                 knowledgebase_label, "retriever", retriever_options, params
                 )
 
-            # print("\nretriever:",retriever,"\n")
             if retriever:
                 filter_options = retriever.available_filter_options
                 current_filter_options = retriever.current_filter
@@ -181,8 +248,15 @@ def write_sidebar(
                     )
 
                 retriever.current_filter = options
+                retriever.top_k = st.slider(
+                    "Retrieved documents",
+                    min_value=1,
+                    max_value=10,
+                    value=3,
+                    step=1
+                )
 
-        ########### MODEL STUFF ###############
+        ########### MAIN MODEL STUFF ###############
         model_state_name = "model_catalog"
         if model_state_name not in st.session_state:
             model_catalog = ModelCatalog(
@@ -193,12 +267,12 @@ def write_sidebar(
             )
             st.session_state[model_state_name] = model_catalog
             model_catalog.bootstrap()
+            print("model_catalog",model_catalog)
         model_options = st.session_state[model_state_name]
         language_model_label = _("Language Model")
         model, model_changed = __render_dropdown(
             language_model_label, "model", model_options, params
             )
-        # print("model.model_kwargs before", model.model_kwargs)
 
         st.checkbox(
             label=_("Language Model X-Ray ") + "🩻",
@@ -219,10 +293,11 @@ def write_sidebar(
         _sidebar.flow = flow
         _sidebar.retriever = retriever
         _sidebar.model = model
-        # print("_sidebar.model after", _sidebar.model.model_kwargs)
-        _sidebar.flow_or_retriever_or_model_changed = retriever_changed | model_changed | flow_changed
+        _sidebar.agents_chains = agents_chains
+        _sidebar.sql_model = sql_model
+        _sidebar.flow_or_retriever_or_model_or_agent_changed = retriever_changed | model_changed | sql_model_changed | flow_changed | agents_chains_changed
         _sidebar.uploaded_file_content = uploaded_file_content
+        _sidebar.sql_connection_uri = sql_connection_uri
 
 
         return _sidebar
-    # flow, retriever, model, retriever_changed | model_changed | flow_changed, uploaded_file_content

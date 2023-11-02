@@ -170,7 +170,6 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     regions = [aws_config.region]
 
-    # flow, retriever, model, flow_or_retriever_or_model_changed, uploaded_file_content 
     _sidebar = write_sidebar(
         chatbot_name,
         favicon_url,
@@ -202,7 +201,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
 
-    if _sidebar.flow_or_retriever_or_model_changed:
+    if _sidebar.flow_or_retriever_or_model_or_agent_changed:
         chat_history.add_chat_message(
             chat_history.create_system_message(_sidebar.model, _sidebar.retriever, _sidebar.flow)
         )
@@ -222,7 +221,14 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
                 else memory_item.get_instance(session_id)
             )
 
-            app = _sidebar.flow.llm_app_factory(_sidebar.model, _sidebar.retriever, prompt_catalog)
+            app = _sidebar.flow.llm_app_factory(
+                _sidebar.model,
+                _sidebar.retriever,
+                _sidebar.agents_chains,
+                prompt_catalog,
+                _sidebar.sql_connection_uri,
+                _sidebar.sql_model
+            )
 
             # add the content of an uploaded file content, if available
             prompt = _sidebar.uploaded_file_content + "\n" + prompt

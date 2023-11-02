@@ -12,6 +12,7 @@ from .retriever_catalog_item import RetrieverCatalogItem
 from .catalog import CatalogById
 from .catalog_item import CatalogItem
 from .model_catalog_item import ModelCatalogItem
+from .agent_chain_catalog_item import AgentChainCatalogItem
 
 @dataclass
 class FlowCatalogItem(CatalogItem[Chain], ABC):
@@ -30,6 +31,10 @@ class FlowCatalogItem(CatalogItem[Chain], ABC):
         return False
 
     @property
+    def enable_agents_chains(self) -> bool:
+        return False
+
+    @property
     def current_filter(self) -> List[Tuple[str, Any]]:
         return []
 
@@ -39,7 +44,13 @@ class FlowCatalogItem(CatalogItem[Chain], ABC):
 
     @abstractmethod
     def llm_app_factory(
-        self, retriever: RetrieverCatalogItem,model: ModelCatalogItem, prompt_catalog: CatalogById
+        self, 
+        retriever: RetrieverCatalogItem,
+        model: ModelCatalogItem, 
+        agent_chain: AgentChainCatalogItem,
+        prompt_catalog: CatalogById,
+        sql_connection_uri: str,
+        sql_model: ModelCatalogItem,
     ) -> LLMApp:
         """
         Returns the llm app to use for this retriever.

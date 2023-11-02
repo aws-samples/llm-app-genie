@@ -11,16 +11,29 @@ from .memory_catalog_item import CatalogItem, MemoryCatalogItem
 from .flow_catalog_item_simple_chat import SimpleChatFlowItem, SIMPLE_CHATBOT
 from .flow_catalog_item_upload_file import DocUploadItem, UPLOAD_DOCUMENT_SEARCH
 from .flow_catalog_item_rag import RagItem, RETRIEVAL_AUGMENTED_GENERATION
+from .flow_catalog_item_agent import AgentsItem, AGENT_NAME
+
 from .flow_catalog import (
     Catalog,
     FlowCatalog,
     SimpleChatFlowItem,
     DocUploadItem,
     RagItem,
+    AgentsItem,
 )
 from .flow_catalog_item import (
     CatalogItem,
     FlowCatalogItem,
+)
+
+from .agent_chain_catalog_item import AgentChainCatalogItem
+from .agent_chain_catalog_item_sql_generator import SqlGeneratorAgentChainItem
+from .agent_chain_catalog_item_financial_analysis import FinancialAnalysisAgentChainItem
+from .agent_chain_catalog import (
+    Catalog,
+    AgentChainCatalog,
+    FinancialAnalysisAgentChainItem,
+    SqlGeneratorAgentChainItem,
 )
 
 from .retriever_catalog_item_kendra import KendraRetrieverItem, RetrieverCatalogItem

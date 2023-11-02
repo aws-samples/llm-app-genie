@@ -110,7 +110,6 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
                 InvocationTimeoutSeconds=self.max_request_timeout, # timeout of 60 seconds to detect if it's not running yet
                 **_endpoint_kwargs,
             )
-            # raise Exception("Endpoint is not running - check back in ~10 minutes.")
             text = "Endpoint is not running, waking it up. - It will take about 10 minutes from the first wake up attempt."
         else:
             print("Endpoint is running! Proceeding to inference.")

@@ -35,6 +35,7 @@ class OpenSearchRetrieverItem(RetrieverCatalogItem):
         embedding_endpoint_name: str,
         secret_id: str,
         region=None,
+        top_k=3
     ):
         super().__init__(friendly_name)
         self.index_name = index_name
@@ -42,6 +43,7 @@ class OpenSearchRetrieverItem(RetrieverCatalogItem):
         self.embedding_endpoint_name = embedding_endpoint_name
         self.secret = secret_id
         self.endpoint = endpoint
+        self.top_k = top_k
 
     def get_instance(self) -> BaseRetriever:
         embeddings_endpoint_name = self.embedding_endpoint_name
@@ -49,6 +51,7 @@ class OpenSearchRetrieverItem(RetrieverCatalogItem):
         endpoint = self.endpoint
         index_name = self.index_name
         region = self.region
+        top_k = self.top_k
 
         secret = get_credentials(secret_id, region)
         os_http_auth = (secret["user"] or "admin", secret["password"])
@@ -60,6 +63,6 @@ class OpenSearchRetrieverItem(RetrieverCatalogItem):
         )
 
         retriever = OpenSearchIndexRetriever(
-            index_name, endpoint, http_auth=os_http_auth, embeddings_predictor=predictor
+            index_name, endpoint, http_auth=os_http_auth, embeddings_predictor=predictor, k=top_k
         )
         return retriever
