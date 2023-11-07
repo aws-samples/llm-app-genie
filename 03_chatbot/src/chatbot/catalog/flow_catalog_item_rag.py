@@ -13,7 +13,7 @@ from chatbot.llm_app import BaseLLMApp, LLMApp, RAGApp
 from .agent_chain_catalog_item import AgentChainCatalogItem
 
 
-RETRIEVAL_AUGMENTED_GENERATION = "Retrival Augmented Generation"
+RETRIEVAL_AUGMENTED_GENERATION = "Retrieval Augmented Generation"
 
 
 @dataclass
