@@ -10,6 +10,7 @@ class ChatbotEnvironmentVariables(Enum):
 
     AmazonBedrockRegion = "BEDROCK_REGION"
     AWSRegion = "AWS_DEFAULT_REGION"
+    AmazonTextractS3Bucket = "AMAZON_TEXTRACT_S3_BUCKET"
     BaseUrl = "BASE_URL"
     AWSAppConfigApplication = "AWS_APP_CONFIG_APPLICATION"
     AWSAppConfigEnvironment = "AWS_APP_CONFIG_ENVIRONMENT"

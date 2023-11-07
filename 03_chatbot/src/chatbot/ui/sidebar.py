@@ -1,9 +1,10 @@
 """ Chatbot UI side panel. """
-from io import BytesIO
+from io import BytesIO, StringIO
 from logging import Logger
 from typing import Callable, Generic, List, Tuple, TypeVar, Union
+import tempfile
+import os
 
-from io import StringIO
 import streamlit as st
 from chatbot.catalog import (
     ModelCatalog,
@@ -20,6 +21,31 @@ from numpy import ndarray
 from streamlit.type_util import OptionSequence, T
 
 from chatbot.catalog.agent_chain_catalog_item_sql_generator import AGENT_CHAIN_SQL_GENERATOR_NAME
+from langchain.document_loaders.pdf import AmazonTextractPDFLoader
+
+import boto3
+from botocore.exceptions import ClientError
+import logging
+
+s3 = boto3.client('s3')
+# set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+def upload_file_to_s3(file_name, bucket, object_name=None):
+    if object_name is None:
+        object_name = file_name
+    try:
+        s3.upload_file(file_name, bucket, object_name)
+    except ClientError as e:
+        logger.error(e)
+        return False
+
+def delete_file_from_s3(bucket, object_name):
+    try:
+        s3.delete_object(Bucket=bucket, Key=object_name)
+    except ClientError as e:
+        logger.error(e)
+        return False
 
 class SidebarObj():
     def init(self):
@@ -120,15 +146,33 @@ def write_sidebar(
         # upload file button
         uploaded_file_content = ""
         if enable_file_upload:
-            uploaded_file = st.sidebar.file_uploader(
-                                "Upload a file", 
-                                type=["txt", "json"], 
-                                key=flow_options,
-                                )
+            uploaded_file = \
+                st.sidebar.file_uploader(
+                    "Upload a file",
+                    type=["txt", "json", "pdf"],
+                    key=flow_options,
+                )
             if uploaded_file is not None:
-                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                 uploaded_file_content = "=== BEGIN FILE ===\n"
-                uploaded_file_content += stringio.read()
+                if uploaded_file.type == "application/pdf":
+                    docs = []
+                    temp_dir = tempfile.TemporaryDirectory()
+                    temp_filepath = os.path.join(temp_dir.name, uploaded_file.name)
+                    with open(temp_filepath, "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                    bucket = st.session_state['textract_s3_bucket']
+                    key = temp_filepath.split('/')[-1]
+                    upload_file_to_s3(temp_filepath, bucket, key)
+                    s3_path = f"s3://{bucket}/{key}"
+                    loader = AmazonTextractPDFLoader(s3_path, textract_features=["TABLES", "LAYOUT", "FORMS"])
+                    docs.extend(loader.load())
+
+                    for doc in docs:
+                        uploaded_file_content += doc.page_content
+                    delete_file_from_s3(bucket, key)
+                else:
+                    stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+                    uploaded_file_content += stringio.read()
                 uploaded_file_content += "\n=== END FILE ===\n"
 
         ########### AGENTS STUFF ###############

@@ -16,6 +16,7 @@ from aws_cdk import custom_resources as cr
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
+from aws_cdk import aws_s3 as s3
 
 stack = {
     "description": "Generative AI Chatbot Application",
@@ -132,6 +133,17 @@ class ChatbotStack(GenAiStack):
             ),
             removal_policy=RemovalPolicy.DESTROY,
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+        )
+
+        textract_bucket = s3.Bucket(
+            self,
+            f"TextractBucket",
+            versioned=False,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            enforce_ssl=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
         )
 
         Tags.of(memory_table).add(
@@ -286,6 +298,35 @@ class ChatbotStack(GenAiStack):
             )
         )
 
+        role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "s3:GetObject",
+                    "s3:ListObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                ],
+                resources=[
+                    f"arn:aws:s3:::{textract_bucket.bucket_name}",
+                    f"arn:aws:s3:::{textract_bucket.bucket_name}/*"
+                ]
+            )
+        )
+
+        role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "textract:DetectDocumentText",
+                    "textract:AnalyzeDocument",
+                    "textract:StartDocumentAnalysis",
+                    "textract:GetDocumentAnalysis"
+                ],
+                resources=["*"]
+            )
+        )
+
         # ==================================================
         # =============== FARGATE SERVICE ==================
         # ==================================================
@@ -313,6 +354,7 @@ class ChatbotStack(GenAiStack):
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
+                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name
             },
             secrets={
                 "PASSWORD": ecs.Secret.from_secrets_manager(

@@ -11,28 +11,33 @@ You can run locally the ChatBot Streamlit app in two ways:
 1. [build and run the streamlit container via Docker](#running-the-streamlit-chatbot-app-using-docker), or
 2. [running the streamlit app locally](#running-the-chatbot-app-using-streamlit)
 
-The application uses the AWS Region configured through the `AWS_DEFAULT_REGION` environment variable. For Amazon Bedrock, it uses the AWS Region defined in the `BEDROCK_REGION` environment variable. Remember that although Amazon Bedrock is now Generally Available, the models need to be activated in the console!
+The application uses the AWS Region configured through the `AWS_DEFAULT_REGION` environment variable.
+For Amazon Bedrock, it uses the AWS Region defined in the `BEDROCK_REGION` environment variable.
+Remember that although Amazon Bedrock is now Generally Available, the models need to be activated in the console!
+For Amazon Textract to analyze PDF files, you need to configure an S3 bucket where files gets temporarily stored.
+This information needs to be stored in `AMAZON_TEXTRACT_S3_BUCKET` environment variable.
 
 To set these environment variables in Linux/MacOS run the following commands in the terminal where you plan to execute the application from or define them in the container.
 
 ```bash
 export AWS_DEFAULT_REGION=eu-west-1
 export BEDROCK_REGION=us-west-2
+export AMAZON_TEXTRACT_S3_BUCKET=<your-s3-bucket>
 ```
 
 ## Environment Variables
 
 The chatbot allows you to configure the following environment variables.
 
-| Variable Name              | Default Value | Usage                                                                                                                                                                                                                                                             |
-| -------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AWS_DEFAULT_REGION         | eu-west-1     | The AWS region that the chatbot is running in and that contains Amazon OpenSearch domains, Kendra indices, and language models.                                                                                                                                   |
-| BEDROCK_REGION             | None          | The chatbot uses Amazon Bedrock in this region. See also [Amazon Bedrock](#amazon-bedrock)                                                                                                                                                                        |
-| BASE_URL                   | no default    | Base URL from which the chatbot web app is served. Not used.                                                                                                                                                                                                      |
-| AWS_APP_CONFIG_APPLICATION | no default    | Optional AWS AppConfig application name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_ENVIRONMENT and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
-| AWS_APP_CONFIG_ENVIRONMENT | no default    | Optional AWS AppConfig environment name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
-| AWS_APP_CONFIG_PROFILE     | no default    | Optional AWS AppConfig profile name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_ENVIRONMENT. See also [Personalize the app](#personalize-the-app) |
-
+| Variable Name               | Default Value   | Usage                                                                                                                                                                                                                                                             |
+|-----------------------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AWS_DEFAULT_REGION          | eu-west-1       | The AWS region that the chatbot is running in and that contains Amazon OpenSearch domains, Kendra indices, and language models.                                                                                                                                   |
+| BEDROCK_REGION              | None            | The chatbot uses Amazon Bedrock in this region. See also [Amazon Bedrock](#amazon-bedrock)                                                                                                                                                                        |
+| BASE_URL                    | no default      | Base URL from which the chatbot web app is served. Not used.                                                                                                                                                                                                      |
+| AWS_APP_CONFIG_APPLICATION  | no default      | Optional AWS AppConfig application name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_ENVIRONMENT and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
+| AWS_APP_CONFIG_ENVIRONMENT  | no default      | Optional AWS AppConfig environment name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
+| AWS_APP_CONFIG_PROFILE      | no default      | Optional AWS AppConfig profile name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_ENVIRONMENT. See also [Personalize the app](#personalize-the-app) |
+| AMAZON_TEXTRACT_S3_BUCKET   | no default      | S3 bucket where PDFs are stored to be analyzed by Amazon Textract. Used data is extracted, the file is removed from S3.                                                                                                                                           |
 In code all environment variables are defined in [ChatbotEnvironmentVariables](./src/chatbot/config/environment_variables.py).
 
 ## Running the streamlit chatbot app using Docker
@@ -65,6 +70,7 @@ AWS_SESSION_TOKEN=...
 AWS_DEFAULT_REGION=...
 USERNAME=...
 PASSWORD=...
+AMAZON_TEXTRACT_S3_BUCKET=...
 ```
 
 Run the container with the `env.list` file:

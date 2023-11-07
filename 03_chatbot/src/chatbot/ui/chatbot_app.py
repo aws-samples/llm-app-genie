@@ -91,6 +91,13 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         )
     app_config: AppConfigProvider = st.session_state["app_config"]
 
+    if "textract_s3_bucket" not in st.session_state:
+        textract_s3_bucket = environment.get_env_variable(
+            ChatbotEnvironmentVariables.AmazonTextractS3Bucket
+        )
+        print(f"textract_s3_bucket: {textract_s3_bucket}")
+        st.session_state["textract_s3_bucket"] = textract_s3_bucket
+
     chatbot_name = app_config.config.appearance.parameters.name
     favicon_url = app_config.config.appearance.parameters.favicon_url
 
