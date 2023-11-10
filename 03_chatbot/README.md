@@ -1,6 +1,6 @@
 # Chatbot App
 
-This applications contains the frontend and chatbot logic for some common generative AI patterns, such as Retrieval Augmented Generation (RAG) of answers.
+This applications contains the frontend and chatbot logic for some common generative AI patterns, such as Retrieval Augmented Generation (RAG) of answers, and Agents.
 It allows selecting from the large language models (LLMs) and knowledge bases (KBs) available in the account where the solution is deployed. You can read more about the LLMs and KBs that the application uses in the [Discovery of available Knowledge bases and LLMs section](#discovery-of-available-knowledge-bases-and-llms)
 
 The usable LLMs are accessible either via Amazon Bedrock or Amazon SageMaker endpoints (both [real-time](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html) and [asynchronous](https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html)). The asynchronous support in Langchain is based on this [blog post implementation](https://aws.amazon.com/it/blogs/machine-learning/optimize-deployment-cost-of-amazon-sagemaker-jumpstart-foundation-models-with-amazon-sagemaker-asynchronous-endpoints/).
@@ -174,6 +174,11 @@ When creating the Amazon DynamoDB table use `SessionId` with type `String` as th
 The easy configuration for the app to use Amazon Bedrock is to set the `BEDROCK_REGION` environment variable (see also [Environment Variables](#environment-variables)). The app will discover the Amazon Bedrock models in that region.
 
 If you want the app to use Amazon Bedrock in multiple regions or you want to control more of the app configuration for Amazon Bedrock then you should take a look at the [Personalize the app](#personalize-the-app) section. If you configure an AWS Region for Amazon Bedrock usage through the app configuration and the environment variable then the app configuration takes precedent.
+
+## SQL connection string for SQL query generator
+
+The SQL generator agent expects an SQL connection string to connect to a SQL database. It leverages the class [langchain.sql_database.SQLDatabase](https://api.python.langchain.com/en/latest/utilities/langchain.utilities.sql_database.SQLDatabase.html).
+The expected string is of the form `{db_type}://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}`, where `db_type` supports the SQL dialects `mysql+pymysql` and `postgresql+psycopg2`.
 
 ## Personalize the app
 
@@ -373,3 +378,40 @@ Write the following launch configuration into your `launch.json` file and replac
 ```
 
 Use `F5` to debug the streamlit application on VS Code.
+
+
+## Change the code
+
+The code is structured into several modular classes, with catalogs.
+When streamlit is executed, the file `03_chatbot\src\run_module.py` is called, which in turn executes `03_chatbot\src\chatbot\__main__.py`, which loads the environment variables, and calls `03_chatbot\src\chatbot\ui\chatbot_app.py`.
+The rest of the code is contained inside the folder `03_chatbot\src\chatbot` and therefore this prefix will be omitted from now onwards.
+
+The chatbot app first checks for authentication, then loads the sidebar.
+The sidebar loads several catalogs. 
+Catalogs are used to bootstrap collections of objects (i.e. catalog items) of the same type.
+Some of the collections of catalog items are exposed to the UI for the user to select the appropiate options.
+The selected catalog items are propagated back to the app. 
+
+The exposed catalogs are hierarchical, and can be combined as desired.
+- Flow catalog: determines the the chatbot "mode". Flow catalog item can be:
+  - Simple chatbot
+  - Upload File
+  - RAG
+  - Agents
+- Model catalog: Available LLMs
+  - Amazon SageMaker
+  - Amazon Bedrock
+- Retriever Catalog:
+  - Amazon Kendra
+  - Amazon OpenSearch
+- Agent Chains: Available agent configurations
+  - Financial Analyzer
+  - SQL query generator
+
+Once the user selection has been performed, the app retrieves the appropriate PromptCatalog, the Memory Catalog with the Chat history.
+At that point, the selected Flow Catalog item is instantiated. In turn, the Retrieve, Agent Chain, and Model catalog items are also instantiated.
+
+Finally, the appropriate derived class of `LLMApp` is called, to start the appropriate chatbot actions.
+
+A visualization of the main components of chatbot code are summarized in the graph below:
+![Visual representation of the main components of chatbot code flow.](./images/Genie_LLM_App_chatbot_code_flow.png "Visual representation of the main components of chatbot code flow.")

@@ -28,11 +28,12 @@
 
 ## Intro and Architecture <a name="introduction"></a>
 
-LLM App Genie is a fully private chat companion which uses retrieval augmented generation (RAG) to augment an LLM conversation with additional knowledge from private knowledge bases.
+LLM App Genie is a fully private chat companion which provides several functionalities, each of them providing a reference implementation of a dialog-based search bot using interchangeable large language models (LLMs).
 
-This solution provides a reference implementation of a dialog-based search bot using the retrieval augmented generation (RAG) approach with interchangeable large language models (LLMs) and knowledge bases (KBs).
-
-It combines intelligent search with generative AI to give factual answers based on the private knowledge base. The search is based on [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/) and [Amazon Kendra](https://aws.amazon.com/kendra/) services. The solution also leverages [Streamlit](https://streamlit.io/) for the frontend and [Langchain](https://github.com/hwchase17/langchain) for the conversation flow to implement an interactive chat application.
+It combines intelligent search with generative AI to give factual answers based on the private knowledge bases, APIs and SQL databases. 
+The RAG search is based on [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/) and [Amazon Kendra](https://aws.amazon.com/kendra/) services. 
+The Agents implementation covers various open source APIs and an SQL query generator.
+The solution also leverages [Streamlit](https://streamlit.io/) for the frontend and [Langchain](https://github.com/hwchase17/langchain) for the conversation flow to implement an interactive chat application.
 
 The core features of this implementation are:
 
@@ -40,11 +41,12 @@ The core features of this implementation are:
 - Flexible browser based webcrawler using scrapy and Playwright to download and ingest webpages from public and private sources into the knowledge base, see [full webcrawler feature list](./01_crawler/README.md#crawler)
 - Support for different knowledge bases ([OpenSearch](https://aws.amazon.com/opensearch-service/) or [Amazon Kendra](https://aws.amazon.com/kendra/))
 - Semantic Search with Amazon Kendra or custom vector embeddings with OpenSearch
+- Support for Financial Analysis and SQL database query generator thgough Agents
 - Fine-tuning of LLMs to increase model relevance and quality of answers
 - Free choice of different LLMs and search engines
 - End-to-end automated deployment using AWS CDK
 
-The following screenshot shows the application user interface:
+The following screenshot shows the application user interface in RAG mode:
 ![Genie application user interface](05_doc/app-screenshot.png)
 
 <div class=“alert alert-info”> 💡 Note: this solution will incur AWS costs. You can find more information about these costs in the Costs section.
