@@ -26,6 +26,7 @@ class LlmLoggingHandler(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Do nothing."""
+        print("TOKEN",token)
         pass
 
     def on_llm_error(

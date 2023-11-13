@@ -34,6 +34,7 @@ class BedrockModelItem(ModelCatalogItem):
         model_id,
         bedrock_config: AmazonBedrockParameters,
         llm_config: Optional[LLMConfig],
+        callbacks = [],
         **model_kwargs,
     ):
         if llm_config is None:
@@ -51,6 +52,7 @@ class BedrockModelItem(ModelCatalogItem):
         self._set_default_model_kwargs()
         self._set_default_display_model_name()
 
+        self.callbacks = callbacks
         super().__init__(
             self.display_model_name,
             chat_prompt_identifier=llm_config.parameters.chat_prompt,
@@ -69,6 +71,8 @@ class BedrockModelItem(ModelCatalogItem):
             model_id=self.model_id,
             # region_name=region,
             model_kwargs=self.model_kwargs,
+            streaming=True,
+            callbacks=self.callbacks,
         )
 
     def _set_default_model_kwargs(self):

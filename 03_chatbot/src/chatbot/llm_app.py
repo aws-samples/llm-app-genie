@@ -217,6 +217,7 @@ class MRKLApp(LLMApp):
             handle_parsing_errors=self._handle_error,
             max_iterations=50,
             return_intermediate_steps=True,
+            callbacks=callbacks,
         )
 
         return mrkl
@@ -259,6 +260,7 @@ class SQLMRKLApp(LLMApp):
             # handle_parsing_errors=True,
             return_intermediate_steps=True,
             max_iterations=50,
+            callbacks=callbacks,
         )
         
         return agent_executor

@@ -41,7 +41,7 @@ class AgentsItem(FlowCatalogItem):
         agent_chain: AgentChainCatalogItem,
         prompt_catalog: CatalogById,
         sql_connection_uri: str,
-        sql_model: ModelCatalogItem, 
+        sql_model: ModelCatalogItem
     ) -> Union[MRKLApp, SQLMRKLApp]:
         """
         Returns the llm app (i.e. agent in this case) to use for this flow.

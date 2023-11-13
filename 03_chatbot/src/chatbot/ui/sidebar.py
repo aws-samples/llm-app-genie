@@ -67,8 +67,10 @@ def write_sidebar(
         app_config: AppConfig,
         aws_config: AWSConfig,
         logger: Logger,
+        llm_callbacks,
         show_llm_debug_messages: bool = False,
         gettext: Callable[[str], str] = lambda x: x,
+        
     ) -> Tuple[FlowCatalogItem, RetrieverCatalogItem, ModelCatalogItem, bool]:
     """
     Functional UI component that renders the sidebar.
@@ -229,6 +231,7 @@ def write_sidebar(
                         bedrock_config=app_config.amazon_bedrock or [],
                         logger=logger,
                         llm_config=app_config.llm_config.parameters,
+                        callbacks=llm_callbacks
                     )
                     st.session_state[sql_model_state_name] = sql_model_catalog
                     sql_model_catalog.bootstrap()
@@ -308,6 +311,7 @@ def write_sidebar(
                 bedrock_config=app_config.amazon_bedrock or [],
                 logger=logger,
                 llm_config=app_config.llm_config.parameters,
+                callbacks=llm_callbacks
             )
             st.session_state[model_state_name] = model_catalog
             model_catalog.bootstrap()

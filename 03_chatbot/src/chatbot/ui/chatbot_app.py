@@ -3,6 +3,7 @@ import os
 import sys
 import uuid
 from typing import Dict, List
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 import streamlit as st
 from babel import Locale
@@ -46,6 +47,7 @@ from .chat_messages import (
 )
 from .sidebar import write_sidebar
 from .topbar import write_top_bar
+from .stream_handler import StreamHandler
 
 
 def create_session_id() -> str:
@@ -177,6 +179,33 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     regions = [aws_config.region]
 
+    # Refresh button callback
+    def refresh():
+        session_id = create_session_id()
+        st.session_state.session_id = session_id
+        chat_history.clear()
+
+    write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
+
+    # Layout of input/response containers
+    response_container = st.empty()
+
+    with response_container.container():
+        chat_history.write()
+
+    def on_llm_response(text: str):
+        #response_container.empty()
+        stream_msg = ChatMessage(ChatParticipant.BOT, text)
+        #chat_history.append_to_previous_message(stream_msg)
+        with response_container.container():
+            chat_history.write()
+            with st.chat_message(stream_msg.sender.value, avatar=stream_msg.avatar):
+                stream_msg.write()
+            
+
+    llm_callbacks = [
+        StreamHandler(callback=on_llm_response)
+    ]
     _sidebar = write_sidebar(
         chatbot_name,
         favicon_url,
@@ -184,6 +213,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         gettext=gettext,
         aws_config=aws_config,
         logger=logger,
+        llm_callbacks=llm_callbacks,
         show_llm_debug_messages=show_llm_debug_messages,
         app_config=app_config.config,
     )
@@ -200,50 +230,45 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         memory_catalog.bootstrap()
     memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
 
-    # Refresh button callback
-    def refresh():
-        session_id = create_session_id()
-        st.session_state.session_id = session_id
-        chat_history.clear()
-
-    write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
-
     if _sidebar.flow_or_retriever_or_model_or_agent_changed:
         chat_history.add_chat_message(
             chat_history.create_system_message(_sidebar.model, _sidebar.retriever, _sidebar.flow)
         )
     
-    # Layout of input/response containers
-    response_container = st.container()
     empty_input_text = _("Ask a question or prompt the LLM")
     prompt = st.chat_input(empty_input_text)
 
     ## Conditional display of AI generated responses as a function of user provided prompts
-    with response_container:
-        if prompt:
-            memory_item = next(iter(memory_catalog or []), None)
-            memory = (
-                StreamlitChatMessageHistory()
-                if memory_item is None
-                else memory_item.get_instance(session_id)
-            )
+    if prompt:
+        memory_item = next(iter(memory_catalog or []), None)
+        memory = (
+            StreamlitChatMessageHistory()
+            if memory_item is None
+            else memory_item.get_instance(session_id)
+        )
 
-            app = _sidebar.flow.llm_app_factory(
-                _sidebar.model,
-                _sidebar.retriever,
-                _sidebar.agents_chains,
-                prompt_catalog,
-                _sidebar.sql_connection_uri,
-                _sidebar.sql_model
-            )
+        app = _sidebar.flow.llm_app_factory(
+            _sidebar.model,
+            _sidebar.retriever,
+            _sidebar.agents_chains,
+            prompt_catalog,
+            _sidebar.sql_connection_uri,
+            _sidebar.sql_model
+        )
 
-            # add the content of an uploaded file content, if available
-            prompt = _sidebar.uploaded_file_content + "\n" + prompt
+        # add the content of an uploaded file content, if available
+        prompt = _sidebar.uploaded_file_content + "\n" + prompt
 
-            chat_history.add_chat_message(ChatMessage(ChatParticipant.USER, prompt))
-            response = app.generate_response(
-                prompt, memory, callbacks=[llm_log_handler]
-            )
-            chat_history.add_chat_message(ChatMessage(ChatParticipant.BOT, response))
-
+        prompt_msg = ChatMessage(ChatParticipant.USER, prompt)
+        chat_history.add_chat_message(prompt_msg)
+        
+        response = app.generate_response(
+            prompt, memory, callbacks=[llm_log_handler, 
+                                    #    StreamingStdOutCallbackHandler(),
+                                    #    StreamHandler(response_container)
+                                        ]
+        )
+        chat_history.add_chat_message(ChatMessage(ChatParticipant.BOT, response))
+    
+    with response_container.container():
         chat_history.write()

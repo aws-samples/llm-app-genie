@@ -41,7 +41,7 @@ class RagItem(FlowCatalogItem):
         agent_chain: AgentChainCatalogItem,
         prompt_catalog: CatalogById,
         sql_connection_uri: str,
-        sql_model: ModelCatalogItem,
+        sql_model: ModelCatalogItem
     ) -> LLMApp:
         """
         Returns the llm app to use for this retriever.

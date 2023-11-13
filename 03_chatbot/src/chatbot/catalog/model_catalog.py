@@ -33,11 +33,13 @@ class ModelCatalog(Catalog):
         bedrock_config: List[AmazonBedrock],
         llm_config: Dict[str, LLMConfig],
         logger: Logger = getLogger("ModelCatalogLogger"),
+        callbacks = []
     ) -> None:
         self.regions = regions
         self.bedrock_config = bedrock_config
         self.logger = logger
         self.llm_config = llm_config
+        self.callbacks = callbacks
         super().__init__()
 
     def get_llm_config(
@@ -90,6 +92,7 @@ class ModelCatalog(Catalog):
                             fm["modelId"], config_model_id_regexs
                         ),
                         bedrock_config=bedrock_config.parameters,
+                        callbacks=self.callbacks
                     )
                     for fm in foundation_models
                 ]
