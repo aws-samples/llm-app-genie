@@ -7,8 +7,9 @@
   - [Intro and Architecture](#introduction)
     - [Architecture Overview](#architecture-overview)
   - [Getting started](#getting-started)
-    - [Full deployment](#full-deployment)
+    - [Fast, minimal, fully managed deployment](#minimal-deployment)
     - [Modular Deployment: Deploying individual components](#modular-deployment)
+    - [Full deployment](#full-deployment)
     - [Common Deployment Scenarios](#common-deployment-scenarios)
   - [I need help](#i-need-help)
   - [Usage Scenarios](#usage-scenarios)
@@ -60,10 +61,11 @@ The following screenshot shows the application user interface in RAG mode:
 
 We provide infrastructure as code for the solution in [AWS CDK](https://aws.amazon.com/cdk/).
 
-There are two main deployment types:
+There are three main deployment types:
 
-- [Full deployment](#full-deployment): Deploy all components (stacks) of the solution.
+- [Fast, minimal, fully managed deployment](#minimal-deployment): Deploy and use AWS Managed services: use Amazon Kendra and Amazon Bedrock.
 - [Modular deployment](#modular-deployment): Deploy each component (stack) individually.
+- [Full deployment](#full-deployment): Deploy all components (stacks) of the solution.
 
 **Step 0**: Pre-requisites <a name="pre_requisites"></a>
 
@@ -110,13 +112,13 @@ To install `Python Poetry`, or see [poetry installation details](https://python-
 To clone the GitHub repository:
 
 ```sh
-git clone <repo-path>.git
+git clone https://github.com/aws-samples/llm-app-genie.git
 ```
 
 ❗ **Automated deployment is implemented in 06_automation, go to this folder and proceed with other steps:**
 
 ```bash
-cd <path-to-cloned-repo>/06_automation
+cd llm-app-genie/06_automation
 ```
 
 Change to the infrastructure as code directory and install the dependencies:
@@ -125,48 +127,81 @@ Change to the infrastructure as code directory and install the dependencies:
 poetry install
 poetry shell
 ```
-If required, you can change the used AWS account and region by setting the following env variables, after having logged in with your credentials:
+Login with your AWS credentials. This step is not needed if you have already credentials loaded or if you are started Cloud9 with a user having all the required permissions.
 ```bash
 aws configure
-export CDK_DEFAULT_ACCOUNT=<your_account_id>
+```
+In Cloud9, when switching to a role different than the AWS managed default, remember to delete the file `~/.aws/credentials` first, then execute `aws configure`.
+
+
+If required, you can change the used AWS account and region by setting the following env variables, 
+```bash
 export AWS_DEFAULT_REGION=<aws_region>
 ```
-When providing a role different than the AWS managed one in Cloud9 (necessary to adapt to the CDK required permissions), remember to delete the file `~/.aws/credentials` first, then execute `aws configure`.
+Also, you need to set the Account ID of the account to be used for deployment:
+```bash
+export CDK_DEFAULT_ACCOUNT=<your_account_id>
+```
 
 You can review the [CDK Deployment Flow](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#:~:text=expects%20to%20exist.-,Deployment%20Flow,-This%20guide%20will) to understand what roles and access rights for each role are being used.
 In a nutshell, you can bootstrap CDK (`cdk boostrap`) using e.g. credentials with Administrator access, which creates a set of scoped roles (`cdk-file-publishing-role, cdk-image-publishing-role, cdk-deploy-role, cdk-exec-role`).
+```bash
+cdk boostrap
+```
 
 You can trigger the deployment through CDK which assumes the file, image publishing and deployment role to initiate the deployment through AWS CloudFormation which then can use the passed `cdk-exec-role` IAM role to create the required resources.
 
 Note that the deployment user does not need to have the rights to directly create the resources.
 
-❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution. Alternatively you can [enable your favorite models in Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html), in your preferred region.**
+### Fast, minimal, fully managed Deployment <a name="minimal-deployment"> </a>
 
+If you want a minimal deployment using fully managed AWS services, you can follow these instructions. You need to deploy:
 
-### Full deployment <a name="full-deployment"></a>
+1. A knowledge base (KB) with a search index over ingested documents based on Amazon Kendra. 
+2. A Chatbot front-end which orchestrates the conversation with langchain, using Large Language Models available in Amazon Bedrock.
 
-You can deploy all the components (stacks) of the solution at once.
+**Step 1: Deploying the knowledge base on Amazon Kendra**
 
-The simplest way is to use Launch Stack (to be added), which uses a AWS CloudFormation template to bootstrap an AWS CodeCommit repo from the GitHub repository and triggers a full deployment using AWS CodePipeline.
-
-Alternatively, you can use the next steps to deploy the full solution with CDK.
-
-**Step 1:** Deploying with CDK
-
-Make sure your current working directory is `06_automation`.
-The following command will check for available stack and deploy the whole solution.
-CDK will add the Application Prefix to all stack (**Genie** by default)
+To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)
 
 ```bash
-cdk ls
-cdk deploy --all --require-approval never
+cdk deploy GenieKendraIndexStack GenieKendraDataSourcesStack --require-approval never
 ```
 
-The most relevant app configuration parameters are being loaded from the [app config](./06_automation/configs/dev.json)
+`KendraIndexStack` creates an Amazon Kendra Index and a `WEBCRAWLERV2` data source pointing at the website you specified in the [app config](06_automation/configs/dev.json). The default configuration points to the last 10 pages of [media releases from the federal website admin.ch.](https://www.admin.ch/gov/en/start/documentation/media-releases.html)
 
-### Modular Deployment: Deploying individual components <a name="modular-deployment"> </a>
+The stack deployment takes about 30 minutes.
 
-You can also deploy individual components only. Genie will automatically detect which components are available based on resource tags (defined in [app config](./06_automation/configs/dev.json)) and use them accordingly. Check [automation readme](./06_automation/README.md) for more details.
+**Step 2: Deploy the chatbot based on Amazon Bedrock LLMs**
+
+Before to deploy the chatbot you need to decide whether update the Amazon Bedrock region in the [deployment config](./06_automation/configs/dev.json#L8), setup by default to `us-west-2`.
+You can check more information in the **Amazon Bedrock** section in [03_chatbot/README.md](./03_chatbot/README.md#amazon-bedrock). 
+
+❗ **When using Amazon Bedrock remember that although the service is now Generally Available, the models need to be activated in the console.**
+
+```bash
+cdk deploy GenieChatBotStack --require-approval never
+```
+The deployment should last 10 minutes.
+
+The link to access the chatbot on your website can be found in the CloudFormation Output variables for the stack, in the region used for the deployment.
+
+Since the chatbot is exposed to the public internet, the UI interface is protected by a login form. The credentials are automatically generated and stored in AWS Secret Manager.
+The Streamlit credentials can be retrieved either by navigating in the console to the AWS Secret Manager, or by using the AWS CLI.
+
+```bash
+# username
+aws secretsmanager get-secret-value --secret-id GenieStreamlitCredentials | jq -r '.SecretString' | jq -r '.username'
+# password
+aws secretsmanager get-secret-value --secret-id GenieStreamlitCredentials | jq -r '.SecretString' | jq -r '.password'
+```
+
+When connecting to the website, you will see a self-signed certificate error from the browser. You can ignore the error and proceed to the website.
+
+
+### Fully modular Deployment: Deploying individual components of choice <a name="modular-deployment"> </a>
+
+You can also deploy individual components only. Genie will automatically detect which components are available based on resource tags (defined in [deployment config](./06_automation/configs/dev.json)) and use them accordingly. Check [automation readme](./06_automation/README.md) for more details.
 
 The Genie components are:
 
@@ -197,7 +232,7 @@ cdk deploy GenieOpenSearchDomainStack GenieOpenSearchIngestionPipelineStack --re
 `GenieOpenSearchDomainStack` deploys an OpenSearch domain with Direct Internet Access, protected by an IAM role.
 Similarly you can also deploy `GenieOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`buildspec.yml`](06_automation/code/llm_setup/buildspec.yml). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
 
-To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)\*\*
+To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)
 
 ```bash
 cdk deploy GenieKendraIndexStack GenieKendraDataSourcesStack --require-approval never
@@ -218,7 +253,8 @@ The chatbot requires the following configuration:
 
 [Optional] Use chatbot with Amazon Bedrock:
 
-- To use Amazon Bedrock you have to update the chatbot according to the **Amazon Bedrock** section in [03_chatbot/README.md](./03_chatbot/README.md#amazon-bedrock). 
+- Before to deploy the chatbot you need to decide whether update the Amazon Bedrock region in the [deployment config](./06_automation/configs/dev.json#L8), setup by default to `us-west-2`.
+You can check more information in the **Amazon Bedrock** section in [03_chatbot/README.md](./03_chatbot/README.md#amazon-bedrock). 
 
 ❗ **When using Amazon Bedrock remember that although the service is now Generally Available, the models need to be activated in the console.**
 
@@ -271,11 +307,33 @@ The solution provides notebooks for experimentation. For example:
 - [./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb](./00_llm_endpoint_setup/deploy_embeddings_model_sagemaker_endpoint.ipynb) to deploy a SageMaker endpoint to help create document embeddings with HuggingFace's Transformers.
 - [./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb](./00_llm_endpoint_setup/deploy_falcon-40b-instruct.ipynb) to deploy Falcon 40b Foundation Model, either real-time or asynchronous.
 
-
-
 ```bash
 cdk deploy SageMakerStudioDomainStack --require-approval never
 ```
+
+### Full deployment <a name="full-deployment"></a>
+
+You can deploy all the components (stacks) of the solution at once.
+
+❗ **By default, this solution deploys the Falcon 40B LLM model on a `ml.g5.12xlarge` compute instance on Amazon SageMaker. Please ensure your account has an appropriate service quotas for this type of instance in the AWS region you want to deploy the solution. Alternatively you can [enable your favorite models in Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html), in your preferred region.**
+
+The simplest way is to use Launch Stack (to be added), which uses a AWS CloudFormation template to bootstrap an AWS CodeCommit repo from the GitHub repository and triggers a full deployment using AWS CodePipeline.
+
+Alternatively, you can use the next steps to deploy the full solution with CDK.
+
+**Step 1:** Deploying with CDK
+
+Make sure your current working directory is `06_automation`.
+The following command will check for available stack and deploy the whole solution.
+CDK will add the Application Prefix to all stack (**Genie** by default)
+
+```bash
+cdk ls
+cdk deploy --all --require-approval never
+```
+
+The most relevant app configuration parameters are being loaded from the [deployment config](./06_automation/configs/dev.json)
+
 
 ### CI/CD Deployment
 
@@ -311,9 +369,10 @@ If you do not have access to Amazon Bedrock, or if it is not available in the AW
 
 The most common scenarios are:
 
+- Amazon Kendra + Large LLM on Amazon Bedrock (Claude v2 100K)
 - Amazon Kendra + Large LLM on Amazon SageMaker (Falcon 40B)
 - Amazon OpenSearch + Large LLM on Amazon Bedrock (Claude Instant 12K)
-- Amazon OpenSearch + Light LLM on Amazon SageMaker (e.g. Falcon 7B)
+- Amazon OpenSearch + Light LLM on Amazon SageMaker (Falcon 7B)
 
 ## I need help <a name="i-need-help"></a>
 
