@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - N/A
+- 
+## [1.1.1] - 2023-11-18
 
-## [1.0.5] - 2023-11-10
+### Added
+
+- Enable streaming responses with toggle
+
+## [1.1.0] - 2023-11-10
 
 ### Added
 
