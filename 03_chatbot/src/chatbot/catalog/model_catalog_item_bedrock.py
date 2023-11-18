@@ -34,6 +34,7 @@ class BedrockModelItem(ModelCatalogItem):
         model_id,
         bedrock_config: AmazonBedrockParameters,
         llm_config: Optional[LLMConfig],
+        supports_streaming: bool = False,
         callbacks = [],
         **model_kwargs,
     ):
@@ -49,6 +50,7 @@ class BedrockModelItem(ModelCatalogItem):
         self.model_kwargs = model_kwargs
         self.model_id = model_id
         self.model_provider = model_id.split(".")[0]
+        
         self._set_default_model_kwargs()
         self._set_default_display_model_name()
 
@@ -57,7 +59,10 @@ class BedrockModelItem(ModelCatalogItem):
             self.display_model_name,
             chat_prompt_identifier=llm_config.parameters.chat_prompt,
             rag_prompt_identifier=llm_config.parameters.rag_prompt,
+            supports_streaming=supports_streaming,
+            streaming_on=supports_streaming
         )
+
     def get_instance(self) -> LLM:
         region = self.config.region.value
         endpoint_url = self.config.endpoint_url
@@ -71,7 +76,7 @@ class BedrockModelItem(ModelCatalogItem):
             model_id=self.model_id,
             # region_name=region,
             model_kwargs=self.model_kwargs,
-            streaming=True,
+            streaming=self.supports_streaming and self.streaming_on,
             callbacks=self.callbacks,
         )
 

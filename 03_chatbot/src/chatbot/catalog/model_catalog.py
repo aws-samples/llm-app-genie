@@ -92,7 +92,8 @@ class ModelCatalog(Catalog):
                             fm["modelId"], config_model_id_regexs
                         ),
                         bedrock_config=bedrock_config.parameters,
-                        callbacks=self.callbacks
+                        callbacks=self.callbacks,
+                        supports_streaming= ("responseStreamingSupported" in fm) and fm["responseStreamingSupported"]
                     )
                     for fm in foundation_models
                 ]

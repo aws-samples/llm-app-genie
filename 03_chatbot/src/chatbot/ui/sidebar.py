@@ -58,6 +58,7 @@ class SidebarObj():
         self.uploaded_file_content = ""
         self.sql_connection_uri = ""
         self.retriever_top_k = 3
+        self.streaming = False
 
 
 def write_sidebar(
@@ -70,7 +71,6 @@ def write_sidebar(
         llm_callbacks,
         show_llm_debug_messages: bool = False,
         gettext: Callable[[str], str] = lambda x: x,
-        
     ) -> Tuple[FlowCatalogItem, RetrieverCatalogItem, ModelCatalogItem, bool]:
     """
     Functional UI component that renders the sidebar.
@@ -321,12 +321,24 @@ def write_sidebar(
         model, model_changed = __render_dropdown(
             language_model_label, "model", model_options, params
             )
-
-        st.checkbox(
+        
+        st.toggle(
             label=_("Language Model X-Ray ") + "🩻",
             value=show_llm_debug_messages,
             key="show_llm_debug_messages",
-            )
+            help="Look behing the scenes at the full prompts."
+        )
+
+
+        supports_streaming = model.supports_streaming
+        streaming_help_msg = _("Turn streaming on or off.") if supports_streaming else _("Model does not support streaming.")
+        streaming = st.toggle(
+            label=_("Streaming"),
+            disabled=not supports_streaming,
+            value=model.streaming_on,
+            help=streaming_help_msg
+        )
+        model.streaming_on = streaming
 
         with st.expander('Change model parameters'):
             temperature = st.slider("Temperature",
@@ -346,6 +358,6 @@ def write_sidebar(
         _sidebar.flow_or_retriever_or_model_or_agent_changed = retriever_changed | model_changed | sql_model_changed | flow_changed | agents_chains_changed
         _sidebar.uploaded_file_content = uploaded_file_content
         _sidebar.sql_connection_uri = sql_connection_uri
-
+        _sidebar.streaming = streaming
 
         return _sidebar
