@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Enable streaming responses with toggle
+- Enable X-ray for agents
+- update README to document fast and minimal deployment
 
 ## [1.1.0] - 2023-11-10
 
