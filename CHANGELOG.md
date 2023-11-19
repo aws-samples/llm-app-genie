@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enable streaming responses with toggle
 - Enable X-ray for agents
 - update README to document fast and minimal deployment
+- Support Llama 2 model in Amazon Bedrock
 
 ## [1.1.0] - 2023-11-10
 
