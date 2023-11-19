@@ -4,7 +4,8 @@ import boto3
 from chatbot.config import AmazonBedrockParameters, LLMConfig, LLMConfigParameters
 from chatbot.helpers import get_boto_session
 from langchain.llms.base import LLM
-from langchain.llms.bedrock import Bedrock
+#from langchain.llms.bedrock import Bedrock
+from chatbot.helpers import Bedrock
 
 from .model_catalog_item import ModelCatalogItem
 
@@ -102,7 +103,12 @@ class BedrockModelItem(ModelCatalogItem):
                     "presencePenalty": {"scale": 0},
                     "frequencyPenalty": {"scale": 0},
                 }
-
+            elif self.model_provider == "meta": # Meta
+                self.model_kwargs = {  # Meta
+                    "max_gen_len": llm_config.max_token_count or 512,
+                    "temperature": llm_config.temperature or 0.1,
+                    "top_p": llm_config.top_p or 0.9
+                }
             else:  # Amazon
                 self.model_kwargs = {
                     "maxTokenCount": llm_config.max_token_count or 512,

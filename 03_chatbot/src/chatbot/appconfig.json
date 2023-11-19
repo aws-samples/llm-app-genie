@@ -9,7 +9,14 @@
   },
   "llmConfig": {
     "parameters": {
-      "anthropic.claude*": {
+      "meta\\.llama.*": {
+        "type": "LLMConfig",
+        "parameters": {
+          "chatPrompt": "prompts/meta_llama2_chat.yaml",
+          "ragPrompt": "prompts/meta_llama2_rag.yaml"
+        }
+      },
+      "anthropic\\.claude.*": {
         "type": "LLMConfig",
         "parameters": {
           "chatPrompt": "prompts/anthropic_claude_chat.yaml",
@@ -20,3 +27,5 @@
     "type": "LLMConfigMap"
   }
 }
+
+
