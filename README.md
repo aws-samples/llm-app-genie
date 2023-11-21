@@ -549,6 +549,22 @@ See also https://github.com/trunk-io/ for additional information on trunk.
 
 In preparation
 
+## Bump a new version
+
+We track in code the current released version in [03_chatbot/pyproject.toml](03_chatbot/poetry.lock).
+When releasing a new version, ensure you create a git commit and a git tag to easily identify the bumped file.
+You can do this with the following command:
+
+```Bash
+pip install bump-my-version
+bump-my-version bump patch/minor/major 03_chatbot/pyproject.toml --commit --tag
+```
+
+Then push the commit and tag:
+```Bash
+git push && git push <your-upstream-repo> <tagname>
+```
+
 ## Copyright information <a name="copyright"> </a>
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
