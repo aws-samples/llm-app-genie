@@ -146,7 +146,7 @@ export CDK_DEFAULT_ACCOUNT=<your_account_id>
 You can review the [CDK Deployment Flow](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#:~:text=expects%20to%20exist.-,Deployment%20Flow,-This%20guide%20will) to understand what roles and access rights for each role are being used.
 In a nutshell, you can bootstrap CDK (`cdk boostrap`) using e.g. credentials with Administrator access, which creates a set of scoped roles (`cdk-file-publishing-role, cdk-image-publishing-role, cdk-deploy-role, cdk-exec-role`).
 ```bash
-cdk boostrap
+cdk bootstrap
 ```
 
 You can trigger the deployment through CDK which assumes the file, image publishing and deployment role to initiate the deployment through AWS CloudFormation which then can use the passed `cdk-exec-role` IAM role to create the required resources.

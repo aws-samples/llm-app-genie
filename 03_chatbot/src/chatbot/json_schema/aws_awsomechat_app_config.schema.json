@@ -21,6 +21,9 @@
         },
         "llmConfig": {
           "$ref": "#/$defs/LLMConfigMap"
+        },
+        "finAnalyzer": {
+          "$ref": "#/$defs/FinAnalyzer"
         }
       }
     },
@@ -136,6 +139,36 @@
             },
             "iam": {
               "$ref": "#/$defs/BotoIAM"
+            }
+          }
+        }
+      }
+    },
+    "FinAnalyzer": {
+      "title": "Finance Analyzer",
+      "description": "Configuration for Finance Analyzer.",
+      "required": ["type", "parameters"],
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "FinAnalyzer"
+        },
+        "parameters": {
+          "required": ["friendlyName", "s3Bucket", "s3Prefix"],
+          "type": "object",
+          "properties": {
+            "friendlyName": {
+              "type": "string",
+              "description": "The name of the RAG option in the menu."
+            },
+            "s3Bucket": {
+              "type": "string",
+              "description": "S3 bucket with Finance Data."
+            },
+            "s3Prefix": {
+              "type": "string",
+              "description": "S3 bucket prefix (path) with Finance Data."
             }
           }
         }

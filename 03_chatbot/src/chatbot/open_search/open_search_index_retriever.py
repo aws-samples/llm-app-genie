@@ -11,6 +11,7 @@ from chatbot.embeddings import SageMakerEndpointEmbeddings
 from chatbot.helpers.logger import TECHNICAL_LOGGER_NAME
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import OpenSearchVectorSearch
+from opensearchpy import OpenSearch
 
 logger = logging.getLogger(TECHNICAL_LOGGER_NAME)
 
@@ -23,7 +24,6 @@ except json.decoder.JSONDecodeError:
         + "Do you have AWS credentials configured? "
     )
     sys.exit(0)
-
 
 def get_credentials(secret_id: str, region_name: str) -> str:
     """Retrieve credentials password for given username from AWS SecretsManager.
@@ -45,6 +45,20 @@ def get_credentials(secret_id: str, region_name: str) -> str:
     secrets_value = json.loads(response["SecretString"])
     return secrets_value
 
+def get_open_search_index_list(region, domain, os_http_auth):
+    client = boto3.client("opensearch", region)
+    client = OpenSearch(
+        hosts=[{"host": domain["Endpoint"], "port": 443}],
+        http_auth=os_http_auth,
+        use_ssl=True,
+        verify_certs=False,
+        ssl_assert_hostname=False,
+        ssl_show_warn=False,
+    )
+
+    response = client.cat.indices(v=True, format="json")
+    indexes = [item for item in response if item['rep'] == "1"]
+    return indexes
 
 class OpenSearchIndexRetriever(BaseRetriever):
     """Retriever to search Amazon OpenSearch.
@@ -59,7 +73,6 @@ class OpenSearchIndexRetriever(BaseRetriever):
 
     Example:
         ```python
-        os_http_auth = ("admin", "password")
 
         embeddings_predictor = HuggingFacePredictor(
             endpoint_name=embeddings_endpoint_name, sagemaker_session=session
@@ -87,7 +100,8 @@ class OpenSearchIndexRetriever(BaseRetriever):
         http_auth: Tuple[str, str],
         embeddings_predictor: HuggingFacePredictor,
         k: int = 3,
-        max_character_limit: int = 1000,
+        # TODO::This could be another parameter added to GUI
+        max_character_limit: int = 10000,
     ):
         os_domain_ep = domain_endpoint
         os_index_name = index_name

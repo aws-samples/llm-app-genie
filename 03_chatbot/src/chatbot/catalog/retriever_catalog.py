@@ -13,7 +13,9 @@ import botocore
 from .catalog import FRIENDLY_NAME_TAG, Catalog
 from .retriever_catalog_item_kendra import KendraRetrieverItem
 from .retriever_catalog_item_open_search import OpenSearchRetrieverItem
-
+from ..fin_analyzer.retriever_catalog_item_fin_analyzer import FinAnalyzerRetrieverItem
+from chatbot.open_search import get_credentials, get_open_search_index_list
+from chatbot.config import AppConfig
 
 @dataclass
 class RetrieverCatalog(Catalog):
@@ -25,15 +27,19 @@ class RetrieverCatalog(Catalog):
 
     logger: Logger
 
+    app_config: AppConfig
+
     def __init__(
         self,
         account_id,
         regions: list,
+        app_config: AppConfig,
         logger: Logger = getLogger("RetrieverCatalogLogger"),
     ) -> None:
         self.regions = regions
         self.account_id = account_id
         self.logger = logger
+        self.app_config = app_config
         super().__init__()
 
     def _get_kendra_indices(self, account):
@@ -153,7 +159,7 @@ class RetrieverCatalog(Catalog):
                     continue
                 tags_keys = list(map(itemgetter("Key"), tags))
                 genai_friendly_tag_present = FRIENDLY_NAME_TAG in tags_keys
-                genai_index_name_present = "genie:index-name" in tags_keys
+                
                 genai_secret_tag_present = "genie:secrets-id" in tags_keys
                 genai_embedding_tag_present = (
                     "genie:sagemaker-embedding-endpoint-name" in tags_keys
@@ -163,7 +169,6 @@ class RetrieverCatalog(Catalog):
                     genai_friendly_tag_present
                     and genai_secret_tag_present
                     and genai_embedding_tag_present
-                    and genai_index_name_present
                 ):
 
                     def get_genai_tag_value_by_key(tags, key):
@@ -181,8 +186,7 @@ class RetrieverCatalog(Catalog):
                         tags,
                         "genie:sagemaker-embedding-endpoint-name",
                     )
-                    index_name = get_genai_tag_value_by_key(tags, "genie:index-name")
-
+                    
                     try:
                         embedding_endpoint = sagemaker_client.describe_endpoint(
                             EndpointName=embedding_sagemaker_name
@@ -207,18 +211,20 @@ class RetrieverCatalog(Catalog):
                         continue
 
                     try:
-                        secret = secrets_manager_client.describe_secret(
-                            SecretId=secrets_tag_value
-                        )
-                        if secret:
+                        secret = get_credentials(secrets_tag_value, region)
+                        os_http_auth = (secret["user"] or "admin", secret["password"])
+                        data_sources = get_open_search_index_list(region, domain, os_http_auth)
+
+                        if data_sources:
                             opensearch_indices.append(
                                 OpenSearchRetrieverItem(
                                     friendly_name=friendly_name_tag_value,
                                     region=region,
-                                    index_name=index_name,
+                                    data_sources = data_sources,
                                     endpoint=f"https://{domain['Endpoint']}",
                                     embedding_endpoint_name=embedding_sagemaker_name,
-                                    secret_id=secrets_tag_value,
+                                    os_http_auth = os_http_auth
+
                                 )
                             )
                     except (
@@ -237,8 +243,36 @@ class RetrieverCatalog(Catalog):
             time.time() - start_time,
         )
 
+    def _get_fin_analyzer_indices(self, account):
+        """Get list of FinAnalyzer indices, based on application config (appconfig.json)."""
+        
+        config = self.app_config.fin_analyzer
+        if config is None:
+            self.logger.info(
+                f"Skipping Finance Analyzer indices due to missing configuration."
+            )
+            return
+
+        start_time = time.time()
+        logging.info("Retrieving FinAnalyzer indices...")
+
+        for region in self.regions:
+            self.append(
+                FinAnalyzerRetrieverItem(
+                    index_id="FinAnalyzer",
+                    config=config.parameters,
+                    region=region
+                )
+            )
+
+        logging.info(
+            "%s FinAnalyzer indices retrieved in %s seconds",
+            len(self),
+            time.time() - start_time,
+        )
 
     def bootstrap(self) -> None:
         """Bootstraps the catalog."""
         self._get_kendra_indices(self.account_id)
         self._get_open_search_indices(self.account_id)
+        self._get_fin_analyzer_indices(self.account_id)

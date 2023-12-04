@@ -59,9 +59,12 @@ class RagItem(FlowCatalogItem):
 
         retriever = retriever.get_instance()
 
-        return RAGApp(
-            prompt=rag_prompt,
-            llm=llm,
-            condense_question_prompt_template=condense_question_prompt,
-            retriever=retriever,
-        )
+        # Checking if retriever is initialized, if not app will print retriever errors
+        # TODO: implemenent error handling on app level then retriver can throw an error
+        if retriever:
+            return RAGApp(
+                prompt=rag_prompt,
+                llm=llm,
+                condense_question_prompt_template=condense_question_prompt,
+                retriever=retriever,
+            )

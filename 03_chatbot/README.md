@@ -10,6 +10,7 @@ You can run locally the ChatBot Streamlit app in two ways:
 
 1. [build and run the streamlit container via Docker](#running-the-streamlit-chatbot-app-using-docker), or
 2. [running the streamlit app locally](#running-the-chatbot-app-using-streamlit)
+3. [activating application modes](#activating-application-modes)
 
 The application uses the AWS Region configured through the `AWS_DEFAULT_REGION` environment variable.
 For Amazon Bedrock, it uses the AWS Region defined in the `BEDROCK_REGION` environment variable.
@@ -415,3 +416,9 @@ Finally, the appropriate derived class of `LLMApp` is called, to start the appro
 
 A visualization of the main components of chatbot code are summarized in the graph below:
 ![Visual representation of the main components of chatbot code flow.](./images/Genie_LLM_App_chatbot_code_flow.png "Visual representation of the main components of chatbot code flow.")
+
+## activating application modes
+On top of standard functionality, you can activate application modes, check the list below and follow the instructions to activate functaionality you need:
+
+### [Finance Analyzer](./src/chatbot/fin_analyzer/readme.md)
+This mode allows your to analyze latest finance documents (SEC fillings) of top US market companies.

@@ -116,11 +116,15 @@ def write_sidebar(
         return selected, changed
 
     with st.sidebar:
-        col1, col2 = st.columns([1, 5])
-        with col1:
-            st.image(app_icon, use_column_width="always")
-        with col2:
-            st.title(chatbot_name)
+        # Logo layout with 2 columns good for small square logo
+        # col1, col2 = st.columns([1, 2])
+        # with col1:
+        #     st.image(app_icon, use_column_width="always")
+        # with col2:
+        
+        # Logo layout for big and long logo
+        st.image(app_icon, use_column_width="always")
+        st.title(chatbot_name)
 
         params = st.experimental_get_query_params()
 
@@ -251,6 +255,7 @@ def write_sidebar(
                 retriever_catalog = RetrieverCatalog(
                     aws_config.account_id, 
                     regions, 
+                    app_config,
                     logger
                     )
                 st.session_state[retriever_state_name] = retriever_catalog
@@ -294,11 +299,25 @@ def write_sidebar(
                     format_func=lambda x: x[0],
                     )
 
+            # Finance Analyzer specific options
+            if (app_config.fin_analyzer is not None and 
+                retriever.friendly_name == app_config.fin_analyzer.parameters.friendly_name):
+                if len(options) > 0:
+                    filtered_df = retriever.announcement_df[retriever.announcement_df["symbol"].isin(opt[0] for opt in options)]
+                    retriever.announcement_filter = st.multiselect(
+                        "Company Announcements", 
+                        filtered_df.sort_values(by='id', ascending=False).id.tolist(),
+                        placeholder=_("Select announcements for analysis")
+                    )
+                else:
+                    st.info("Select companies for analysis")
+            else:
                 retriever.current_filter = options
                 retriever.top_k = st.slider(
                     "Retrieved documents",
                     min_value=1,
-                    max_value=10,
+                    ## TODO:: should come from config
+                    max_value=20,
                     value=3,
                     step=1
                 )

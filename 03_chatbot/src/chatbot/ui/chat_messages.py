@@ -8,6 +8,7 @@ import streamlit as st
 from ansi2html import Ansi2HTMLConverter
 from chatbot.catalog import SIMPLE_CHATBOT, UPLOAD_DOCUMENT_SEARCH, ModelCatalogItem, RetrieverCatalogItem, FlowCatalogItem
 
+from plotnine import ggplot
 
 class ChatParticipant(Enum):
     """Participants that are able to send messages to the chat."""
@@ -52,6 +53,8 @@ class ChatMessage(AbstractChatMessage):
 
     def write(self):
         """See base class."""
+        # TODO Markdown escape full implementation
+        self._msg = self._msg.replace("\$", "$").replace("$", "\$")                    
         st.write(self._msg, unsafe_allow_html=True)
 
 
@@ -105,6 +108,25 @@ class DebugMessage(AbstractChatMessage):
         """See base class."""
         expander = st.expander(label=self.label, expanded=False)
         expander.markdown(self._msg, unsafe_allow_html=True)
+
+
+@dataclass
+class GraphMessage(AbstractChatMessage):
+    """A debug message gives additional transparency about
+    what the chatbot does in the background."""
+
+    def __init__(self, sender: ChatParticipant, plot: ggplot):
+        self.plot = plot
+        self._sender = sender
+
+    @property
+    def sender(self) -> ChatParticipant:
+        """See base class."""
+        return self._sender
+
+    def write(self):
+        """See base class."""
+        st.pyplot(ggplot.draw(self.plot))
 
 
 class ChatHistory:
@@ -189,6 +211,10 @@ class ChatHistory:
             return
         len(st.session_state.log_history)
 
+    def add_plot(self, plot: ggplot):
+        plot_message = GraphMessage(ChatParticipant.BOT, plot)
+        self.add_chat_message(plot_message)
+
     def add_chat_message(self, msg: AbstractChatMessage):
         """Stores a chat message in this chat history.
 
@@ -221,8 +247,12 @@ class ChatHistory:
 
     def write(self):
         """Display this chat history using Streamlit elements."""
-        if "chat_history" in st.session_state:
-            for message in st.session_state["chat_history"]:
-                with st.chat_message(message["sender"].value, avatar=message["avatar"]):
-                    for msg in message["messages"]:
-                        msg.write()
+                
+        if "chat_history" not in st.session_state:
+            return
+        for message in st.session_state["chat_history"]:
+            with st.chat_message(message["sender"].value, avatar=message["avatar"]):
+                for msg in message["messages"]:
+                    msg.write()
+
+

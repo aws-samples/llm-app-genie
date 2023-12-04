@@ -1,0 +1,52 @@
+Upload a document and search it:
+  Upload a document and search it:
+    all:       
+      - name: Summarization
+        prompt: "Give me detailed summary for the documents"
+      - name: Comparison
+        prompt: "Compare the provided documents"
+      - name: Sensetive data
+        prompt: "Check the document to find PII or any kind of sensitive data and classify the findings in table format"
+
+Only Chat:
+  Only Chat:
+    all:
+      - name: AWS Sustainability
+        prompt: "What are AWS sustainability mission and goals?"
+      - name: Tasks
+        prompt: "Which tasks you can do for me?"
+
+Retrieval Augmented Generation:
+  Stock Analysis:
+    all:
+      - name: Key financial information
+        prompt: "Give detailed key financial information for each announcement, split the highlights and lowlights #graph"
+      - name: Risks in table format (German)
+        prompt: Highlight all the risks for each announcement in table format, give this information in German
+      - name: Impact with price targets
+        prompt: "Provide an analytical conclusion based on the data provided. Summarize if the announcement had a positive or negative impact and any patterns or trends observed #graph"
+      - name: Comparison with buy/sell/hold
+        prompt: "Make the detailed comparison for provided announcements, recommend buy/sell/hold actions, assume the most probable scenario, also what in your opinion will be a price in 6, 12 and 24 month for each company. Put all the details into table #graph"
+  OpenSearch Domain - Demo:
+    stock-market:
+      - name: AMZN 10-Q announcements analysis
+        prompt: Make the detailed analysis for latest AMZN 10-K announcements, recommend buy/sell/hold actions, also what in your opinion will be a price in 6, 12 and 24 month for each company
+      - name: AMZN current assets summary
+        prompt: Compare Amazon.com Inc (AMZN) '10-Q' announcements current assets by group
+      - name: AAPL 10-K financials & forecast
+        prompt: AAPL 10-K announcement from November 02 financials. Include buy/hold/sell recommendation and price forecast for the next 6, 12 and 24 months
+    press-releases-en:
+      - name: Digital Vignette
+        prompt: When Digital Vignette was announced in Switzerland?
+      - name: Ukraine support
+        prompt: How Switzerland supports Ukraine?
+      - name: Kosovo news
+        prompt: Latest news about Kosovo?
+  Amazon Kendra index - Demo:
+    press-releases-en:
+      - name: Digital Vignette
+        prompt: When Digital Vignette was announced in Switzerland?
+      - name: Ukraine support
+        prompt: How Switzerland supports Ukraine?
+      - name: Kosovo news
+        prompt: Latest news about Kosovo?

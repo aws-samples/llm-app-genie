@@ -7,11 +7,11 @@
   },
   "bedrock_region": "us-west-2",
   "customer": {
-    "name": "SwissGov"
+    "name": "Demo"
   },
   "opensearch": {
-    "domain": "KB",
-    "instance_type": "t3.medium.search",
+    "domain": "kb",
+    "instance_type": "t3.small.search",
     "index":"press-releases-en"
   },
   "sagemaker": {

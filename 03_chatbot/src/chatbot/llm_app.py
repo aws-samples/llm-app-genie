@@ -125,6 +125,8 @@ class BaseLLMApp(LLMApp):
 # =========================================================
 
 
+
+
 @dataclass
 class RAGApp(LLMApp):
     """Retrieval augmented generation interacts with an LLM uses information from a
@@ -151,11 +153,18 @@ class RAGApp(LLMApp):
 
     def get_input(self, input_text: str):
         """See base class."""
+
+        # Checking if the user requested a graph
+        if "#graph" in input_text:
+            input_text = input_text.replace("#graph", "")
+            self.retriever.plot_requested = True
+        
         return {"question": input_text}
 
     def get_output(self, response) -> str:
         """See base class."""
         text = super().get_output(response)
+        
         if "source_documents" in response and len(response["source_documents"]) > 0:
             resources = [
                 {**doc.metadata, **{"page_content": doc.page_content}}
@@ -164,21 +173,22 @@ class RAGApp(LLMApp):
             resources_df = pd.DataFrame(resources)
             resources_df = resources_df.drop_duplicates(subset=["title"], keep="first")
             resources_df = resources_df.assign(num=range(1, len(resources_df) + 1))
-            resources_df["title_suffix"] = resources_df.apply(
-                lambda row: f"<details><summary> </summary> {row['page_content']}</details>",
-                axis=1,
-            )
-            resources_df["reference"] = resources_df.apply(
-                lambda row: f"  {row.num}. [{row['title']}]({row['source']})", axis=1
-            )
-            resources = "\n \n Resources:\n\n" + "\n".join(
-                resources_df["reference"].values
-            )
+            
+            required_columns = ['title', 'source']
+            if all(column in resources_df.columns for column in required_columns):
+                # If all required columns are present, generate the references
+                resources_df["reference"] = resources_df.apply(
+                    lambda row: f"  {row.num}. [{row['title']}]({row['source']})", axis=1
+                )
+                resources = "\n \n Resources:\n\n" + "\n".join(
+                    resources_df["reference"].values
+                )
 
-            pos = text.find("Unhelpful Answer")
-            if pos > 0:
-                text = text[:pos]
-            text = text + resources
+                pos = text.find("Unhelpful Answer")
+                if pos > 0:
+                    text = text[:pos]
+                text = text + resources
+
         return text
 
 

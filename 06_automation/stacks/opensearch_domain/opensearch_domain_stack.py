@@ -19,7 +19,7 @@ stack = {
         "genie:secrets-id": f"{config['appPrefix']}OpenSearchCredentials",
         "genie:index-name": config['opensearch']['index'],
         "genie:sagemaker-embedding-endpoint-name": f"{config['appPrefix']}{config['sagemaker']['embeddings_endpoint_name']}",
-        "genie:friendly-name": f"OpenSearch Index: {config['customer']['name']}"
+        "genie:friendly-name": f"OpenSearch Domain - {config['customer']['name']}"
     }
 }
 

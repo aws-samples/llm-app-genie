@@ -35,6 +35,7 @@ from chatbot.helpers.logger.app_logging import (
 from chatbot.helpers.logger.log_to_ui_handler import LogToUiHandler
 from chatbot.i18n import install_language
 from langchain.memory import StreamlitChatMessageHistory
+from langchain.schema import BaseChatMessageHistory
 
 from .about_page import about_page
 from .auth import check_password
@@ -46,9 +47,10 @@ from .chat_messages import (
     InfoMessage,
 )
 from .sidebar import write_sidebar
-from .topbar import write_top_bar
+from .topbar import write_top_bar, write_prompt_hints
 from .stream_handler import StreamHandler
 
+import yaml
 
 def create_session_id() -> str:
     """Create a session id.
@@ -180,18 +182,34 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     regions = [aws_config.region]
 
     # Refresh button callback
-    def refresh():
+    def refresh(memory: BaseChatMessageHistory):
         session_id = create_session_id()
         st.session_state.session_id = session_id
         chat_history.clear()
 
-    write_top_bar(session_id=session_id, on_refresh=refresh, gettext=gettext)
+        # Clear Streamlit local memory cache
+        if memory and type(memory) is StreamlitChatMessageHistory:
+            memory.clear()    
+
+    if "memory_catalog" not in st.session_state:
+        memory_catalog = MemoryCatalog(
+            account_id=aws_config.account_id, regions=regions, logger=logger
+        )
+        st.session_state["memory_catalog"] = memory_catalog
+        memory_catalog.bootstrap()
+
+    memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
+    
+    memory_item = next(iter(memory_catalog or []), None)
+    memory = (
+        StreamlitChatMessageHistory()
+        if memory_item is None
+        else memory_item.get_instance(session_id)
+    )
+    write_top_bar(session_id=session_id, on_refresh=lambda:refresh(memory), gettext=gettext)
 
     # Layout of input/response containers
     response_container = st.empty()
-
-    with response_container.container():
-        chat_history.write()
 
     def on_llm_response(text: str):
         #response_container.empty()
@@ -222,14 +240,6 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         st.session_state["prompt_catalog"] = PromptCatalog()
     prompt_catalog: Dict[PromptCatalogItem] = st.session_state["prompt_catalog"]
 
-    if "memory_catalog" not in st.session_state:
-        memory_catalog = MemoryCatalog(
-            account_id=aws_config.account_id, regions=regions, logger=logger
-        )
-        st.session_state["memory_catalog"] = memory_catalog
-        memory_catalog.bootstrap()
-    memory_catalog: List[MemoryCatalogItem] = st.session_state["memory_catalog"]
-
     if _sidebar.flow_or_retriever_or_model_or_agent_changed:
         chat_history.add_chat_message(
             chat_history.create_system_message(_sidebar.model, _sidebar.retriever, _sidebar.flow)
@@ -238,15 +248,18 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     empty_input_text = _("Ask a question or prompt the LLM")
     prompt = st.chat_input(empty_input_text)
 
+    # Showing hints buttons
+    button_prompt = write_prompt_hints(_sidebar)
+    if button_prompt:
+        refresh(memory)
+        prompt = button_prompt
+
+    with response_container.container():
+        chat_history.write()
+
+    
     ## Conditional display of AI generated responses as a function of user provided prompts
     if prompt:
-        memory_item = next(iter(memory_catalog or []), None)
-        memory = (
-            StreamlitChatMessageHistory()
-            if memory_item is None
-            else memory_item.get_instance(session_id)
-        )
-
         app = _sidebar.flow.llm_app_factory(
             _sidebar.model,
             _sidebar.retriever,
@@ -255,6 +268,10 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
             _sidebar.sql_connection_uri,
             _sidebar.sql_model
         )
+        # Required for retriver validations, it will stop and show retriever error
+        if not app:
+            return
+
 
         # add the content of an uploaded file content, if available
         prompt = _sidebar.uploaded_file_content + "\n" + prompt
@@ -269,6 +286,11 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
                                         ]
         )
         chat_history.add_chat_message(ChatMessage(ChatParticipant.BOT, response))
+
+        # Adding graph data and fixing no document search option
+        if hasattr(app, 'retriever') and hasattr(app.retriever, 'graphs'):
+            for _, graph_data in app.retriever.graphs.items():
+                chat_history.add_plot(graph_data)
     
     with response_container.container():
         chat_history.write()

@@ -10,6 +10,7 @@ from .amazon_bedrock import AmazonBedrock, AmazonBedrockParameters
 from .appearance import AWSsomeChatAppearance
 from .aws_region import AWSRegion
 from .llm_config import LLMConfigMap
+from .fin_analyzer import FinAnalyzer
 from .parser_helpers import from_list, from_none, from_union, to_class
 
 # This code is used to parse the configuration file for this application.
@@ -34,16 +35,19 @@ class AppConfig:
     _amazon_bedrock: Optional[List[AmazonBedrock]] = None
     appearance: AWSsomeChatAppearance = None
     _llm_config: LLMConfigMap = field(default_factory=LLMConfigMap({}))
+    _fin_analyzer: Optional[FinAnalyzer] = None
 
     def __init__(
         self,
         appearance: AWSsomeChatAppearance,
         amazon_bedrock: Optional[List[AmazonBedrock]] = None,
         llm_config: LLMConfigMap = LLMConfigMap({}),
+        fin_analyzer: Optional[FinAnalyzer] = None
     ):
         self.appearance = appearance
         self._amazon_bedrock = amazon_bedrock
         self._llm_config = llm_config
+        self._fin_analyzer = fin_analyzer
 
     @property
     def amazon_bedrock(self) -> Optional[List[AmazonBedrock]]:
@@ -52,6 +56,10 @@ class AppConfig:
     @property
     def llm_config(self) -> LLMConfigMap:
         return self._llm_config
+
+    @property
+    def fin_analyzer(self) -> Optional[FinAnalyzer]:
+        return self._fin_analyzer
 
     def add_amazon_bedrock(self, region: str, endpoint_url: str = None):
         """Adds an AWS Region for Amazon Bedrock usage to the config.
@@ -87,8 +95,11 @@ class AppConfig:
         llm_config = from_union(
             [LLMConfigMap.from_dict, from_none], obj.get("llmConfig")
         )
+        fin_analyzer  = from_union(
+            [FinAnalyzer.from_dict, from_none], obj.get("finAnalyzer")
+        )
         return AppConfig(
-            appearance=appearance, amazon_bedrock=amazon_bedrock, llm_config=llm_config
+            appearance=appearance, amazon_bedrock=amazon_bedrock, llm_config=llm_config, fin_analyzer=fin_analyzer
         )
 
     def to_dict(self) -> dict:
@@ -100,6 +111,9 @@ class AppConfig:
         )
         result["llmConfig"] = from_union(
             [lambda x: to_class(LLMConfigMap, x), from_none], self.llm_config
+        )
+        result["finAnalyzer"] = from_union(
+            [lambda x: to_class(FinAnalyzer, x), from_none], self.fin_analyzer
         )
 
         return result
