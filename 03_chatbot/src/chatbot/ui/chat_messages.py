@@ -54,7 +54,13 @@ class ChatMessage(AbstractChatMessage):
     def write(self):
         """See base class."""
         # TODO Markdown escape full implementation
-        self._msg = self._msg.replace("\$", "$").replace("$", "\$")                    
+        try:
+            if self._msg.get("output",""): # agent replies with a dictionary
+                self._msg = self._msg.get("output")
+        except:
+            pass
+        if type(self._msg) == str:
+            self._msg = self._msg.replace("\$", "$").replace("$", "\$")
         st.write(self._msg, unsafe_allow_html=True)
 
 

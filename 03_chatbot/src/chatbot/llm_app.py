@@ -226,7 +226,7 @@ class MRKLApp(LLMApp):
             verbose=True,
             handle_parsing_errors=self._handle_error,
             max_iterations=50,
-            return_intermediate_steps=True,
+            return_intermediate_steps=False,
             callbacks=callbacks,
         )
 
@@ -268,7 +268,7 @@ class SQLMRKLApp(LLMApp):
             verbose=True,
             handle_parsing_errors=self._handle_error,
             # handle_parsing_errors=True,
-            return_intermediate_steps=True,
+            return_intermediate_steps=False,
             max_iterations=50,
             callbacks=callbacks,
         )
