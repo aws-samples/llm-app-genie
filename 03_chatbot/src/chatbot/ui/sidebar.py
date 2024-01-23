@@ -126,7 +126,7 @@ def write_sidebar(
         st.image(app_icon, use_column_width="always")
         st.title(chatbot_name)
 
-        params = st.experimental_get_query_params()
+        params = st.query_params
 
         _sidebar = SidebarObj()
 
@@ -348,16 +348,16 @@ def write_sidebar(
             help="Look behing the scenes at the full prompts."
         )
 
-
-        supports_streaming = model.supports_streaming
-        streaming_help_msg = _("Turn streaming on or off.") if supports_streaming else _("Model does not support streaming.")
-        streaming = st.toggle(
-            label=_("Streaming"),
-            disabled=not supports_streaming,
-            value=model.streaming_on,
-            help=streaming_help_msg
-        )
-        model.streaming_on = streaming
+        if model is not None:
+            supports_streaming = model.supports_streaming
+            streaming_help_msg = _("Turn streaming on or off.") if supports_streaming else _("Model does not support streaming.")
+            streaming = st.toggle(
+                label=_("Streaming"),
+                disabled=not supports_streaming,
+                value=model.streaming_on,
+                help=streaming_help_msg
+            )
+            model.streaming_on = streaming
 
         with st.expander('Change model parameters'):
             temperature = st.slider("Temperature",
