@@ -42,6 +42,7 @@ amazon-textract-response-parser = '1.0.2'
 textractor = '0.1.2'
 amazon-textract-textractor = '1.4.5'
 statsmodels = "0.14.0"
+watchdog = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core"]
