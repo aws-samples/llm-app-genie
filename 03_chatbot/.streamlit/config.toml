@@ -9,7 +9,7 @@
 # If you'd like to turn off this warning, set this to True.
 
 # Default: false
-disableWatchdogWarning = true
+# disableWatchdogWarning = true
 
 # By default, Streamlit displays a warning when a user sets both a widget
 # default value in the function defining the widget and a widget value via
@@ -100,7 +100,7 @@ magicEnabled = false
 # script's execution.
 
 # Default: false
-installTracer = false
+# installTracer = false
 
 # Sets the MPLBACKEND environment variable to Agg inside Streamlit to
 # prevent Python crashing.
