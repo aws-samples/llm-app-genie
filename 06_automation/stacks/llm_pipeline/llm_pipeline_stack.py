@@ -45,6 +45,198 @@ class LLMSageMakerStack(GenAiStack):
                 "../00_llm_endpoint_setup/codebuild/llm", branch="main"
             ),
         )
+        policy_doc = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AllowAllNonAdminSageMakerActions",
+                    "Effect": "Allow",
+                    "Action": [
+                        "sagemaker:*Endpoint*"
+                    ],
+                    "NotResource": [
+                        "arn:aws:sagemaker:*:*:domain/*",
+                        "arn:aws:sagemaker:*:*:user-profile/*",
+                        "arn:aws:sagemaker:*:*:app/*",
+                        "arn:aws:sagemaker:*:*:space/*",
+                        "arn:aws:sagemaker:*:*:flow-definition/*"
+                    ]
+                },
+                {
+                    "Sid": "AllowAWSServiceActions",
+                    "Effect": "Allow",
+                    "Action": [
+                        "application-autoscaling:DeleteScalingPolicy",
+                        "application-autoscaling:DeleteScheduledAction",
+                        "application-autoscaling:DeregisterScalableTarget",
+                        "application-autoscaling:DescribeScalableTargets",
+                        "application-autoscaling:DescribeScalingActivities",
+                        "application-autoscaling:DescribeScalingPolicies",
+                        "application-autoscaling:DescribeScheduledActions",
+                        "application-autoscaling:PutScalingPolicy",
+                        "application-autoscaling:PutScheduledAction",
+                        "application-autoscaling:RegisterScalableTarget",
+                        "cloudformation:GetTemplateSummary",
+                        "cloudwatch:DeleteAlarms",
+                        "cloudwatch:DescribeAlarms",
+                        "cloudwatch:GetMetricData",
+                        "cloudwatch:GetMetricStatistics",
+                        "cloudwatch:ListMetrics",
+                        "cloudwatch:PutMetricAlarm",
+                        "cloudwatch:PutMetricData",
+                        "codecommit:BatchGetRepositories",
+                        "codecommit:CreateRepository",
+                        "codecommit:GetRepository",
+                        "codecommit:List*",
+                        "ec2:CreateNetworkInterface",
+                        "ec2:CreateNetworkInterfacePermission",
+                        "ec2:CreateVpcEndpoint",
+                        "ec2:DeleteNetworkInterface",
+                        "ec2:DeleteNetworkInterfacePermission",
+                        "ec2:DescribeDhcpOptions",
+                        "ec2:DescribeNetworkInterfaces",
+                        "ec2:DescribeRouteTables",
+                        "ec2:DescribeSecurityGroups",
+                        "ec2:DescribeSubnets",
+                        "ec2:DescribeVpcEndpoints",
+                        "ec2:DescribeVpcs",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:BatchGetImage",
+                        "ecr:CreateRepository",
+                        "ecr:Describe*",
+                        "ecr:GetAuthorizationToken",
+                        "ecr:GetDownloadUrlForLayer",
+                        "ecr:StartImageScan",
+                        "elastic-inference:Connect",
+                        "iam:ListRoles",
+                        "kms:DescribeKey",
+                        "kms:ListAliases",
+                        "logs:CreateLogDelivery",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:DeleteLogDelivery",
+                        "logs:Describe*",
+                        "logs:GetLogDelivery",
+                        "logs:GetLogEvents",
+                        "logs:ListLogDeliveries",
+                        "logs:PutLogEvents",
+                        "logs:PutResourcePolicy",
+                        "logs:UpdateLogDelivery",
+                        "tag:GetResources"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Sid": "AllowECRActions",
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecr:SetRepositoryPolicy",
+                        "ecr:CompleteLayerUpload",
+                        "ecr:BatchDeleteImage",
+                        "ecr:UploadLayerPart",
+                        "ecr:DeleteRepositoryPolicy",
+                        "ecr:InitiateLayerUpload",
+                        "ecr:DeleteRepository",
+                        "ecr:PutImage"
+                    ],
+                    "Resource": [
+                        "arn:aws:ecr:*:*:repository/*sagemaker*"
+                    ]
+                },
+                {
+                    "Sid": "AllowCodeCommitActions",
+                    "Effect": "Allow",
+                    "Action": [
+                        "codecommit:GitPull",
+                        "codecommit:GitPush"
+                    ],
+                    "Resource": [
+                        "arn:aws:codecommit:*:*:*sagemaker*",
+                        "arn:aws:codecommit:*:*:*SageMaker*",
+                        "arn:aws:codecommit:*:*:*Sagemaker*"
+                    ]
+                },
+                {
+                    "Sid": "AllowCodeBuildActions",
+                    "Action": [
+                        "codebuild:BatchGetBuilds",
+                        "codebuild:StartBuild"
+                    ],
+                    "Resource": [
+                        "arn:aws:codebuild:*:*:project/sagemaker*",
+                        "arn:aws:codebuild:*:*:build/*"
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    "Sid": "AllowS3ObjectActions",
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:PutObject",
+                        "s3:DeleteObject",
+                        "s3:AbortMultipartUpload"
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::*SageMaker*",
+                        "arn:aws:s3:::*Sagemaker*",
+                        "arn:aws:s3:::*sagemaker*",
+                    ]
+                },
+                {
+                    "Sid": "AllowS3GetObjectWithSageMakerExistingObjectTag",
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:GetObject"
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::*"
+                    ],
+                    "Condition": {
+                        "StringEqualsIgnoreCase": {
+                            "s3:ExistingObjectTag/SageMaker": "true"
+                        }
+                    }
+                },
+                {
+                    "Sid": "AllowS3BucketACL",
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:GetBucketAcl",
+                        "s3:PutObjectAcl"
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::*SageMaker*",
+                        "arn:aws:s3:::*Sagemaker*",
+                        "arn:aws:s3:::*sagemaker*"
+                    ]
+                },
+                {
+                    "Sid": "AllowCreateServiceLinkedRoleForSageMakerApplicationAutoscaling",
+                    "Action": "iam:CreateServiceLinkedRole",
+                    "Effect": "Allow",
+                    "Resource": "arn:aws:iam::*:role/aws-service-role/sagemaker.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_SageMakerEndpoint",
+                    "Condition": {
+                        "StringLike": {
+                            "iam:AWSServiceName": "sagemaker.application-autoscaling.amazonaws.com"
+                        }
+                    }
+                },
+                {
+                    "Sid": "AllowPassRoleToSageMaker",
+                    "Effect": "Allow",
+                    "Action": [
+                        "iam:PassRole"
+                    ],
+                    "Resource": "arn:aws:iam::*:role/*",
+                    "Condition": {
+                        "StringEquals": {
+                            "iam:PassedToService": "sagemaker.amazonaws.com"
+                        }
+                    }
+                },
+            ]
+        }
 
         # should we name the S3 bucket?
         s3_bucket = s3.Bucket(
@@ -69,11 +261,9 @@ class LLMSageMakerStack(GenAiStack):
                 iam.ServicePrincipal("codebuild.amazonaws.com"),
                 iam.ServicePrincipal("codepipeline.amazonaws.com"),
             ),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AmazonSageMakerFullAccess"
-                ),
-            ],
+            inline_policies={
+                "sagemakerPolicies": iam.PolicyDocument.from_json(policy_doc)
+            }
         )
 
         cdk_deploy = codebuild.PipelineProject(
