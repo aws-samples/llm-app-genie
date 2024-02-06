@@ -105,16 +105,3 @@ def delete_certificate(cert_arn):
 
     return cert_arn
 
-# event = {
-#     'ResourceProperties': {
-#                 "email_address": "tasio@amazon.ch",
-#                 "common_name": "mwaa-dalaksjdlaf.example.com",
-#                 "city": "Zurich",
-#                 "country_code": "CH",
-#                 "organization": "AWS",
-#                 "organizational_unit": "SA",
-#                 "state": "ZH"
-#             },
-#     'RequestType': 'Create'
-# }
-# print(lambda_handler(event, None))
