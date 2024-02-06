@@ -119,6 +119,6 @@ class BedrockModelItem(ModelCatalogItem):
 
     def _set_default_display_model_name(self):
         if self.model_provider == "amazon":
-            self.display_model_name = f"(limited preview) Bedrock - {self.model_id} - ({self.config.region.value})"
+            self.display_model_name = f"(limited preview) Bedrock - {self.model_id.replace(":",".")} - ({self.config.region.value})"
         else:
-            self.display_model_name = f"Bedrock - {self.model_id} - ({self.config.region.value})"
+            self.display_model_name = f"Bedrock - {self.model_id.replace(":",".")} - ({self.config.region.value})"
