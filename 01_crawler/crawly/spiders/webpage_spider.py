@@ -31,7 +31,7 @@ class WebpageSpider(Spider):
             "Crawling could not start: 'filename' parameter not found."
         )
 
-    with open(config_filename, "r") as file:
+    with open(config_filename, "r", encoding="utf8") as file:
         config = json.loads(file.read())
 
     max_depth = config["CRAWLER_DEPTH"]

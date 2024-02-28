@@ -16,15 +16,16 @@ def lambda_handler(event, context):
     props = event["ResourceProperties"]
     request_type = event["RequestType"]
     stack_id = event["StackId"]
+    tags = props["tags"]
 
     if request_type == "Create":
         cert = generate_certificate(**props)
-        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id)
+        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags)
     elif request_type == "Update":
         # Deletes and regenerates a self-signed certificate
         cert_arn = delete_certificate(event["PhysicalResourceId"])
         cert = generate_certificate(**props)
-        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id)
+        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags)
     else: # Delete
         cert_arn = delete_certificate(event["PhysicalResourceId"])
 
@@ -77,22 +78,25 @@ def generate_certificate(
         "certificate": crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
     }
 
-def register_certificate_in_acm(cert, stack_id):
+def register_certificate_in_acm(cert, stack_id, tags: dict[str, str]):
     """
     Registers the input x509 certificate into ACM and returns its ARN
     """
     private_key = cert["private_key"]
     certificate = cert["certificate"]
 
+    
+
+    tags.append(
+        {
+                'Key': "stack-id",
+                'Value': stack_id
+        }
+    )
     result = acm.import_certificate(
         Certificate=certificate,
         PrivateKey=private_key,
-        Tags=[
-            {
-                'Key': "stack-id",
-                'Value': stack_id
-            }
-        ]
+        Tags=tags
     )
 
     return result['CertificateArn']

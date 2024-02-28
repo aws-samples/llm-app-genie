@@ -48,7 +48,7 @@ crawled_file_path = ssm_client.get_parameter(Name=f"{app_prefix}CrawledFileLocat
 ]
 df = pd.read_json(crawled_file_path)
 
-df.style.set_properties(**{"text-align": "left"})
+#df.style.set_properties(**{"text-align": "left"})
 
 df.head()
 

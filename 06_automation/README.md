@@ -27,10 +27,12 @@ trunk check 06_automation/
   },
   "sagemaker": {
     # Instance type for calculating the embeddings
+    # If you use a different instance type without local storage volume you should add a KMS Key in th AWS::SageMaker::EndpointConfig in 00_llm_endpoint_setup/codebuild/embeddings/endpoint-config-template.yml. See also https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sagemaker-endpointconfig.html#cfn-sagemaker-endpointconfig-kmskeyid
     "embeddings_instance_type": "ml.g4dn.xlarge",
     # Name of the endpoint to compute the endpoint
     "embeddings_endpoint_name": "EmbeddingsE5Large",
     # We recommend either a ml.g5.12xlarge or a ml.g5.48xlarge for the Falcon 40B instruct LLM
+    # If you use a different instance type without local storage volume you should add a KMS Key in th AWS::SageMaker::EndpointConfig in 00_llm_endpoint_setup/codebuild/embeddings/endpoint-config-template.yml. See also https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sagemaker-endpointconfig.html#cfn-sagemaker-endpointconfig-kmskeyid
     "llm_instance_type": "ml.g5.12xlarge",
     # Name of the endpoint that hosts the LLM
     "llm_endpoint_name": "Falcon40bInstruct12xlarge"

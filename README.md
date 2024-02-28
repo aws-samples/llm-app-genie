@@ -182,9 +182,9 @@ You can check more information in the **Amazon Bedrock** section in [03_chatbot/
 ```bash
 cdk deploy GenieChatBotStack --require-approval never
 ```
-The deployment should last 10 minutes.
+The deployment should take 10 minutes.
 
-The link to access the chatbot on your website can be found in the CloudFormation Output variables for the stack, in the region used for the deployment.
+The link to access the chatbot can be found in the CloudFormation Output variables for the stack, in the region used for the deployment.
 
 Since the chatbot is exposed to the public internet, the UI interface is protected by a login form. The credentials are automatically generated and stored in AWS Secret Manager.
 The Streamlit credentials can be retrieved either by navigating in the console to the AWS Secret Manager, or by using the AWS CLI.
@@ -226,11 +226,12 @@ After the deployment is completed, you can navigate to AWS CodePipeline to monit
 To deploy the Amazon OpenSearch index, follow the instructions below.
 
 ```bash
-cdk deploy GenieOpenSearchDomainStack GenieOpenSearchIngestionPipelineStack --require-approval never
+cdk deploy GeniePrivateOpenSearchDomainStack GenieOpenSearchVPCEndpointStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never
 ```
 
-`GenieOpenSearchDomainStack` deploys an OpenSearch domain with Direct Internet Access, protected by an IAM role.
-Similarly you can also deploy `GenieOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`buildspec.yml`](06_automation/code/llm_setup/buildspec.yml). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
+`GenieOpenSearchDomainStack` deploys an OpenSearch domain inside its own VPC, protected by an IAM role.
+The `GenieOpenSearchVPCEndpointStack` stack deploys a VPC endpoint for private network traffic between the chatbot and the OpenSearch cluster.
+You can optionally deploy `GeniePrivateOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`admin-ch-press-releases-en.json`](01_crawler/crawly/configs/admin-ch-press-releases-en.json). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
 
 To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)
 
@@ -329,7 +330,7 @@ CDK will add the Application Prefix to all stack (**Genie** by default)
 
 ```bash
 cdk ls
-cdk deploy --all --require-approval never
+cdk deploy GenieDeploymentPipelineStack GenieLlmPipelineStack GenieKendraIndexStack GenieKendraDataSourcesStack GenieChatBotStack GeniePrivateOpenSearchDomainStack GenieOpenSearchVPCEndpointStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never
 ```
 
 The most relevant app configuration parameters are being loaded from the [deployment config](./06_automation/configs/dev.json)
@@ -476,6 +477,17 @@ Then, you can remove the stacks created by CDK
 ```bash
 cdk destroy --all
 ```
+
+Some resources use the CDK [`RemovalPolicy.RETAIN`](https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/RemovalPolicy.html#aws_cdk.RemovalPolicy.RETAIN). Those resources do not get delete to not accidentally delete important data. They may cause the deletion to fail and you need to delete the resources manually. Here are the resources with `RemovalPolicy.RETAIN`:
+
+| Stack                               |                                     Resource                                     | 
+| :--------------------------------- | :---------------------------------------------------------------------------------: | 
+| Nested *OpenSearchDomainStack-ChatbotAccessLogsStack    |  OpenSearch Domain      | 
+| Nested *ChatBotStack-ChatbotAccessLogsStack    |  S3 bucket access logs bucket      | 
+| Nested *DeploymentPipelineStack-ChatbotAccessLogsStack    |  S3 bucket access logs bucket      | 
+| Nested *LlmPipelineStack-ChatbotAccessLogsStack    |  S3 bucket access logs bucket      | 
+| Nested *OpenSearchIngestionPipelineStack-ChatbotAccessLogsStack    |  S3 bucket access logs bucket      | 
+
 
 ## Setup development environment<a name="setup-development-environment"></a>
 

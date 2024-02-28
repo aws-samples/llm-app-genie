@@ -8,9 +8,6 @@
 
 # If you'd like to turn off this warning, set this to True.
 
-# Default: false
-# disableWatchdogWarning = true
-
 # By default, Streamlit displays a warning when a user sets both a widget
 # default value in the function defining the widget and a widget value via
 # the widget's key in `st.session_state`.
@@ -99,8 +96,6 @@ magicEnabled = false
 # any point and introspect it. As a side-effect, this slows down your
 # script's execution.
 
-# Default: false
-# installTracer = false
 
 # Sets the MPLBACKEND environment variable to Agg inside Streamlit to
 # prevent Python crashing.
@@ -163,7 +158,7 @@ fileWatcherType = "none"
 # be set to the same value across all replicas to ensure they all share the same secret.
 
 # Default: randomly generated secret key.
-# cookieSecret = "3039309c3bac12f503fbc754ffdae94a0678e37f987c30cafb9145f9f35615db"
+# cookieSecret = "<YOUR_SECRET>"
 
 # If false, will attempt to open a browser window on start.
 

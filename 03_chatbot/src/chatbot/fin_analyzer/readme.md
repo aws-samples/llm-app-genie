@@ -66,7 +66,7 @@ document_types=[
 ```
 5. Make sure you have required libraries, this is special mod, so the modules are not included in standard poetry setup:
 ```bash
-pip install requests fake_useragent markdownify finnhub-python alpaca_trade_api
+pip install requests fake_useragent markdownify finnhub-python alpaca_trade_api defusedxml
 ```
 6. Go inside **02_ingestion** folder and execute the file and check that the files are uploaded to S3
 

@@ -81,6 +81,8 @@ class SageMakerStudioStack(GenAiStack):
             domain_name=sagemaker_domain_name,
             subnet_ids=public_subnet_ids,
             vpc_id=default_vpc.vpc_id,
+            app_network_access_type="VpcOnly",
+            app_security_group_management="Service"
         )
 
         sagemaker.CfnUserProfile(

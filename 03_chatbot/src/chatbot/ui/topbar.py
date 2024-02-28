@@ -41,7 +41,7 @@ def write_prompt_hints(sidebar):
         sidebar: Streamlit sidebar object.
     """
         
-    with open('src/chatbot/prompts/hints.yaml', 'r') as yaml_file:
+    with open('src/chatbot/prompts/hints.yaml', 'r', encoding="utf8") as yaml_file:
         hints = yaml.safe_load(yaml_file)
 
     # TODO: this part should be moved to CDK

@@ -16,6 +16,8 @@ from .retriever_catalog_item_open_search import OpenSearchRetrieverItem
 from ..fin_analyzer.retriever_catalog_item_fin_analyzer import FinAnalyzerRetrieverItem
 from chatbot.open_search import get_credentials, get_open_search_index_list
 from chatbot.config import AppConfig
+from opensearchpy import ConnectionError, ConnectionTimeout
+
 
 @dataclass
 class RetrieverCatalog(Catalog):
@@ -28,6 +30,8 @@ class RetrieverCatalog(Catalog):
     logger: Logger
 
     app_config: AppConfig
+
+
 
     def __init__(
         self,
@@ -158,34 +162,36 @@ class RetrieverCatalog(Catalog):
                     )
                     continue
                 tags_keys = list(map(itemgetter("Key"), tags))
-                genai_friendly_tag_present = FRIENDLY_NAME_TAG in tags_keys
                 
-                genai_secret_tag_present = "genie:secrets-id" in tags_keys
-                genai_embedding_tag_present = (
-                    "genie:sagemaker-embedding-endpoint-name" in tags_keys
+                
+                def get_genai_tag_value_by_key(tags, key):
+                    if key not in tags_keys:
+                        return None
+                    return tags[list(map(itemgetter("Key"), tags)).index(key)][
+                        "Value"
+                    ]
+
+                friendly_name_tag_value = get_genai_tag_value_by_key(
+                    tags, FRIENDLY_NAME_TAG
+                )
+                secrets_tag_value = get_genai_tag_value_by_key(
+                    tags, "genie:secrets-id"
+                )
+                embedding_sagemaker_name = get_genai_tag_value_by_key(
+                    tags,
+                    "genie:sagemaker-embedding-endpoint-name",
+                )
+
+                vpc_endpoint_value = get_genai_tag_value_by_key(
+                    tags,
+                    "genie:chatbot_vpc_endpoint",
                 )
 
                 if (
-                    genai_friendly_tag_present
-                    and genai_secret_tag_present
-                    and genai_embedding_tag_present
+                    friendly_name_tag_value
+                    and secrets_tag_value
+                    and embedding_sagemaker_name
                 ):
-
-                    def get_genai_tag_value_by_key(tags, key):
-                        return tags[list(map(itemgetter("Key"), tags)).index(key)][
-                            "Value"
-                        ]
-
-                    friendly_name_tag_value = get_genai_tag_value_by_key(
-                        tags, FRIENDLY_NAME_TAG
-                    )
-                    secrets_tag_value = get_genai_tag_value_by_key(
-                        tags, "genie:secrets-id"
-                    )
-                    embedding_sagemaker_name = get_genai_tag_value_by_key(
-                        tags,
-                        "genie:sagemaker-embedding-endpoint-name",
-                    )
                     
                     try:
                         embedding_endpoint = sagemaker_client.describe_endpoint(
@@ -213,26 +219,75 @@ class RetrieverCatalog(Catalog):
                     try:
                         secret = get_credentials(secrets_tag_value, region)
                         os_http_auth = (secret["user"] or "admin", secret["password"])
-                        data_sources = get_open_search_index_list(region, domain, os_http_auth)
-
-                        if data_sources:
-                            opensearch_indices.append(
-                                OpenSearchRetrieverItem(
-                                    friendly_name=friendly_name_tag_value,
-                                    region=region,
-                                    data_sources = data_sources,
-                                    endpoint=f"https://{domain['Endpoint']}",
-                                    embedding_endpoint_name=embedding_sagemaker_name,
-                                    os_http_auth = os_http_auth
-
-                                )
-                            )
                     except (
                         botocore.exceptions.ClientError,
                         botocore.exceptions.ConnectTimeoutError,
                     ):
                         self.logger.info(
                             f"Cannot get credentials for OpenSearch domain from AWS Secrets Manager. Ignoring OpenSearch domain {domain_arn}."
+                        )
+                        continue
+                    
+                    try:
+                        #vpc_id = self.environment.get_env_variable(ChatbotEnvironmentVariables.Vpc)
+
+                        endpoint = None
+                        if vpc_endpoint_value:
+                            # get the VPC endpoint for the domain
+
+                            # next_token = None
+
+                            # list_endpoint_response = open_search_client.list_vpc_endpoints_for_domain(
+                            #     DomainName=domain["DomainName"],
+                            #     NextToken=next_token
+                            # )
+                            # if 'NextToken' in list_endpoint_response:
+                            #     next_token = list_endpoint_response['NextToken']
+                            # else: 
+                            #     next_token = None
+                            # available_vpc_endpoint_ids = [vpc_endpoint['VpcEndpointId']  for vpc_endpoint in list_endpoint_response['VpcEndpointSummaryList'] if vpc_endpoint['VpcEndpointOwner'] == account and vpc_endpoint['Status'] == "ACTIVE"]
+                            # describe_vpc_endpoints_response = open_search_client.describe_vpc_endpoints(
+                            #     VpcEndpointIds=available_vpc_endpoint_ids
+                            # )
+                            # vpc_endpoints_in_vpc = [vpc_endpoint for vpc_endpoint in describe_vpc_endpoints_response['VpcEndpoints'] if vpc_endpoint['VpcOptions']['VPCId'] == vpc_id]
+                            endpoint = vpc_endpoint_value
+                        else:
+                            if 'Endpoint' in domain:
+                                endpoint=domain['Endpoint']
+                            elif 'EndpointV2' in domain:
+                                endpoint=domain['EndpointV2']
+                            elif 'Endpoints' in domain:
+                                endpoint = domain['Endpoints']['vpc']
+                            else:
+                                self.logger.info(
+                                    f"Cannot get endpoint for OpenSearch domain. Ignoring OpenSearch domain {domain_arn}."
+                                )
+                                continue
+
+                        if endpoint:
+                            domain['Endpoint'] = endpoint
+
+                            data_sources = get_open_search_index_list(region, domain, os_http_auth)
+
+
+                            if data_sources:
+                                opensearch_indices.append(
+                                    OpenSearchRetrieverItem(
+                                        friendly_name=friendly_name_tag_value,
+                                        region=region,
+                                        data_sources = data_sources,
+                                        endpoint=f"https://{endpoint}",
+                                        embedding_endpoint_name=embedding_sagemaker_name,
+                                        os_http_auth = os_http_auth
+
+                                    )
+                                )
+                    except (
+                        ConnectionError,
+                        ConnectionTimeout
+                    ) as e:
+                        self.logger.info(
+                            f"Cannot connect to OpenSearch domain. Ignoring OpenSearch domain {domain_arn}. {str(e)}"
                         )
                         continue
 

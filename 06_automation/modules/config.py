@@ -9,7 +9,8 @@ import boto3
 # Load the Environment Configuration from the JSON file
 with open(
     "configs/" + (os.environ["STAGE"] if "STAGE" in os.environ else "dev") + ".json",
-    "r",
+    "r", 
+    encoding="utf8"
 ) as file:
     config = json.load(file)
 

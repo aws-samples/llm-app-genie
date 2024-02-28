@@ -1,7 +1,7 @@
 import json
 from typing import Union
 
-from aws_cdk import CustomResource, Duration, RemovalPolicy, Stack, Tags
+from aws_cdk import CustomResource, Duration, RemovalPolicy, Stack, Tags, CfnTag, Names
 from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_ec2 as ec2
@@ -13,10 +13,12 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import custom_resources as cr
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
-from aws_cdk import aws_s3 as s3
+from ..shared.s3_access_logs_stack import S3AccessLogsStack
 
 stack = {
     "description": "Generative AI Chatbot Application",
@@ -25,40 +27,20 @@ stack = {
 
 
 class ChatbotStack(GenAiStack):
+
+    chatbot_security_group: ec2.ISecurityGroup
+
     # def __init__(self, scope: Construct, construct_id: str, config: Config, **kwargs) -> None:
     def __init__(
         self,
         scope: Construct,
         construct_id: str,
-        existing_vpc_id: Union[None, str] = None,
+        vpc: ec2.IVpc,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
 
-        
 
-        if existing_vpc_id:
-            vpc = ec2.Vpc.from_lookup(
-                self, "ChatbotExistingVPCLookup", vpc_id=existing_vpc_id
-            )
-        else:
-            public_subnet = ec2.SubnetConfiguration(
-                name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-            )
-            private_subnet = ec2.SubnetConfiguration(
-                name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=24
-            )
-            vpc = ec2.Vpc(
-                scope=self,
-                id="ChatbotVPC",
-                ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
-                max_azs=2,
-                nat_gateway_provider=ec2.NatProvider.gateway(),
-                nat_gateways=1,
-                subnet_configuration=[public_subnet, private_subnet],
-            )
-
-        self.vpc = vpc
 
         # Do not use a port lower than 1024. The container image runs the app as non root user. Non root user cannot bind to port lower than 1024 in ECS.
         self.container_port = 3001
@@ -74,25 +56,50 @@ class ChatbotStack(GenAiStack):
             entry="./stacks/chatbot/cert_lambda",
             index="function.py",
             handler="lambda_handler",
-            runtime=lambda_.Runtime.PYTHON_3_9,
+            runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=120),
-        )
-
-        cert_function.add_to_role_policy(
-            statement=iam.PolicyStatement(
-                actions=["acm:ImportCertificate"], resources=["*"]
-            )
-        )
-
-        cert_function.add_to_role_policy(
-            statement=iam.PolicyStatement(
-                actions=["acm:AddTagsToCertificate"], resources=["*"]
-            )
         )
 
         provider = cr.Provider(
             self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
         )
+
+
+        
+        all_tags = config["globalTags"] | stack["tags"]
+        custom_resource_tags = [{'Key': k, 'Value': v} for k, v in all_tags.items()]
+        
+
+        certificate_conditional_tag = {
+            "Key": f"{config['appPrefix']}:CDK_DONT_DELETE",
+            "Value":Names.unique_id(provider)
+        }
+        custom_resource_tags.append(certificate_conditional_tag)
+
+        cert_function.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=["acm:ImportCertificate"],
+                resources=["*"],
+                conditions=
+                    {
+                    "StringEquals": {f"aws:ResourceTag/{certificate_conditional_tag['Key']}": certificate_conditional_tag['Value']}
+                }
+                
+            )
+        )
+
+        cert_function.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=["acm:AddTagsToCertificate"], resources=["*"],
+                conditions=
+                    {
+                    "StringEquals": {f"aws:ResourceTag/{certificate_conditional_tag['Key']}": certificate_conditional_tag['Value']}
+                    }
+                
+            )
+        )
+
+        
 
         custom_resource = CustomResource(
             self,
@@ -111,6 +118,7 @@ class ChatbotStack(GenAiStack):
                 "validity_seconds": config["self_signed_certificate"][
                     "validity_seconds"
                 ],
+                "tags":  custom_resource_tags,
             },
         )
 
@@ -118,6 +126,9 @@ class ChatbotStack(GenAiStack):
             statement=iam.PolicyStatement(
                 actions=["acm:DeleteCertificate"],
                 resources=["*"],
+                conditions={
+                    "StringEquals": {f"aws:ResourceTag/{certificate_conditional_tag['Key']}": certificate_conditional_tag['Value']}
+                },
             )
         )
 
@@ -133,6 +144,7 @@ class ChatbotStack(GenAiStack):
             ),
             removal_policy=RemovalPolicy.DESTROY,
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            point_in_time_recovery=True
         )
 
         textract_bucket = s3.Bucket(
@@ -190,8 +202,8 @@ class ChatbotStack(GenAiStack):
                     f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
                 ],
                 conditions={
-                    "StringEquals": {"aws:ResourceTag/genie:deployment": "True"}
-                },
+                    "StringEquals": {f"aws:ResourceTag/{config['appPrefix']}:deployment": "True"}
+                }
             )
         )
         role.add_to_policy(
@@ -226,7 +238,7 @@ class ChatbotStack(GenAiStack):
                 actions=["kendra:Query", "kendra:Retrieve"],
                 resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
                 conditions={
-                    "StringEquals": {"aws:ResourceTag/genie:deployment": "True"}
+                      "StringEquals": {f"aws:ResourceTag/{config['appPrefix']}:deployment": "True"}
                 },
             )
         )
@@ -288,7 +300,8 @@ class ChatbotStack(GenAiStack):
                     "dynamodb:Scan",
                     "dynamodb:BatchWrite*",
                     "dynamodb:CreateTable",
-                    "dynamodb:Delete*",
+                    #"dynamodb:Delete*",
+                    "dynamodb:DeleteItem",
                     "dynamodb:Update*",
                     "dynamodb:PutItem",
                 ],
@@ -330,7 +343,7 @@ class ChatbotStack(GenAiStack):
         # ==================================================
         # =============== FARGATE SERVICE ==================
         # ==================================================
-        cluster = ecs.Cluster(scope=self, id="Cluster", vpc=self.vpc)
+        cluster = ecs.Cluster(scope=self, id="Cluster", vpc=vpc, container_insights=True)
 
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
@@ -354,7 +367,7 @@ class ChatbotStack(GenAiStack):
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
-                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name
+                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name                
             },
             secrets={
                 "PASSWORD": ecs.Secret.from_secrets_manager(
@@ -393,6 +406,7 @@ class ChatbotStack(GenAiStack):
             description="Allow outbound HTTPS connections",
         )
 
+
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             scope=self,
             id="Service",
@@ -400,6 +414,29 @@ class ChatbotStack(GenAiStack):
             task_definition=task_definition,
             certificate=certificate,
             security_groups=[fargate_service_sg],
+        )
+
+        service_connectable = fargate_service.service.connections
+
+        self.chatbot_security_group = service_connectable.connections.security_groups[0]
+        # Setup service security group
+        service_connectable.allow_to_any_ipv4(
+            port_range=ec2.Port.tcp(443), description="Allow HTTPS to internet"
+        )
+
+        service_connectable.allow_from(
+            ec2.Peer.ipv4(vpc.vpc_cidr_block),
+            port_range=ec2.Port.tcp(self.container_port),
+            description=f"Allow inbound from VPC for {config['appPrefixLowerCase']}-ai-app",
+        )
+
+        s3_access_logs = S3AccessLogsStack(
+            scope=self,
+            construct_id="ChatbotAccessLogsStack"
+        )
+        # Enable access logging
+        fargate_service.load_balancer.log_access_logs(
+            bucket=s3_access_logs.bucket
         )
 
         # Setup autoscaling policy

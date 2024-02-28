@@ -164,7 +164,7 @@ def write_sidebar(
                     docs = []
                     temp_dir = tempfile.TemporaryDirectory()
                     temp_filepath = os.path.join(temp_dir.name, uploaded_file.name)
-                    with open(temp_filepath, "wb") as f:
+                    with open(temp_filepath, "wb", encoding="utf8") as f:
                         f.write(uploaded_file.getvalue())
                     bucket = st.session_state['textract_s3_bucket']
                     key = temp_filepath.split('/')[-1]
@@ -299,28 +299,28 @@ def write_sidebar(
                     format_func=lambda x: x[0],
                     )
 
-            # Finance Analyzer specific options
-            if (app_config.fin_analyzer is not None and 
-                retriever.friendly_name == app_config.fin_analyzer.parameters.friendly_name):
-                if len(options) > 0:
-                    filtered_df = retriever.announcement_df[retriever.announcement_df["symbol"].isin(opt[0] for opt in options)]
-                    retriever.announcement_filter = st.multiselect(
-                        "Company Announcements", 
-                        filtered_df.sort_values(by='id', ascending=False).id.tolist(),
-                        placeholder=_("Select announcements for analysis")
-                    )
+                # Finance Analyzer specific options
+                if (app_config.fin_analyzer is not None and 
+                    retriever.friendly_name == app_config.fin_analyzer.parameters.friendly_name):
+                    if len(options) > 0:
+                        filtered_df = retriever.announcement_df[retriever.announcement_df["symbol"].isin(opt[0] for opt in options)]
+                        retriever.announcement_filter = st.multiselect(
+                            "Company Announcements", 
+                            filtered_df.sort_values(by='id', ascending=False).id.tolist(),
+                            placeholder=_("Select announcements for analysis")
+                        )
+                    else:
+                        st.info("Select companies for analysis")
                 else:
-                    st.info("Select companies for analysis")
-            else:
-                retriever.current_filter = options
-                retriever.top_k = st.slider(
-                    "Retrieved documents",
-                    min_value=1,
-                    ## TODO:: should come from config
-                    max_value=20,
-                    value=3,
-                    step=1
-                )
+                    retriever.current_filter = options
+                    retriever.top_k = st.slider(
+                        "Retrieved documents",
+                        min_value=1,
+                        ## TODO:: should come from config
+                        max_value=20,
+                        value=3,
+                        step=1
+                    )
 
         ########### MAIN MODEL STUFF ###############
         model_state_name = "model_catalog"

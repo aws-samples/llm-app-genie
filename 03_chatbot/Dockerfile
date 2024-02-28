@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG LISTEN_PORT=80
+ARG LISTEN_PORT=8001
 
 FROM public.ecr.aws/docker/library/python:3.10-slim as poetry_base
 
@@ -18,9 +18,10 @@ RUN apt-get update \
         curl \
         build-essential \
         wget \
-        unzip
+        unzip \
+    && apt-get clean
 
-
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
 RUN curl -sSL https://install.python-poetry.org | python3 -
 

@@ -48,5 +48,5 @@ if __name__ == "__main__":
     # Write the staging config
     config = extend_config(args, {})
     logger.debug("config: {}".format(json.dumps(config, indent=4)))
-    with open(args.export_config, "w") as f:
+    with open(args.export_config, "w", encoding="utf8") as f:
         json.dump(config, f, indent=4)

@@ -159,7 +159,7 @@ class AppConfigProvider:
             script_dir = os.path.dirname(__file__)
             abs_file_path = os.path.join(script_dir, LOCAL_DEV_APPCONFIG_JSON_PATH)
             logging.info(f"Using local config file: {abs_file_path}")
-            with open(abs_file_path, "r") as j:
+            with open(abs_file_path, "r", encoding="utf8") as j:
                 self.__config = app_config_from_dict(json.load(j))
 
     @property

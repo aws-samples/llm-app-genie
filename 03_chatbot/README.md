@@ -77,7 +77,7 @@ AMAZON_TEXTRACT_S3_BUCKET=...
 Run the container with the `env.list` file:
 
 ```bash
-docker run -p 127.0.0.1:80:80 --env-file env.list streamlit-src
+docker run -p 127.0.0.1:80:8001 --env-file env.list streamlit-src
 ```
 
 You can now access the streamlit application from your browser at [localhost](http://localhost).

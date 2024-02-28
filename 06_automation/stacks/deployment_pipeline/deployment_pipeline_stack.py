@@ -9,6 +9,7 @@ from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
+from ..shared.s3_access_logs_stack import S3AccessLogsStack
 
 stack = {
     "description": "Deploy Pipeline to deploy Genie full infrastructure",
@@ -51,15 +52,46 @@ class DeploymentPipelineStack(GenAiStack):
             }
         )
 
+        s3_access_logs = S3AccessLogsStack(
+            scope=self,
+            construct_id="ArtifactAccessLogsBucketStack"
+        )
+
+        
+        artifacts_lifecycle_rule = s3.LifecycleRule(
+            id="ArtifactBucketLifecycleRule",
+            abort_incomplete_multipart_upload_after=Duration.days(1),
+            enabled=True,
+            expiration=Duration.days(180),
+           # expired_object_delete_marker=True,
+            noncurrent_version_expiration=Duration.days(90),
+            noncurrent_versions_to_retain=123,
+            noncurrent_version_transitions=[s3.NoncurrentVersionTransition(
+                storage_class=s3.StorageClass.GLACIER,
+                transition_after=Duration.days(7),
+
+                # the properties below are optional
+                #noncurrent_versions_to_retain=123
+            )],
+            transitions=[s3.Transition(
+                storage_class=s3.StorageClass.GLACIER,
+
+                transition_after=Duration.days(90),
+            )]
+        )
+
+
         s3_bucket = s3.Bucket(
             self,
             "ArtifactBucket",
-            versioned=False,
+            versioned=True,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             encryption=s3.BucketEncryption.S3_MANAGED,
             enforce_ssl=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            server_access_logs_bucket=s3_access_logs.bucket,
+            lifecycle_rules=[artifacts_lifecycle_rule]
         )
 
         build_image = codebuild.LinuxBuildImage.STANDARD_7_0
@@ -71,10 +103,10 @@ class DeploymentPipelineStack(GenAiStack):
                 iam.ServicePrincipal("cloudformation.amazonaws.com"),
                 iam.ServicePrincipal("codebuild.amazonaws.com"),
                 iam.ServicePrincipal("codepipeline.amazonaws.com"),
-            ),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
-            ]
+            )
+            #, managed_policies=[
+            #     iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
+            # ]
         )
 
         cdk_deploy = codebuild.PipelineProject(

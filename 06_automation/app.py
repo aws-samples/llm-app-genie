@@ -7,14 +7,26 @@ import os
 from aws_cdk import App, Environment, Tags
 from modules.config import config
 from stacks.chatbot.chatbot_stack import ChatbotStack
+from stacks.chatbot.chatbot_vpc_stack import ChatbotVPCStack
 from stacks.deployment_pipeline.deployment_pipeline_stack import DeploymentPipelineStack
 from stacks.kendra_datasources.kendra_datasources_stack import KendraDataSourcesStack
 from stacks.kendra_index.kendra_index_stack import KendraIndexStack
 from stacks.llm_pipeline.llm_pipeline_stack import LLMSageMakerStack
 from stacks.opensearch_domain.opensearch_domain_stack import OpenSearchStack
 from stacks.opensearch_ingestion_pipeline.opensearch_ingestion_pipeline_stack import (
+    OpenSearchIngestionPipelineStack
+)
+from stacks.opensearch_domain.opensearch_domain_stack import OpenSearchStack
+from stacks.opensearch_domain.opensearch_private_vpc_stack import (
+    OpenSearchPrivateVPCStack,
+)
+from stacks.opensearch_domain.opensearch_vpc_endpoint_stack import (
+    OpenSearchVPCEndpointStack,
+)
+from stacks.opensearch_ingestion_pipeline.opensearch_ingestion_pipeline_stack import (
     OpenSearchIngestionPipelineStack,
 )
+
 
 # load the details from defaul AWS config
 env = Environment(
@@ -46,18 +58,8 @@ llm_pipeline = LLMSageMakerStack(
     env=env,
 )
 
-opensearch_stack = OpenSearchStack(
-    app,
-    "OpenSearchDomainStack",
-    env=env,
-)
-ingestion_pipeline = OpenSearchIngestionPipelineStack(
-    app,
-    "OpenSearchIngestionPipelineStack",
-    env=env,
-)
-# Add dependecy between OpenSearch and ingestion pipeline
-ingestion_pipeline.add_dependency(opensearch_stack)
+
+
 
 index_stack = KendraIndexStack(
     app,
@@ -78,16 +80,102 @@ datasource_stack.add_dependency(index_stack)
 ## Dev Environment
 # SageMakerStudioStack(app, "SageMakerStudioDomainStack", env=env)
 
-## Streamlit chatbot
-existing_vpc = config.get("existing_vpc_id")
-if existing_vpc:
-    print(
-        f"""
-    +-------------------------------------------------------------------------+
-        Deploying chatbot into existing VPC {existing_vpc}.
-    +-------------------------------------------------------------------------+
-    """
-    )
-chatbot = ChatbotStack(app, "ChatBotStack", env=env, existing_vpc_id=existing_vpc)
+## Chatbot
+vpc_id_ssm_param = "CHATBOT_PRIVATE_VPC_SSM_PARAMETER"
+chatbot_vpc_cidr_block = "10.0.0.0/16"
+
+
+chatbot_vpc = ChatbotVPCStack(
+    app,
+    "ChatBotVPCStack",
+    env=env,
+    cidr_range=chatbot_vpc_cidr_block,
+    vpc_id_ssm_param=vpc_id_ssm_param
+)
+chatbot = ChatbotStack(app, "ChatBotStack", env=env, vpc=chatbot_vpc.vpc)
+chatbot.add_dependency(chatbot_vpc)
+
+
+
+## OpenSearch
+opensearch_vpc_id_ssm_param = "OPENSEARCH_PRIVATE_VPC_SSM_PARAMETER"
+opensearch_peering_id_param_name = (
+    "OPENSEARCH_VPC_PEERING_CONNECTION_ID_SSM_PARAMETER"
+)
+
+opensearch_vpc_cidr_block = "10.4.0.0/16"
+opensearch_vpc_stack = OpenSearchPrivateVPCStack(
+    app,
+    "OpenSearchPrivateVpc",
+    env=env,
+    vpc_id_ssm_param=opensearch_vpc_id_ssm_param,
+    cidr_range=opensearch_vpc_cidr_block,
+    peering_vpc_cidr=chatbot_vpc_cidr_block,
+    peering_vpc_id_ssm_parameter_name=vpc_id_ssm_param,
+    peer_region=env.region,
+    peering_connection_ssm_parameter_name=opensearch_peering_id_param_name,
+)
+opensearch_vpc_stack.add_dependency(chatbot_vpc)
+
+opensearch_stack_private = OpenSearchStack(
+    app, "PrivateOpenSearchDomainStack", env=env, vpc_output=opensearch_vpc_stack.output
+)
+
+opensearch_stack_private.add_dependency(opensearch_vpc_stack)
+
+
+opensearch_vpc_endpoint = OpenSearchVPCEndpointStack(
+    app,
+    "OpenSearchVPCEndpointStack",
+    env=env,
+    opensearch_domain=opensearch_stack_private.output.domain,
+    consumer_target_vpc=chatbot_vpc.vpc,
+    consumer_security_group=chatbot.chatbot_security_group
+)
+
+opensearch_vpc_endpoint.add_dependency(opensearch_stack_private)
+opensearch_vpc_endpoint.add_dependency(opensearch_vpc_stack)
+opensearch_vpc_endpoint.add_dependency(chatbot)
+
+
+
+
+ingestion_pipeline_private = OpenSearchIngestionPipelineStack(
+    app,
+    "PrivateOpenSearchIngestionPipelineStack",
+    env=env,
+    opensearch_domain_vpc=opensearch_stack_private.output.vpc_endpoint_output
+)
+
+
+
+
+
+# Add dependecy between OpenSearch and ingestion pipeline
+ingestion_pipeline_private.add_dependency(opensearch_stack_private)
+
+
+# Deprecated. Keep for legacy.
+opensearch_stack = OpenSearchStack(
+    app,
+    "OpenSearchDomainStack",
+    env=env,
+)
+
+
+ingestion_pipeline = OpenSearchIngestionPipelineStack(
+    app,
+    "OpenSearchIngestionPipelineStack",
+    env=env
+)
+
+
+
+
+
+# Add dependecy between OpenSearch and ingestion pipeline
+ingestion_pipeline.add_dependency(opensearch_stack)
+
+
 
 app.synth()

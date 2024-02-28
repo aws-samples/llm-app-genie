@@ -11,7 +11,7 @@ from tqdm import tqdm
 from datetime import datetime, timedelta
 import finnhub
 from alpaca_trade_api.rest import REST, TimeFrame
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from modules.aws_helpers import get_credentials
 
 secret_name = "GenieFinAnalyzerAPIs"
@@ -74,17 +74,17 @@ def parse_sec_filling(url, debug = False):
     random_user_agent = user_agent.random
 
     # Fetch HTML content from the web URL
-    response = requests.get(url, headers={"User-Agent": random_user_agent})
+    response = requests.get(url, headers={"User-Agent": random_user_agent}, timeout=0.5)
     html_content = response.text
 
     if debug:
         file_name = "debug/" + url.split("/")[-1]
         
         # open file instead of downloading
-        # with open(file_name, 'r') as file:
+        # with open(file_name, 'r ,encoding="utf8") as file:
         #     html_content = file.read()
 
-        with open(file_name, 'w') as file:
+        with open(file_name, 'w',encoding="utf8") as file:
             file.write(html_content)
 
     # cutting XML header
@@ -102,9 +102,9 @@ def parse_sec_filling(url, debug = False):
 
     if debug:
         print(f"Parsing url: {url} cutting from: {start_from} ")
-        with open(file_name + "-markdownify.md", 'w') as file:
+        with open(file_name + "-markdownify.md", 'w',encoding="utf8") as file:
             file.write(md)
-        with open(file_name + "-markdownify-cleared.md", 'w') as file:
+        with open(file_name + "-markdownify-cleared.md", 'w',encoding="utf8") as file:
             file.write(content)
 
     return markdownify(content)

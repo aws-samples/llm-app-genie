@@ -11,17 +11,28 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 from aws_cdk import Stack
+from aws_cdk import aws_ec2 as ec2
+from typing import Optional
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
+from stacks.opensearch_domain.opensearch_domain_stack import OpenSearchVpcOutput
+from ..shared.s3_access_logs_stack import S3AccessLogsStack
+
 import logging
 
+
+
 stack = {"description": "OpenSearch Ingestion Pipeline", "tags": {}}
-
-
 class OpenSearchIngestionPipelineStack(GenAiStack):
     """A root construct which represents a codepipeline CloudFormation stack."""
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+            self, 
+            scope: Construct, 
+            construct_id: str, 
+            opensearch_domain_vpc: Optional[OpenSearchVpcOutput] = None,
+            **kwargs
+    ) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
 
         response = quotas_client.get_service_quota(
@@ -39,6 +50,8 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             )
 
         bucket_name = f"{config['appPrefixLowerCase']}-sagemaker-{self.account}-{self.region}"
+
+        
         
         ssm.StringParameter(
             scope=self,
@@ -68,9 +81,27 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             string_value=config["opensearch"]["index"],
         )
 
+        s3_access_logs = S3AccessLogsStack(
+            scope=self,
+            construct_id="IngestionPipelineBucketAccessLogsBucketStack"
+        )
+
+        artifacts_lifecycle_rule = s3.LifecycleRule(
+            id="IngestionPipelineBucketLifecycleRule",
+            abort_incomplete_multipart_upload_after=Duration.days(1),
+            enabled=True,
+            expiration=Duration.days(360),
+           # expired_object_delete_marker=True,
+            transitions=[s3.Transition(
+                storage_class=s3.StorageClass.GLACIER,
+
+                transition_after=Duration.days(180),
+            )]
+        )
+
         s3_bucket = s3.Bucket(
             self,
-            "Bucket",
+            "IngestionPipelineBucket",
             versioned=False,
             bucket_name=bucket_name,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
@@ -78,6 +109,8 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             enforce_ssl=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            server_access_logs_bucket=s3_access_logs.bucket,
+            lifecycle_rules=[artifacts_lifecycle_rule]
         )
 
         repo_embeddings = codecommit.Repository(
@@ -233,6 +266,31 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             timeout=Duration.minutes(300),
         )
 
+        ingestion_step_kwargs = {}
+
+        if opensearch_domain_vpc:
+            ingestion_sg = ec2.SecurityGroup(
+                self,
+                "OpenSearchIngestionPipelineSecurityGroup",
+                vpc=opensearch_domain_vpc.vpc,
+                description="Security group for ingestion step of the CodePipeline.",
+                allow_all_outbound=True,
+                disable_inline_rules=True,
+            )
+
+            opensearch_domain_sg = ec2.SecurityGroup.from_security_group_id(self, "OpenSearchIngestionDomainSGImport", opensearch_domain_vpc.security_group_id,
+                mutable=True
+            )
+
+
+            opensearch_domain_sg.add_ingress_rule(ingestion_sg, ec2.Port.tcp(443), "Allow HTTPS access from ingestion pipeline.")
+
+            ingestion_step_kwargs = {
+                "vpc": opensearch_domain_vpc.vpc,
+                "security_groups": [ingestion_sg],
+            }
+
+
         cdk_ingest = codebuild.PipelineProject(
             self,
             config["appPrefix"] + "CodeBuildIngest",
@@ -265,8 +323,10 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             ),
             role=iam_role,
             timeout=Duration.minutes(300),
+            **ingestion_step_kwargs,
         )
 
+       
         source_embeddings_output = codepipeline.Artifact()
         source_crawler_output = codepipeline.Artifact()
         source_ingestion_output = codepipeline.Artifact()

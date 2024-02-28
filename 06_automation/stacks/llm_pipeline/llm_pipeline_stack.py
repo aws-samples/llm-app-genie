@@ -10,6 +10,7 @@ from aws_cdk import Stack
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
 import logging
+from ..shared.s3_access_logs_stack import S3AccessLogsStack
 
 stack = {
     "description": "MLOps Pipeline to deploy LLM to SageMaker inference endpoint",
@@ -238,10 +239,27 @@ class LLMSageMakerStack(GenAiStack):
             ]
         }
 
-        # should we name the S3 bucket?
+        s3_access_logs = S3AccessLogsStack(
+            scope=self,
+            construct_id="LLMArtifactAccessLogsBucketStack"
+        )
+
+        artifacts_lifecycle_rule = s3.LifecycleRule(
+            id="LLMArtifactBucketLifecycleRule",
+            abort_incomplete_multipart_upload_after=Duration.days(1),
+            enabled=True,
+            expiration=Duration.days(360),
+           # expired_object_delete_marker=True,
+            transitions=[s3.Transition(
+                storage_class=s3.StorageClass.GLACIER,
+
+                transition_after=Duration.days(180),
+            )]
+        )
+
         s3_bucket = s3.Bucket(
             self,
-            "Bucket",
+            "LLMArtifactBucket",
             versioned=False,
             bucket_name=f"{config['appPrefixLowerCase']}-sagemaker-llm-falcon-artifact-{self.region}-{self.account}",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
@@ -249,6 +267,8 @@ class LLMSageMakerStack(GenAiStack):
             enforce_ssl=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            lifecycle_rules=[artifacts_lifecycle_rule],
+            server_access_logs_bucket=s3_access_logs.bucket
         )
 
         build_image = codebuild.LinuxBuildImage.STANDARD_7_0
