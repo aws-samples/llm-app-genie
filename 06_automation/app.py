@@ -81,7 +81,7 @@ datasource_stack.add_dependency(index_stack)
 # SageMakerStudioStack(app, "SageMakerStudioDomainStack", env=env)
 
 ## Chatbot
-vpc_id_ssm_param = f"{config["appPrefix"]}_CHATBOT_PRIVATE_VPC_SSM_PARAMETER"
+vpc_id_ssm_param = f"{config['appPrefix']}_CHATBOT_PRIVATE_VPC_SSM_PARAMETER"
 chatbot_vpc_cidr_block = "10.0.0.0/16"
 
 
@@ -98,8 +98,8 @@ chatbot.add_dependency(chatbot_vpc)
 
 
 ## OpenSearch
-opensearch_vpc_id_ssm_param = f"{config["appPrefix"]}_OPENSEARCH_PRIVATE_VPC_SSM_PARAMETER"
-opensearch_peering_id_param_name = f"{config["appPrefix"]}_OPENSEARCH_VPC_PEERING_CONNECTION_ID_SSM_PARAMETER"
+opensearch_vpc_id_ssm_param = f"{config['appPrefix']}_OPENSEARCH_PRIVATE_VPC_SSM_PARAMETER"
+opensearch_peering_id_param_name = f"{config['appPrefix']}_OPENSEARCH_VPC_PEERING_CONNECTION_ID_SSM_PARAMETER"
 
 opensearch_vpc_cidr_block = "10.4.0.0/16"
 opensearch_vpc_stack = OpenSearchPrivateVPCStack(
