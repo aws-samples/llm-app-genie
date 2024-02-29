@@ -104,9 +104,9 @@ class DeploymentPipelineStack(GenAiStack):
                 iam.ServicePrincipal("codebuild.amazonaws.com"),
                 iam.ServicePrincipal("codepipeline.amazonaws.com"),
             )
-            #, managed_policies=[
-            #     iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
-            # ]
+            , managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
+            ]
         )
 
         cdk_deploy = codebuild.PipelineProject(

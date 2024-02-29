@@ -22,4 +22,4 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - poetry run cdk deploy --all --require-approval never
+      - poetry run cdk deploy GenieDeploymentPipelineStack GenieLlmPipelineStack GenieKendraIndexStack GenieKendraDataSourcesStack GenieChatBotStack GenieOpenSearchDomainStack GenieOpenSearchIngestionPipelineStack --require-approval never
