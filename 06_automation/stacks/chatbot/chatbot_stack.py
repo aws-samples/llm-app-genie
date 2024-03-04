@@ -202,7 +202,7 @@ class ChatbotStack(GenAiStack):
                     f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
                 ],
                 conditions={
-                    "StringEquals": {f"aws:ResourceTag/{config['appPrefix']}:deployment": "True"}
+                    "StringEquals": {f"aws:ResourceTag/genie:deployment": "True"}
                 }
             )
         )
@@ -238,7 +238,7 @@ class ChatbotStack(GenAiStack):
                 actions=["kendra:Query", "kendra:Retrieve"],
                 resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
                 conditions={
-                      "StringEquals": {f"aws:ResourceTag/{config['appPrefix']}:deployment": "True"}
+                      "StringEquals": {f"aws:ResourceTag/genie:deployment": "True"}
                 },
             )
         )
@@ -367,7 +367,8 @@ class ChatbotStack(GenAiStack):
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
-                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name                
+                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name,
+                "APP_PREFIX": config["appPrefix"]
             },
             secrets={
                 "PASSWORD": ecs.Secret.from_secrets_manager(
