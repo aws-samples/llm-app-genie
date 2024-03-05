@@ -19,7 +19,11 @@ phases:
     on-failure: ABORT
     commands:
       - poetry run cdk destroy $LLM_STACK_NAME $INGESTION_STACK_NAME --force
+  update_pipeline:
+    on-failure: ABORT
+    commands:
+      - poetry run cdk deploy GenieDeploymentPipelineStack --require-approval never
   build:
     on-failure: ABORT
     commands:
-      - poetry run cdk deploy GenieDeploymentPipelineStack $LLM_STACK_NAME $INGESTION_STACK_NAME GenieKendraIndexStack GenieKendraDataSourcesStack GenieChatBotStack GeniePrivateOpenSearchDomainStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never
+      - poetry run cdk deploy $LLM_STACK_NAME $INGESTION_STACK_NAME GenieKendraIndexStack GenieKendraDataSourcesStack GenieChatBotStack GeniePrivateOpenSearchDomainStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never

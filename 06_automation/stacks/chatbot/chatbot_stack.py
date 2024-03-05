@@ -64,6 +64,8 @@ class ChatbotStack(GenAiStack):
             self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
         )
 
+        provider.node.add_dependency(cert_function)
+
 
         
         all_tags = config["globalTags"] | stack["tags"]
@@ -122,6 +124,8 @@ class ChatbotStack(GenAiStack):
             },
         )
 
+        custom_resource.node.add_dependency(provider)
+
         cert_function.add_to_role_policy(
             statement=iam.PolicyStatement(
                 actions=["acm:DeleteCertificate"],
@@ -132,9 +136,13 @@ class ChatbotStack(GenAiStack):
             )
         )
 
+        
+
         certificate = acm.Certificate.from_certificate_arn(
             self, id="SelfSignedCert", certificate_arn=custom_resource.ref
         )
+
+        certificate.node.add_dependency(custom_resource)
 
         memory_table = dynamodb.Table(
             self,
@@ -417,6 +425,13 @@ class ChatbotStack(GenAiStack):
             security_groups=[fargate_service_sg],
         )
 
+        fargate_service.listener.node.add_dependency(custom_resource)
+        fargate_service.listener.node.add_dependency(certificate)
+        fargate_service.listener.node.add_dependency(cert_function)
+        fargate_service.listener.node.add_dependency(provider)
+
+
+        
         service_connectable = fargate_service.service.connections
 
         self.chatbot_security_group = service_connectable.connections.security_groups[0]
