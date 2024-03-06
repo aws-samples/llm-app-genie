@@ -148,7 +148,7 @@ def get_identifier_of(cert_arn):
     """
     all_tags = acm.list_tags_for_certificate(CertificateArn=cert_arn)
     filtered_tags = [tag['Value'] for tag in all_tags['Tags'] if tag['Key'] == identifier_tag_key]
-    identifier_tag = next(filtered_tags, [None] )
+    identifier_tag = next(iter(filtered_tags), [None] )
 
     return identifier_tag
 
