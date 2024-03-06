@@ -16,8 +16,7 @@ from .retriever_catalog_item_open_search import OpenSearchRetrieverItem
 from ..fin_analyzer.retriever_catalog_item_fin_analyzer import FinAnalyzerRetrieverItem
 from chatbot.open_search import get_credentials, get_open_search_index_list
 from chatbot.config import AppConfig
-from opensearchpy import ConnectionError, ConnectionTimeout
-
+import opensearchpy
 
 @dataclass
 class RetrieverCatalog(Catalog):
@@ -283,8 +282,8 @@ class RetrieverCatalog(Catalog):
                                     )
                                 )
                     except (
-                        ConnectionError,
-                        ConnectionTimeout
+                        opensearchpy.ImproperlyConfigured,
+                        opensearchpy.OpenSearchException
                     ) as e:
                         self.logger.info(
                             f"Cannot connect to OpenSearch domain. Ignoring OpenSearch domain {domain_arn}. {str(e)}"
