@@ -5,8 +5,11 @@
 from OpenSSL import crypto
 from cryptography import x509
 import boto3
+import hashlib
 
 acm = boto3.client("acm")
+
+identifier_tag_key = 'CDK_CUSTOM_RESOURCE_DONT_DELETE_IDENTIFIER'
 
 def lambda_handler(event, context):
     """
@@ -18,14 +21,22 @@ def lambda_handler(event, context):
     stack_id = event["StackId"]
     tags = props["tags"]
 
+
+    identifier = get_identifier(**props)
+
     if request_type == "Create":
         cert = generate_certificate(**props)
-        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags)
+        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags, id=identifier)
     elif request_type == "Update":
         # Deletes and regenerates a self-signed certificate
-        cert_arn = delete_certificate(event["PhysicalResourceId"])
-        cert = generate_certificate(**props)
-        cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags)
+        cert_arn = event["PhysicalResourceId"]
+        existing_identifier = get_identifier_of(cert_arn)
+
+        if identifier != existing_identifier:
+            # Need to replace certificate
+            cert_arn = delete_certificate()
+            cert = generate_certificate(**props)
+            cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id, tags=tags, id=identifier )
     else: # Delete
         cert_arn = delete_certificate(event["PhysicalResourceId"])
 
@@ -75,22 +86,44 @@ def generate_certificate(
 
     return {
         "private_key": crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"),
-        "certificate": crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
+        "certificate": crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"),
     }
 
-def register_certificate_in_acm(cert, stack_id, tags: dict[str, str]):
+def get_identifier(
+        email_address,
+        common_name,
+        country_code,
+        city,
+        state,
+        organization,
+        organizational_unit,
+        validity_seconds: int=5*365*24*60*60, # Five years validity
+        **kwargs):
+    """
+    Creates a string identifier for the config of the certificate configuration.
+    """
+    config = email_address + common_name + country_code + city + state + organization + organizational_unit + validity_seconds
+    cert_hash = hashlib.sha256(config.encode("utf-8"), usedforsecurity=False ).hexdigest()
+    return cert_hash
+
+def register_certificate_in_acm(cert, stack_id, tags: dict[str, str], id: str):
     """
     Registers the input x509 certificate into ACM and returns its ARN
     """
     private_key = cert["private_key"]
     certificate = cert["certificate"]
 
-    
+    tags.append(
+        {
+            'Key': identifier_tag_key,
+            'Value': id
+        }
+    )
 
     tags.append(
         {
-                'Key': "stack-id",
-                'Value': stack_id
+            'Key': "stack-id",
+            'Value': stack_id
         }
     )
     result = acm.import_certificate(
@@ -108,4 +141,14 @@ def delete_certificate(cert_arn):
     acm.delete_certificate(CertificateArn=cert_arn)
 
     return cert_arn
+
+def get_identifier_of(cert_arn):
+    """
+    Gets the identifier from the tags of an existing cert
+    """
+    all_tags = acm.list_tags_for_certificate(CertificateArn=cert_arn)
+    filtered_tags = [tag['Value'] for tag in all_tags['Tags'] if tag['Key'] == identifier_tag_key]
+    identifier_tag = next(filtered_tags, [None] )
+
+    return identifier_tag
 

@@ -78,21 +78,11 @@ class ChatbotStack(GenAiStack):
         }
         custom_resource_tags.append(certificate_conditional_tag)
 
-        cert_function.add_to_role_policy(
-            statement=iam.PolicyStatement(
-                actions=["acm:ImportCertificate"],
-                resources=["*"],
-                conditions=
-                    {
-                    "StringEquals": {f"aws:ResourceTag/{certificate_conditional_tag['Key']}": certificate_conditional_tag['Value']}
-                }
-                
-            )
-        )
+       
 
         cert_function.add_to_role_policy(
             statement=iam.PolicyStatement(
-                actions=["acm:AddTagsToCertificate"], resources=["*"],
+                actions=["acm:AddTagsToCertificate", "acm:ListTagsForCertificate", "acm:ImportCertificate"], resources=["*"],
                 conditions=
                     {
                     "StringEquals": {f"aws:ResourceTag/{certificate_conditional_tag['Key']}": certificate_conditional_tag['Value']}
