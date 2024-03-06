@@ -122,7 +122,7 @@ class DeploymentPipelineStack(GenAiStack):
                         value=f"{config['appPrefix']}LlmPipelineStack",
                     ),
                     "INGESTION_STACK_NAME": codebuild.BuildEnvironmentVariable(
-                        value=f"{config['appPrefix']}OpenSearchIngestionPipelineStack"
+                        value=f"{config['appPrefix']}PrivateOpenSearchIngestionPipelineStack"
                     )
                 }
             ),
