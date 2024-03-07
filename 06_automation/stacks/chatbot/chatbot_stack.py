@@ -1,7 +1,6 @@
 import json
-from typing import Union
 
-from aws_cdk import CustomResource, Duration, RemovalPolicy, Stack, Tags, CfnTag, Names
+from aws_cdk import CustomResource, Duration, RemovalPolicy, Tags, Names
 from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_ec2 as ec2
@@ -13,12 +12,12 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import custom_resources as cr
-from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
 from ..shared.s3_access_logs_stack import S3AccessLogsStack
+from modules.ssm_parameter_reader import SSMParameterReader, SSMParameterReaderProps
 
 stack = {
     "description": "Generative AI Chatbot Application",
@@ -41,6 +40,12 @@ class ChatbotStack(GenAiStack):
         super().__init__(scope, construct_id, stack, **kwargs)
 
 
+        # chatbot_vpc_id_reader = SSMParameterReader(
+        #     self,
+        #     "ChatbotVPCIdReader",
+        #     props=chatbot_vpc_parameter
+        # )
+        # chatbot_vpc_id = chatbot_vpc_id_reader.get_parameter_value()
 
         # Do not use a port lower than 1024. The container image runs the app as non root user. Non root user cannot bind to port lower than 1024 in ECS.
         self.container_port = 3001

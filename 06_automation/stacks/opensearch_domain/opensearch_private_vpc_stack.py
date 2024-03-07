@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Sequence
 
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ssm as ssm
@@ -28,11 +27,6 @@ class OpenSearchPrivateVPCStack(GenAiStack):
         self,
         scope: Construct,
         construct_id: str,
-        vpc_id_ssm_param: str,
-        peering_vpc_id_ssm_parameter_name: str,
-        peering_vpc_cidr: str,
-        peer_region: str,
-        peering_connection_ssm_parameter_name: str,
         cidr_range: str = "10.4.0.0/16",
         **kwargs,
     ) -> None:
@@ -72,38 +66,9 @@ class OpenSearchPrivateVPCStack(GenAiStack):
 
         subnet_selection = ec2.SubnetSelection(subnets=opensearch_subnets)
 
-        ssm.StringParameter(
-            self,
-            "OpenSearchVPCIdParameter",
-            parameter_name=vpc_id_ssm_param,
-            description="VPC id of OpenSearch vpc.",
-            string_value=vpc.vpc_id,
-        )
-
+       
         self.output_props = OpenSearchPrivateVPCStackOutput(
             vpc=vpc, subnet_selection=subnet_selection
-        )
-
-        peer_vpc_id_reader = SSMParameterReader(
-            self,
-            "VPCPerringVPCIdReader",
-            props=SSMParameterReaderProps(
-                parameter_name=peering_vpc_id_ssm_parameter_name, region=peer_region
-            ),
-        )
-        peering_vpc_id = peer_vpc_id_reader.get_parameter_value()
-
-        opensearch_vpc_peering_stack = VPCPeeringStack(
-            self,
-            "OpenSearchVPCPeering",
-            peering_vpc_id,
-            peering_vpc_cidr,
-            peer_region,
-            vpc.vpc_id,
-            vpc_route_table_ids=[
-                subnet.route_table.route_table_id for subnet in opensearch_subnets
-            ],
-            peering_connection_ssm_parameter_name=peering_connection_ssm_parameter_name,
         )
 
     @property

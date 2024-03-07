@@ -2,9 +2,9 @@
 # pylint: disable=invalid-name
 # pylint: disable=redefined-builtin
 import json
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Optional
 
-from aws_cdk import CfnOutput, RemovalPolicy, Tags
+from aws_cdk import CfnOutput, RemovalPolicy
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_opensearchservice as opensearch
@@ -12,10 +12,8 @@ from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 from modules.config import config
-from modules.ssm_parameter_reader import SSMParameterReader
 from modules.stack import GenAiStack
 from stacks.opensearch_domain.opensearch_private_vpc_stack import (
-    OpenSearchPrivateVPCStack,
     OpenSearchPrivateVPCStackOutput,
 )
 

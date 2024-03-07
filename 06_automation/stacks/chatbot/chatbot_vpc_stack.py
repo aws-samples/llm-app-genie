@@ -37,7 +37,6 @@ class ChatbotVPCStack(GenAiStack):
         self,
         scope: Construct,
         construct_id: str,
-        vpc_id_ssm_param: str,
         cidr_range: str = "10.0.0.0/16",
         **kwargs,
     ) -> None:
@@ -72,16 +71,6 @@ class ChatbotVPCStack(GenAiStack):
         self.vpc = vpc
 
         self.subnets = vpc.private_subnets + vpc.isolated_subnets + vpc.public_subnets
-
-
-        ssm.StringParameter(
-            self,
-            "ChatbotPrivateVPCIdParameter",
-            parameter_name=vpc_id_ssm_param,
-            description="VPC id of chatbot private vpc.",
-            string_value=vpc.vpc_id,
-        )
-
 
         # ==================================================
         # ============= ECR Private Endpoint ===============

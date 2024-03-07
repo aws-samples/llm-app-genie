@@ -81,7 +81,6 @@ datasource_stack.add_dependency(index_stack)
 # SageMakerStudioStack(app, "SageMakerStudioDomainStack", env=env)
 
 ## Chatbot
-vpc_id_ssm_param = f"{config['appPrefix']}_CHATBOT_PRIVATE_VPC_SSM_PARAMETER"
 chatbot_vpc_cidr_block = "10.0.0.0/16"
 
 
@@ -90,7 +89,6 @@ chatbot_vpc = ChatbotVPCStack(
     "ChatBotVPCStack",
     env=env,
     cidr_range=chatbot_vpc_cidr_block,
-    vpc_id_ssm_param=vpc_id_ssm_param
 )
 chatbot = ChatbotStack(app, "ChatBotStack", env=env, vpc=chatbot_vpc.vpc)
 chatbot.add_dependency(chatbot_vpc)
@@ -98,22 +96,14 @@ chatbot.add_dependency(chatbot_vpc)
 
 
 ## OpenSearch
-opensearch_vpc_id_ssm_param = f"{config['appPrefix']}_OPENSEARCH_PRIVATE_VPC_SSM_PARAMETER"
-opensearch_peering_id_param_name = f"{config['appPrefix']}_OPENSEARCH_VPC_PEERING_CONNECTION_ID_SSM_PARAMETER"
 
 opensearch_vpc_cidr_block = "10.4.0.0/16"
 opensearch_vpc_stack = OpenSearchPrivateVPCStack(
     app,
     "OpenSearchPrivateVpc",
     env=env,
-    vpc_id_ssm_param=opensearch_vpc_id_ssm_param,
     cidr_range=opensearch_vpc_cidr_block,
-    peering_vpc_cidr=chatbot_vpc_cidr_block,
-    peering_vpc_id_ssm_parameter_name=vpc_id_ssm_param,
-    peer_region=env.region,
-    peering_connection_ssm_parameter_name=opensearch_peering_id_param_name,
 )
-opensearch_vpc_stack.add_dependency(chatbot_vpc)
 
 opensearch_stack_private = OpenSearchStack(
     app, "PrivateOpenSearchDomainStack", env=env, vpc_output=opensearch_vpc_stack.output
