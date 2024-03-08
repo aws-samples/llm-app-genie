@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 - 
+
+## [1.2.0] - 2024-03-08
+
+### Added
+
+- CDK stack to deploy OpenSearch domain into a VPC without internet connectivity. Chatbot connects to OpenSearch domain with a VPC endpoint.
+- Adds cdk retetion policies to keep resources that store data (i.e. OpenSearch, S3 buckets) when cdk stacks get deleted
+- Adds VPC flow logs
+- CDK adds lifecycle rules and versioning to S3 bucket to follow best practices
+
+
+### Fixed
+
+- adapt Streamlit changes to query parameter API
+- Streamlit breaking configuration parameters
+- 02_ingestion ingest.py script 
+
+
+### Changed
+
+- Reduce IAM permissions of some IAM roles
+- Improve duckduckgo agent
+- Documentation about local deployment now uses a port that is less likely in use
+
+
+### Deprecated
+
+- CDK stack to deploy OpenSearch index with an internet facing endpoint may be removed in a future release.
+
 ## [1.1.1] - 2023-11-18
 
 ### Added

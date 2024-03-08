@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crawly"
-version = "1.0.3"
+version = "1.2.0"
 description = ""
 authors = ["Arlind Nocaj <arlnocaj@amazon.com>"]
 readme = "README.md"

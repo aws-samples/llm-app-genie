@@ -11,7 +11,7 @@ trunk check 06_automation/
 ```python
 {
   "globalTags": {
-    "version": "1.0",
+    "version": "1.2.0",
     "app": "demo",
     "owner": "gena-team",
     "deployment": "True"
