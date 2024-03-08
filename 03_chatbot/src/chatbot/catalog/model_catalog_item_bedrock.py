@@ -4,6 +4,7 @@ import boto3
 from chatbot.config import AmazonBedrockParameters, LLMConfig, LLMConfigParameters
 from chatbot.helpers import get_boto_session
 from langchain.llms.base import LLM
+from langchain_community.chat_models import BedrockChat
 #from langchain.llms.bedrock import Bedrock
 from chatbot.helpers import Bedrock
 
@@ -71,6 +72,14 @@ class BedrockModelItem(ModelCatalogItem):
         iam_config = self.config.iam
 
         session = get_boto_session(iam_config, region)
+
+        if self.model_id.startswith("anthropic.claude-3") or self.model_id.startswith("anthropic.claude-v2"):
+            return BedrockChat(
+                client=session.client("bedrock-runtime", region, endpoint_url=endpoint_url),
+                model_id=self.model_id,
+                streaming=self.supports_streaming and self.streaming_on,
+                callbacks=self.callbacks,
+            )
 
         return Bedrock(
             client=session.client("bedrock-runtime", region, endpoint_url=endpoint_url),
