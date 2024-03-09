@@ -14,7 +14,8 @@ python = ">=3.10, <4.0"
 aws-cdk-lib = "^2.100.0"
 boto3 = "^1.28.9"
 "aws-cdk.aws-lambda-python-alpha" = "^2.100.0a0"
-cryptography = "^42.0.1"
+cryptography = "^42.0.5"
+botocore = "^1.34.59"
 
 [build-system]
 requires = ["poetry-core"]
