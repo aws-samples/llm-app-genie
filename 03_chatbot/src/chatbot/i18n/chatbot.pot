@@ -5,7 +5,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: LLM App Genie 1.2.0\n"
+"Project-Id-Version: LLM App Genie 1.2.1\n"
 "Report-Msgid-Bugs-To: malterei@amazon.com\n"
 "POT-Creation-Date: 2023-08-17 20:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
