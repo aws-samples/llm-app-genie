@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.1] - 2024-03-09
 
+### Added
+
+- Anthropic Claude 3
+
 ### Security
 
 - Update dependencies to their latest versions
