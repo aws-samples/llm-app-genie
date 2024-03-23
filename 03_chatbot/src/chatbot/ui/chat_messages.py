@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Union
+import re
 
 import streamlit as st
 from ansi2html import Ansi2HTMLConverter
@@ -61,8 +62,14 @@ class ChatMessage(AbstractChatMessage):
             pass
         if type(self._msg) == str:
             self._msg = self._msg.replace("\$", "$").replace("$", "\$")
+
+        self._clean_msg()
         st.write(self._msg, unsafe_allow_html=True)
 
+    # Do not write in the chat the full content of a document
+    def _clean_msg(self):
+        pattern = r"=== BEGIN FILE ===([\s\S]*)=== END FILE ==="
+        self._msg = re.sub(pattern, "", self._msg)
 
 @dataclass
 class InfoMessage(AbstractChatMessage):

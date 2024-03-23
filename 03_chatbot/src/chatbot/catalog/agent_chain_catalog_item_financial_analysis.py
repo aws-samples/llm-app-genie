@@ -23,7 +23,7 @@ class FinancialAnalysisAgentChainItem(AgentChainCatalogItem):
         from langchain.agents import Tool
 
         search_duckduckgo = DuckDuckGoSearchAPIWrapper()
-        
+
         agent_chain = [
             Tool(
                 name="get stock data",

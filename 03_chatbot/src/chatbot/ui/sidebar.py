@@ -21,11 +21,13 @@ from numpy import ndarray
 from streamlit.type_util import OptionSequence, T
 
 from chatbot.catalog.agent_chain_catalog_item_sql_generator import AGENT_CHAIN_SQL_GENERATOR_NAME
-from langchain.document_loaders.pdf import AmazonTextractPDFLoader
+from langchain.document_loaders import AmazonTextractPDFLoader
 
 import boto3
 from botocore.exceptions import ClientError
 import logging
+
+from textractor.data.text_linearization_config import TextLinearizationConfig
 
 s3 = boto3.client('s3')
 # set up logging
@@ -159,27 +161,41 @@ def write_sidebar(
                     key=flow_options,
                 )
             if uploaded_file is not None:
-                uploaded_file_content = "=== BEGIN FILE ===\n"
                 if uploaded_file.type == "application/pdf":
                     docs = []
                     temp_dir = tempfile.TemporaryDirectory()
                     temp_filepath = os.path.join(temp_dir.name, uploaded_file.name)
-                    with open(temp_filepath, "wb", encoding="utf8") as f:
+                    with open(temp_filepath, "wb") as f:
                         f.write(uploaded_file.getvalue())
                     bucket = st.session_state['textract_s3_bucket']
                     key = temp_filepath.split('/')[-1]
-                    upload_file_to_s3(temp_filepath, bucket, key)
-                    s3_path = f"s3://{bucket}/{key}"
-                    loader = AmazonTextractPDFLoader(s3_path, textract_features=["TABLES", "LAYOUT", "FORMS"])
-                    docs.extend(loader.load())
-
-                    for doc in docs:
-                        uploaded_file_content += doc.page_content
-                    delete_file_from_s3(bucket, key)
+                    alternate_key = key.replace('.pdf', '.txt')
+                    alternate_temp_filepath = temp_filepath.replace('.pdf', '.txt')
+                    # Check if the file exists
+                    try:
+                        print(f"The file '{key}' exists in the '{bucket}' bucket.")
+                        response = s3.get_object(Bucket=bucket, Key=alternate_key)
+                        uploaded_file_content = response['Body'].read().decode('utf-8')
+                        #print(f"File content:\n{uploaded_file_content}")
+                    except s3.exceptions.NoSuchKey:
+                        print(f"The file '{key}' does not exist in the '{bucket}' bucket.")
+                        upload_file_to_s3(temp_filepath, bucket, key)
+                        s3_path = f"s3://{bucket}/{key}"
+                        loader = AmazonTextractPDFLoader(s3_path, textract_features=["TABLES", "LAYOUT", "FORMS"], linearization_config=TextLinearizationConfig(hide_header_layout=True,hide_footer_layout=True, hide_figure_layout=True))
+                        docs.extend(loader.load())
+                        uploaded_file_content = "=== BEGIN FILE ===\n"
+                        for doc in docs:
+                            uploaded_file_content += doc.page_content
+                        uploaded_file_content += "\n=== END FILE ===\n"
+                        with open(alternate_temp_filepath, 'w') as f:
+                            f.write(uploaded_file_content)
+                        upload_file_to_s3(alternate_temp_filepath, bucket, alternate_key)
+                    #delete_file_from_s3(bucket, key)
                 else:
+                    uploaded_file_content = "=== BEGIN FILE ===\n"
                     stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                     uploaded_file_content += stringio.read()
-                uploaded_file_content += "\n=== END FILE ===\n"
+                    uploaded_file_content += "\n=== END FILE ===\n"
 
         ########### AGENTS STUFF ###############
         agents_chains = None

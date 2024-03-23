@@ -17,7 +17,7 @@ python = ">=3.10, <4.0"
 streamlit = "^1.32.0"
 streamlit-chat = "^0.1.1"
 streamlit-extras = "^0.4.0"
-langchain = "0.1.11"
+langchain = "0.1.13"
 opensearch-py = "^2.4.2"
 sagemaker = "^2.212.0"
 babel = "^2.14.0"
@@ -37,11 +37,11 @@ pymysql = '1.1.0'
 pypdf = '4.1.0'
 amazon-textract-caller = '0.2.2'
 amazon-textract-response-parser = '1.0.2'
-textractor = '0.1.2'
-amazon-textract-textractor = '1.7.5'
+textractor = '^0.1.2'
+amazon-textract-textractor = '^1.7.5'
 statsmodels = "0.14.1"
 watchdog = "^4.0.0"
-langchain-community = "^0.0.27"
+langchain-community = "^0.0.29"
 
 [build-system]
 requires = ["poetry-core"]

@@ -321,7 +321,10 @@ class ChatbotStack(GenAiStack):
                     "s3:GetObject",
                     "s3:ListObject",
                     "s3:PutObject",
-                    "s3:DeleteObject"
+                    "s3:DeleteObject",
+                    "s3:ListBucket",
+                    "s3:GetBucketLocation",
+                    "s3:GetObjectVersion"
                 ],
                 resources=[
                     f"arn:aws:s3:::{textract_bucket.bucket_name}",
