@@ -1,18 +1,20 @@
 """
     CDK construct that creates a Kendra data source that uses site maps.
 """
+
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=redefined-builtin
 
 
-from aws_cdk import Stack
+from aws_cdk import Stack, Duration, CustomResource
 from aws_cdk import aws_iam as iam
 from aws_cdk import custom_resources as cr
 from aws_cdk.aws_iam import PolicyStatement
 from constructs import Construct
-from modules.config import config
-
+from aws_cdk import aws_lambda_python_alpha as lambda_python
+from aws_cdk import aws_lambda as lambda_
+import json
 
 class KendraDataSource(Construct):
     """
@@ -24,8 +26,10 @@ class KendraDataSource(Construct):
         scope: Construct,
         id: str,
         index_id: str,
+        index_arn: str,
         data_source_name: str = "WebDataSource",
         config: dict = None,
+        tags: dict[str, str] = {},
         # urls: list[str] = None,
         # sitemap_urls: list[str] = None,
         # crawler_depth: str = "3",
@@ -38,7 +42,10 @@ class KendraDataSource(Construct):
         # self.sitemap_urls = sitemap_urls
         # self.urls = urls
         # self.crawler_depth = crawler_depth
-        index_arn = f"arn:aws:kendra:{Stack.of(self).region}:{Stack.of(self).account}:index/{index_id}"
+
+        stack = Stack.of(self)
+        region = stack.region
+        account = stack.account
 
         # Create an IAM role for the kendra data source
         data_source_role = iam.Role(
@@ -70,75 +77,101 @@ class KendraDataSource(Construct):
             },
         )
 
-        cr_data_source = cr.AwsCustomResource(
+        data_source_function = lambda_python.PythonFunction(
             self,
-            "KendraWebDataSource" + data_source_name,
-            on_create=cr.AwsSdkCall(
-                service="Kendra",
-                action="createDataSource",
-                parameters={
-                    "IndexId": index_id,
-                    "Name": data_source_name,
-                    "Type": "TEMPLATE",
-                    # "Configuration": self._get_default_config(),
-                    "Configuration": self.config,
-                    "RoleArn": data_source_role.role_arn,
-                },
-                physical_resource_id=cr.PhysicalResourceId.from_response("Id"),
-            ),
-            on_update=cr.AwsSdkCall(
-                service="Kendra",
-                action="updateDataSource",
-                parameters={
-                    # Get the data source ID from the experimental resource
-                    "Id": cr.PhysicalResourceIdReference(),
-                    "IndexId": index_id,
-                    "Name": data_source_name,
-                    "Type": "TEMPLATE",
-                    # "Configuration": self._get_default_config(),
-                    "Configuration": self.config,
-                },
-            ),
-            on_delete=cr.AwsSdkCall(
-                service="Kendra",
-                action="deleteDataSource",
-                parameters={
-                    "Id": cr.PhysicalResourceIdReference(),
-                    "IndexId": index_id,
-                },
-            ),
-            # Policy that allows the experimental resource Lambda function to manage the Kendra data source
-            # and pass the role to the data source
-            policy=cr.AwsCustomResourcePolicy.from_statements(
-                [
-                    PolicyStatement(
-                        actions=[
-                            "kendra:CreateDataSource",
-                            "kendra:DeleteDataSource",
-                            "kendra:DescribeDataSource",
-                            "kendra:UpdateDataSource",
-                            "kendra:ListTagsForResource",
-                        ],
-                        resources=[
-                            f"arn:aws:kendra:{Stack.of(self).region}:{Stack.of(self).account}:index/{index_id}",
-                            f"arn:aws:kendra:{Stack.of(self).region}:{Stack.of(self).account}:index/{index_id}/data-source/*",
-                        ],
-                    ),
-                    PolicyStatement(
-                        actions=["iam:PassRole"], resources=[data_source_role.role_arn]
-                    ),
-                ]
-            ),
+            "CreateKendraDataSource",
+            entry="./modules/kendra/data_source_lambda",
+            index="function.py",
+            handler="lambda_handler",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(amount=120),
         )
 
-        cr.AwsCustomResource(
+        is_complete_handler = lambda_python.PythonFunction(
+            self,
+            id=f"CreateKendraDataSourceIsComplete",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            entry="./modules/kendra/data_source_is_complete_lambda",
+            index="function.py",
+            handler="lambda_handler",
+            timeout=Duration.seconds(amount=120),
+        )
+
+        provider = cr.Provider(
+            self,
+            "KendraDataSourceCustomResourceProvider",
+            on_event_handler=data_source_function,
+            is_complete_handler=is_complete_handler,
+            query_interval=Duration.minutes(2),
+        )
+
+
+        data_source_function.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=["kendra:CreateDataSource"],
+                resources=[
+                    index_arn,
+                    f"{index_arn}/data-source/*"
+                ]
+            )
+        )
+
+        data_source_function.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=[
+                    "kendra:UpdateDataSource",
+                    "kendra:DeleteDataSource",
+                    "kendra:TagResource",
+				    "kendra:UntagResource",
+				    "kendra:ListTagsForResource"
+                ],
+                resources=[
+                    index_arn, 
+                    f"{index_arn}/data-source/*"
+                ],
+            )
+        )
+
+        data_source_function.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=["iam:PassRole"], resources=[data_source_role.role_arn]
+            )
+        )
+
+        is_complete_handler.add_to_role_policy(
+            statement=iam.PolicyStatement(
+                actions=["kendra:DescribeDataSource"],
+                resources=[index_arn, f"{index_arn}/data-source/*"],
+            )
+        )
+
+        custom_resource_tags = [{'Key': k, 'Value': v} for k, v in tags.items()]
+
+        cr_data_source = CustomResource(
+            self,
+            "KendraDataSourceCustomResource",
+            service_token=provider.service_token,
+            properties={
+                "name": data_source_name,
+                "index_id": index_id,
+                "config": json.dumps(self.config),
+                "role_arn": data_source_role.role_arn,
+                "tags": custom_resource_tags,
+                "region": region,
+                "account_id": account
+            },
+        )
+
+       
+
+        data_sync = cr.AwsCustomResource(
             self,
             "KendraDataSourceSyncJob" + data_source_name,
             on_create=cr.AwsSdkCall(
                 service="Kendra",
                 action="StartDataSourceSyncJob",
                 parameters={
-                    "Id": cr_data_source.get_response_field("Id"),
+                    "Id": cr_data_source.ref,
                     "IndexId": index_id,
                 },
                 physical_resource_id=cr.PhysicalResourceId.of("start-sync-job"),
@@ -148,25 +181,14 @@ class KendraDataSource(Construct):
                     PolicyStatement(
                         actions=["kendra:StartDataSourceSyncJob"],
                         resources=[
-                            f"arn:aws:kendra:{Stack.of(self).region}:{Stack.of(self).account}:index/{index_id}",
-                            f"arn:aws:kendra:{Stack.of(self).region}:{Stack.of(self).account}:index/{index_id}/data-source/*",
+                            index_arn,
+                            f"{index_arn}/data-source/*",
                         ],
                     )
                 ]
             ),
         )
 
-    # def _get_default_config(self):
-    #     # self.config = config["kendra"]["data_sources"]
+        data_sync.node.add_dependency(cr_data_source)
 
-    #     if self.urls is not None and len(self.urls) > 0:
-    #         self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]["seedUrlConnections"] = self.urls
-    #         if ("siteMapUrls" in self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]):
-    #             del self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]["siteMapUrls"]
-    #         if ("s3SiteMapUrl" in self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]):
-    #             del self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]["s3SiteMapUrl"]
 
-    #     elif self.sitemap_urls is not None and len(self.sitemap_urls) > 0:
-    #         self.config["TemplateConfiguration"]["Template"]["connectionConfiguration"]["repositoryEndpointMetadata"]["siteMapUrls"] = self.sitemap_urls
-
-    #     return self.config
