@@ -1,4 +1,5 @@
 import json
+import os
 
 from aws_cdk import CustomResource, Duration, RemovalPolicy, Tags, Names
 from aws_cdk import aws_certificatemanager as acm
@@ -12,6 +13,7 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_python_alpha as lambda_python
 from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import custom_resources as cr
+from aws_cdk import aws_ssm as ssm
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 from modules.config import config
@@ -24,6 +26,7 @@ stack = {
     "tags": {},
 }
 
+SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '')
 
 class ChatbotStack(GenAiStack):
 
@@ -374,7 +377,8 @@ class ChatbotStack(GenAiStack):
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
                 "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name,
-                "APP_PREFIX": config["appPrefix"]
+                "APP_PREFIX": config["appPrefix"],
+                "SERPAPI_API_KEY": SERPAPI_API_KEY
             },
             secrets={
                 "PASSWORD": ecs.Secret.from_secrets_manager(

@@ -3,9 +3,10 @@
 from dataclasses import dataclass
 from langchain.tools import BaseTool
 from .agent_chain_catalog_item import AgentChainCatalogItem
+import os
 
 AGENT_CHAIN_FINANCIAL_ANALYSIS_NAME = "Financial Analysis"
-
+SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '')
 
 @dataclass
 class FinancialAnalysisAgentChainItem(AgentChainCatalogItem):
@@ -20,9 +21,13 @@ class FinancialAnalysisAgentChainItem(AgentChainCatalogItem):
     def get_instance(self) -> BaseTool:
         from .agent_tools_catalog_item import get_stock_price, get_recent_stock_news, get_financial_statements
         from langchain.utilities import DuckDuckGoSearchAPIWrapper
+        from langchain.utilities import SerpAPIWrapper
         from langchain.agents import Tool
 
-        search_duckduckgo = DuckDuckGoSearchAPIWrapper()
+        if SERPAPI_API_KEY == '':
+            search = DuckDuckGoSearchAPIWrapper()
+        else:
+            search = SerpAPIWrapper()
 
         agent_chain = [
             Tool(
@@ -31,8 +36,8 @@ class FinancialAnalysisAgentChainItem(AgentChainCatalogItem):
                 description="Use when you are asked to evaluate or analyze a stock. This will output historic share price data for the last 60 days. You should input the stock ticker to it"
             ),
             Tool(
-                name="DuckDuckGo Search",
-                func=search_duckduckgo.run,
+                name="Search",
+                func=search.run,
                 description="Use this to fetch the stock ticker, you can also get recent stock related news. Dont use it for any other analysis or task"
             ),
             Tool(

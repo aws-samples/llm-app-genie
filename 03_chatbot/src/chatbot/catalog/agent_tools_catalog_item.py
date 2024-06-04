@@ -25,10 +25,11 @@ def google_query(search_term):
 
 def get_recent_stock_news(company_name):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
+    }
 
     g_query = google_query(company_name)
-    res = requests.get(g_query, headers=headers, timeout=0.5)
+    res = requests.get(g_query, headers=headers, timeout=1.0)
     res.raise_for_status()
     
     soup = BeautifulSoup(res.text, "html.parser")

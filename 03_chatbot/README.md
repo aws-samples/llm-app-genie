@@ -30,15 +30,16 @@ export AMAZON_TEXTRACT_S3_BUCKET=<your-s3-bucket>
 
 The chatbot allows you to configure the following environment variables.
 
-| Variable Name               | Default Value   | Usage                                                                                                                                                                                                                                                             |
-|-----------------------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| AWS_DEFAULT_REGION          | eu-west-1       | The AWS region that the chatbot is running in and that contains Amazon OpenSearch domains, Kendra indices, and language models.                                                                                                                                   |
-| BEDROCK_REGION              | None            | The chatbot uses Amazon Bedrock in this region. See also [Amazon Bedrock](#amazon-bedrock)                                                                                                                                                                        |
-| BASE_URL                    | no default      | Base URL from which the chatbot web app is served. Not used.                                                                                                                                                                                                      |
-| AWS_APP_CONFIG_APPLICATION  | no default      | Optional AWS AppConfig application name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_ENVIRONMENT and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
-| AWS_APP_CONFIG_ENVIRONMENT  | no default      | Optional AWS AppConfig environment name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
-| AWS_APP_CONFIG_PROFILE      | no default      | Optional AWS AppConfig profile name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_ENVIRONMENT. See also [Personalize the app](#personalize-the-app) |
-| AMAZON_TEXTRACT_S3_BUCKET   | no default      | S3 bucket where PDFs are stored to be analyzed by Amazon Textract. Used data is extracted, the file is removed from S3.                                                                                                                                           |
+| Variable Name              | Default Value | Usage                                                                                                                                                                                                                                                        |
+|----------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AWS_DEFAULT_REGION         | eu-west-1     | The AWS region that the chatbot is running in and that contains Amazon OpenSearch domains, Kendra indices, and language models.                                                                                                                              |
+| BEDROCK_REGION             | None          | The chatbot uses Amazon Bedrock in this region. See also [Amazon Bedrock](#amazon-bedrock)                                                                                                                                                                   |
+| BASE_URL                   | no default    | Base URL from which the chatbot web app is served. Not used.                                                                                                                                                                                                 |
+| AWS_APP_CONFIG_APPLICATION | no default    | Optional AWS AppConfig application name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_ENVIRONMENT and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
+| AWS_APP_CONFIG_ENVIRONMENT | no default    | Optional AWS AppConfig environment name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_PROFILE. See also [Personalize the app](#personalize-the-app) |
+| AWS_APP_CONFIG_PROFILE     | no default    | Optional AWS AppConfig profile name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_ENVIRONMENT. See also [Personalize the app](#personalize-the-app) |
+| AMAZON_TEXTRACT_S3_BUCKET  | no default    | S3 bucket where PDFs are stored to be analyzed by Amazon Textract. Used data is extracted, the file is removed from S3.                                                                                                                                      |
+| SERPAPI_API_KEY            | no default    | SerpAPI API key for internet searches.                                                                                                                                                                                                                       |    
 In code all environment variables are defined in [ChatbotEnvironmentVariables](./src/chatbot/config/environment_variables.py).
 
 ## Running the streamlit chatbot app using Docker
@@ -72,6 +73,7 @@ AWS_DEFAULT_REGION=...
 USERNAME=...
 PASSWORD=...
 AMAZON_TEXTRACT_S3_BUCKET=...
+SERPAPI_API_KEY=...
 ```
 
 Run the container with the `env.list` file:
