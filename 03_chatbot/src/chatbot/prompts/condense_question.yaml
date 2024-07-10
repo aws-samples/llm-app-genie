@@ -3,11 +3,11 @@ input_variables:
   - chat_history
   - question
 template: |
-  Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question. Summarize the question into one sentence.
-
-  Chat History:
-  {chat_history}
-
-  Follow up question: {question}
-
-  Here is the summary of the standalone question:
+  Given the following conversation in diverse languages and a follow up question in English, rephrase the follow up question to be a standalone question that summarizes the context. Summarize the question into one simple query.
+  
+  <context>
+    <chat_history>{chat_history}</chat_history>
+    
+    <follow_up_question>{question}</follow_up_question>
+  </context>
+  Standalone question:

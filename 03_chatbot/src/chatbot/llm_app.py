@@ -85,7 +85,12 @@ class LLMApp(ABC):
         )  # , human_prefix="[|Human|]", ai_prefix="[|AI|]",return_messages=True)
         chain = self.get_chain(memory=memory, callbacks=callbacks)
 
-        response = chain(self.get_input(query))
+        try:
+            response = chain(self.get_input(query))
+        except Exception as e:
+            print(e)
+            response = {"answer": "Sorry, there was an error, please try again."}
+
         return response
 
     @final

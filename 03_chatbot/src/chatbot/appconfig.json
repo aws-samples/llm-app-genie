@@ -7,6 +7,14 @@
       "faviconUrl": "https://a0.awsstatic.com/libra-css/images/logos/aws_smile-header-desktop-en-white_59x35@2x.png"
     }
   },
+  "amazonBedrock": [
+    {
+      "type": "AmazonBedrock",
+      "parameters": {
+        "region": "us-west-2"
+      }
+    }
+  ],
   "llmConfig": {
     "parameters": {
       "meta\\.llama.*": {
@@ -21,6 +29,14 @@
         "parameters": {
           "chatPrompt": "prompts/anthropic_claude_chat.yaml",
           "ragPrompt": "prompts/anthropic_claude_rag.yaml"
+        }
+      },
+      "ai21\\.j.*": {
+        "type": "LLMConfig",
+        "parameters": {
+          "chatPrompt": "prompts/ai21_jurassic_chat.yaml",
+          "ragPrompt": "prompts/ai21_jurassic_rag.yaml",
+          "temperature": 0
         }
       }
     },
