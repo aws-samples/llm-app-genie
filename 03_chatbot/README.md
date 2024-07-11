@@ -424,3 +424,23 @@ On top of standard functionality, you can activate application modes, check the 
 
 ### [Finance Analyzer](./src/chatbot/fin_analyzer/readme.md)
 This mode allows your to analyze latest finance documents (SEC fillings) of top US market companies.
+## Testing
+
+Make sure that you have playwright and the browsers installed
+
+```bash
+poetry install --with dev
+poetry shell
+playwright install
+```
+
+Make sure to set the host_url and admin password.
+```bash
+export host_url=https://yourendpoint.com
+export admin_password=your_password
+```
+
+Run the tests with pytest and generate a report which contains screenshots when a test fails.
+```
+pytest --html=report.html --self-contained-html
+```
