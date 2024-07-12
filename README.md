@@ -226,12 +226,14 @@ After the deployment is completed, you can navigate to AWS CodePipeline to monit
 To deploy the Amazon OpenSearch index, follow the instructions below.
 
 ```bash
-cdk deploy GeniePrivateOpenSearchDomainStack GenieOpenSearchVPCEndpointStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never
+cdk deploy GeniePrivateOpenSearchDomainStack GeniePrivateOpenSearchIngestionPipelineStack --require-approval never
 ```
 
 `GenieOpenSearchDomainStack` deploys an OpenSearch domain inside its own VPC, protected by an IAM role.
-The `GenieOpenSearchVPCEndpointStack` stack deploys a VPC endpoint for private network traffic between the chatbot and the OpenSearch cluster.
 You can optionally deploy `GeniePrivateOpenSearchIngestionPipelineStack`, which initiates the pipeline that creates a SageMaker real-time endpoint for computing embeddings, and a custom crawler to download the website defined in the [`admin-ch-press-releases-en.json`](01_crawler/crawly/configs/admin-ch-press-releases-en.json). It also ingests the documents downloaded by the crawler into the OpenSearch domain.
+
+[Optional cross VPC]: the `GenieOpenSearchVPCEndpointStack` stack deploys a VPC endpoint for private network traffic between the chatbot and the OpenSearch cluster.
+
 
 To deploy the Kendra index and data sources, follow the instructions in [Deploying Amazon Kendra](./06_automation/stacks/README.md#deploying-amazon-kendra)
 
