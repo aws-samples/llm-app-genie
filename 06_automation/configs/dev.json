@@ -5,14 +5,30 @@
     "owner": "genie-team",
     "deployment": "True"
   },
+  "vpc": {
+    "cidr_range": "10.0.0.0/16",
+    "cidr_mask": 24
+  },
+  "vpc": {
+    "cidr_range": "10.0.0.0/16",
+    "cidr_mask": 24
+  },
   "bedrock_region": "us-west-2",
+  "embedding": {
+    "type": "Bedrock",
+    "model": "amazon.titan-embed-text-v2:0"
+  },
+  "embedding": {
+    "type": "Bedrock",
+    "model": "amazon.titan-embed-text-v2:0"
+  },
   "customer": {
     "name": "Demo"
   },
   "opensearch": {
     "domain": "kb",
     "instance_type": "t3.small.search",
-    "index":"press-releases-en"
+    "index": "press-releases-en"
   },
   "sagemaker": {
     "embeddings_instance_type": "ml.g4dn.xlarge",
@@ -133,5 +149,17 @@
     "organization": ".",
     "organizational_unit": ".",
     "validity_seconds": 157680000
+  },
+  "fin_analyzer": {
+    "s3": {
+      "prefix": "finance-analyzer"
+    },
+    "secret": {
+      "finnhub_api_key": "********",
+      "apca_api_key_id": "********",
+      "apca_api_secret_key": "********",
+      "user_agent_email": "********"
+    },
+    "index": "stock-market"
   }
 }

@@ -4,13 +4,7 @@ from typing import Callable
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
-from chatbot.catalog import (
-    ModelCatalog,
-    ModelCatalogItem,
-    RetrieverCatalog,
-    RetrieverCatalogItem,
-)
-import boto3
+
 import yaml
 
 
@@ -35,14 +29,15 @@ def write_top_bar(session_id: str, on_refresh: Callable[[], None], gettext):
             on_refresh()
     colored_header(label="", description="", color_name="blue-30")
 
-def write_prompt_hints(sidebar):
+def write_prompt_hints(sidebar, config):
     """Write prompt to show in the top bar.
     Args:
         sidebar: Streamlit sidebar object.
     """
-        
-    with open('src/chatbot/prompts/hints.yaml', 'r', encoding="utf8") as yaml_file:
-        hints = yaml.safe_load(yaml_file)
+
+    flows = config.flow_config.parameters.flows
+    # with open(config.appearance.parameters.prompt_config_path, 'r') as yaml_file:
+    #     hints = yaml.safe_load(yaml_file)
 
     # TODO: this part should be moved to CDK
     # TODO: existing table should be cleaned
@@ -60,19 +55,23 @@ def write_prompt_hints(sidebar):
 
     # Define your query parameters
     flow = sidebar.flow.friendly_name
-    knowledge_base = sidebar.retriever.friendly_name if sidebar.retriever is not None else flow
-    data_sources = ["all"]
-
+    knowledge_base = sidebar.retriever.friendly_name if sidebar.retriever else None
+    
+    data_sources = []
     if hasattr(sidebar.retriever, "_selected_data_sources"):
         data_sources += [opt[0] for opt in sidebar.retriever._selected_data_sources]
 
-    results = []
     # Checking for the available hints based on user selection
-    if flow in hints:
-        if knowledge_base in hints[flow]:
+    results = []
+    if flow in flows:
+        if "hints" in flows[flow]: # MM:: why flows is double, same down
+            results += flows[flow]["hints"]
+        elif knowledge_base and knowledge_base in flows[flow]:  # MM:: why flows is double
+            if "hints" in flows[flow][knowledge_base]:
+                results += flows[flow][knowledge_base]["hints"]
             for data_source in data_sources:
-                if data_source in hints[flow][knowledge_base]:
-                    results += hints[flow][knowledge_base][data_source]
+                if data_source in flows[flow][knowledge_base]:
+                    results += flows[flow][knowledge_base][data_source]["hints"]
 
     # TODO: this part should be moved to CDK
     # # Define the query condition expression and expression attribute values
@@ -94,6 +93,7 @@ def write_prompt_hints(sidebar):
     if not results:
         return None
     
+    # converting hints into buttongs
     pairs = zip(results, st.columns(len(results)))
     prompt = None
     for i, (text, col) in enumerate(pairs):

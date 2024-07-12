@@ -8,6 +8,7 @@ from aws_cdk import CfnTag, RemovalPolicy
 from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
+from stacks.core.core_stack import CoreStack
 
 stack = {"description": f"Kendra Index for {config['appPrefix']}:", "tags": {}}
 
@@ -20,8 +21,40 @@ class KendraIndexStack(GenAiStack):
     # Class attribute to keep the index construct
     index: kendra.CfnIndex = None
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, core: CoreStack, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
+
+        # Update Application role to access Kendra
+        core.role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["kendra:Query", "kendra:ListTagsForResource"],
+                resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
+            )
+        )
+        
+        # # MM:: move to Kendra Stack
+        # # Policy to allow listing Kendra indices
+        core.role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["kendra:ListIndices", "kendra:ListDataSources"],
+                resources=["*"],
+            )
+        )
+        # Policy statement to allow querying the Kendra indices that have the genie:deployment tag
+        core.role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["kendra:Query", "kendra:Retrieve"],
+                resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
+                conditions={
+                      "StringEquals": {f"aws:ResourceTag/genie:deployment": "True"}
+                },
+            )
+        )
+
+
 
         # Create an IAM role for a Kendra index in CDK
         # with required permissions to write CloudWatch logs and metrics

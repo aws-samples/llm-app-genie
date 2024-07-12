@@ -40,7 +40,7 @@ The chatbot allows you to configure the following environment variables.
 | AWS_APP_CONFIG_PROFILE     | no default    | Optional AWS AppConfig profile name if the chatbot should use AWS AppConfig for configuration instead of json file. Needs to be set together with AWS_APP_CONFIG_APPLICATION and AWS_APP_CONFIG_ENVIRONMENT. See also [Personalize the app](#personalize-the-app) |
 | AMAZON_TEXTRACT_S3_BUCKET  | no default    | S3 bucket where PDFs are stored to be analyzed by Amazon Textract. Used data is extracted, the file is removed from S3.                                                                                                                                      |
 | SERPAPI_API_KEY            | no default    | SerpAPI API key for internet searches.                                                                                                                                                                                                                       |    
-In code all environment variables are defined in [ChatbotEnvironmentVariables](./src/chatbot/config/environment_variables.py).
+In code all environment variables are defined in [ChatbotEnvironmentVariables](./src/chatbot/helpers/environment_variables.py).
 
 ## Running the streamlit chatbot app using Docker
 

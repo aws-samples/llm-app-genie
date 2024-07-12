@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from langchain.tools import BaseTool
 from .agent_chain_catalog_item import AgentChainCatalogItem
 import os
+from chatbot.helpers import ChatbotEnvironment, ChatbotEnvironmentVariables
 
 AGENT_CHAIN_FINANCIAL_ANALYSIS_NAME = "Financial Analysis"
-SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '')
+SERPAPI_API_KEY = ChatbotEnvironment().get_env_variable(ChatbotEnvironmentVariables.SERPAPI_API_KEY)
 
 @dataclass
 class FinancialAnalysisAgentChainItem(AgentChainCatalogItem):

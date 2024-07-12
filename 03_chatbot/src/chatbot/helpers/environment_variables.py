@@ -16,6 +16,7 @@ class ChatbotEnvironmentVariables(Enum):
     AWSAppConfigEnvironment = "AWS_APP_CONFIG_ENVIRONMENT"
     AWSAppConfigProfile = "AWS_APP_CONFIG_PROFILE"
     AppPrefix = "APP_PREFIX"
+    SERPAPI_API_KEY = "SERPAPI_API_KEY"
 
 
 class ChatbotEnvironment:
@@ -28,7 +29,8 @@ class ChatbotEnvironment:
     __defaults: Dict[ChatbotEnvironmentVariables, str] = {
         ChatbotEnvironmentVariables.AmazonBedrockRegion: None,
         ChatbotEnvironmentVariables.AWSRegion: "eu-west-1",
-        ChatbotEnvironmentVariables.AppPrefix: "genie"
+        ChatbotEnvironmentVariables.AppPrefix: "genie",
+        ChatbotEnvironmentVariables.SERPAPI_API_KEY: ""
     }
 
     def get_env_variable(self, variable_name: ChatbotEnvironmentVariables) -> str:

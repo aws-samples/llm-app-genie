@@ -11,7 +11,10 @@
     {
       "type": "AmazonBedrock",
       "parameters": {
-        "region": "us-west-2"
+        "region": "us-west-2",
+        "hide_models": [
+          "anthropic.claude-3-opus-20240229-v1:0"
+        ]
       }
     }
   ],
@@ -41,7 +44,170 @@
       }
     },
     "type": "LLMConfigMap"
+  },
+  "flowConfig": {
+    "type": "FlowConfig",
+    "parameters": {
+      "flows": {
+        "Upload a document and search it": {
+          "hints": [
+            {
+              "name": "Summarization",
+              "prompt": "Give me detailed summary for the documents"
+            },
+            {
+              "name": "Comparison",
+              "prompt": "Compare the provided documents"
+            },
+            {
+              "name": "Sensetive data",
+              "prompt": "Check the document to find PII or any kind of sensitive data and classify the findings in table format"
+            }
+          ]
+        },
+        "Only Chat": {
+          "hints": [
+            {
+              "name": "About AWS",
+              "prompt": "Based on public sources, provide detailed description about AWS business model"
+            },
+            {
+              "name": "AWS in Figures",
+              "prompt": "Based on public sources, provide main Information about AWS, include all the figures, which you have"
+            },
+            {
+              "name": "What we are doing different?",
+              "prompt": "Based on public sources, describe what AWS is doing differently compare to other companies in the same industry"
+            }
+          ]
+        },
+        "Retrieval Augmented Generation": {
+          "maxCharacterLimit": 10000,
+          "retrievedDocumentsSlider": {
+            "minValue": 1,
+            "maxValue": 20,
+            "value": 10,
+            "step": 1
+          },
+          "Stock Analysis": {
+            "enabled": true,
+            "friendlyName": "Stock Analysis",
+            "rag": {
+              "maxCharacterLimit": 50000,
+              "retrievedDocumentsSlider": false
+            },
+            "prompts": {
+              "anthropic\\.claude.*": {
+                "chatPrompt": "fin_analyzer/prompts/anthropic_claude_chat.yaml",
+                "ragPrompt": "fin_analyzer/prompts/anthropic_claude_rag.yaml"
+              }
+            },
+            "hints": [
+              {
+                "name": "Key financial information",
+                "prompt": "Give detailed key financial information for each announcement in table format, split the highlights and lowlights #graph"
+              },
+              {
+                "name": "Risks in table format (German)",
+                "prompt": "Highlight all the risks for each announcement in table format, give this information in German"
+              },
+              {
+                "name": "Impact with price targets",
+                "prompt": "Provide an analytical conclusion based on the data provided. Summarize if the announcement had a positive or negative impact and any patterns or trends observed #graph"
+              },
+              {
+                "name": "Comparison with buy/sell/hold",
+                "prompt": "Make the detailed comparison for provided announcements, recommend buy/sell/hold actions, assume the most probable scenario, also what in your opinion will be a price in 6, 12 and 24 month for each company. Put all the details into table #graph"
+              }
+            ]
+          },
+          "OpenSearch Domain - Demo": {
+            "stock-market": {
+              "embedding": {
+                "type": "Bedrock",
+                "model": "amazon.titan-embed-text-v2:0"
+              },
+              "prompts": {
+                "anthropic\\.claude.*": {
+                  "chatPrompt": "fin_analyzer/prompts/anthropic_claude_chat.yaml",
+                  "ragPrompt": "fin_analyzer/prompts/anthropic_claude_rag.yaml"
+                }
+              },
+              "rag": {
+                "maxCharacterLimit": 10000,
+                "retrievedDocumentsSlider": {
+                  "minValue": 10,
+                  "maxValue": 50,
+                  "value": 30,
+                  "step": 5
+                }
+              },
+              "hints": [
+                {
+                  "name": "AMZN latest 10-Q analysis",
+                  "prompt": "Make the detailed analysis for AMZN 10-Q announcements, recommend buy/sell/hold actions, also what in your opinion will be a price in 6, 12 and 24 month for the company"
+                },
+                {
+                  "name": "AMZN current assets summary",
+                  "prompt": "Compare Amazon.com Inc (AMZN) '10-Q' announcements current assets by group"
+                },
+                {
+                  "name": "AAPL 10-K financials & forecast",
+                  "prompt": "Provide detailed financials and risk analysis for AAPL 10-K announcement from 2023. Include buy/hold/sell recommendation and price forecast for the next 6, 12 and 24 months"
+                },
+                {
+                  "name": "Amazon, Apple comparison",
+                  "prompt": "Provide a detailed financial comparison table for Amazon (AMZN) and Apple (AAPL) based on their latest 10-Q announcements"
+                }
+              ]
+            },
+            "press-releases-en": {
+              "embedding": {
+                "type": "Bedrock",
+                "model": "amazon.titan-embed-text-v2:0"
+              },
+              "hints": [
+                {
+                  "name": "Digital Vignette",
+                  "prompt": "When Digital Vignette was announced in Switzerland?"
+                },
+                {
+                  "name": "Ukraine support",
+                  "prompt": "How Switzerland supports Ukraine?"
+                },
+                {
+                  "name": "Kosovo news",
+                  "prompt": "Latest news about Kosovo?"
+                }
+              ]
+            }
+          },
+          "Amazon Kendra index - Demo": {
+            "hints": [
+              {
+                "name": "About the company",
+                "prompt": "Tell me about the company?"
+              }
+            ],
+            "press-releases-en": {
+              "hints": [
+                {
+                  "name": "Digital Vignette",
+                  "prompt": "When Digital Vignette was announced in Switzerland?"
+                },
+                {
+                  "name": "Ukraine support",
+                  "prompt": "How Switzerland supports Ukraine?"
+                },
+                {
+                  "name": "Kosovo news",
+                  "prompt": "Latest news about Kosovo?"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
   }
 }
-
-

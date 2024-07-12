@@ -9,6 +9,7 @@ from typing import List
 
 import boto3
 import botocore
+import botocore.exceptions
 
 from .catalog import FRIENDLY_NAME_TAG, Catalog
 from .retriever_catalog_item_kendra import KendraRetrieverItem
@@ -189,7 +190,8 @@ class RetrieverCatalog(Catalog):
                 if (
                     friendly_name_tag_value
                     and secrets_tag_value
-                    and embedding_sagemaker_name
+                    # We can have bedrock now
+                    # and embedding_sagemaker_name
                 ):
                     
                     try:
@@ -203,17 +205,19 @@ class RetrieverCatalog(Catalog):
                         self.logger.info(
                             f"Cannot connect to embeddings endpoint {embedding_sagemaker_name} on Amazon SageMaker for OpenSearch domain {domain_arn}."
                         )
-                        continue
+                        # No need to skip, as we can have Bedrock embeddings
+                        # continue
 
-                    if (
-                        not embedding_endpoint
-                        or "EndpointStatus" not in embedding_endpoint
-                        or embedding_endpoint["EndpointStatus"] != "InService"
-                    ):
-                        self.logger.info(
-                            f"Ignoring OpenSearch domain {domain_arn} because embeddings endpoint {embedding_sagemaker_name} on Amazon SageMaker is not in service."
-                        )
-                        continue
+                    # # No need to skip as bedrock can be used
+                    # if (
+                    #     not embedding_endpoint
+                    #     or "EndpointStatus" not in embedding_endpoint
+                    #     or embedding_endpoint["EndpointStatus"] != "InService"
+                    # ):
+                    #     self.logger.info(
+                    #         f"Ignoring OpenSearch domain {domain_arn} because embeddings endpoint {embedding_sagemaker_name} on Amazon SageMaker is not in service."
+                    #     )
+                    #     continue
 
                     try:
                         secret = get_credentials(secrets_tag_value, region)
@@ -266,21 +270,37 @@ class RetrieverCatalog(Catalog):
                         if endpoint:
                             domain['Endpoint'] = endpoint
 
-                            data_sources = get_open_search_index_list(region, domain, os_http_auth)
+                            secret = get_credentials(secrets_tag_value, region)
+                            os_http_auth = (secret["user"] or "admin", secret["password"])
+                            data_sources = get_open_search_index_list(region, domain, os_http_auth)                    
 
+                            # Get the corresponding flow configuration and update with required information
+                            rag_config = self.app_config.flow_config.parameters.flows["Retrieval Augmented Generation"]                            
+                            
+                            if friendly_name_tag_value in rag_config:
+                                embedding_config = rag_config[friendly_name_tag_value]
+                            else: 
+                                embedding_config = {}
 
+                            embedding_config["endpoint"] = f"https://{domain['Endpoint']}"
+                            embedding_config["region"] = region
+
+                            # taking first badrock region, not sure why there should be more than 1 in the setup
+                            embedding_config["bedrock_region"] = self.app_config.amazon_bedrock[0].parameters.region.value
+                            embedding_config["http_auth"] = os_http_auth
+                            embedding_config["default_embadding_name"] = embedding_sagemaker_name
+                            
                             if data_sources:
                                 opensearch_indices.append(
                                     OpenSearchRetrieverItem(
                                         friendly_name=friendly_name_tag_value,
-                                        region=region,
                                         data_sources = data_sources,
-                                        endpoint=f"https://{endpoint}",
-                                        embedding_endpoint_name=embedding_sagemaker_name,
-                                        os_http_auth = os_http_auth
-
+                                        rag_config=rag_config,
+                                        embedding_config=embedding_config,
                                     )
                                 )
+
+
                     except (
                         opensearchpy.ImproperlyConfigured,
                         opensearchpy.OpenSearchException
@@ -300,8 +320,17 @@ class RetrieverCatalog(Catalog):
     def _get_fin_analyzer_indices(self, account):
         """Get list of FinAnalyzer indices, based on application config (appconfig.json)."""
         
-        config = self.app_config.fin_analyzer
-        if config is None:
+        # Checking Finance Analyzer configuration in appconfig.json
+        flows = self.app_config.flow_config.parameters.flows
+        if "Retrieval Augmented Generation" in flows:
+            rag = flows["Retrieval Augmented Generation"]
+            if "Stock Analysis" in rag:        
+                config = rag["Stock Analysis"]
+            else: 
+                config = None
+                
+        if not config or ("enabled" not in config or not config["enabled"]):
+        # if config is None or "enabled" not in config or not config["enabled"]:
             self.logger.info(
                 f"Skipping Finance Analyzer indices due to missing configuration."
             )
@@ -311,13 +340,18 @@ class RetrieverCatalog(Catalog):
         logging.info("Retrieving FinAnalyzer indices...")
 
         for region in self.regions:
-            self.append(
-                FinAnalyzerRetrieverItem(
-                    index_id="FinAnalyzer",
-                    config=config.parameters,
-                    region=region
+            try:
+                self.append(
+                    FinAnalyzerRetrieverItem(
+                        index_id="FinAnalyzer",
+                        config=config,
+                        region=region
+                    )
                 )
-            )
+            except botocore.exceptions.ClientError as e:
+                self.logger.info(
+                    f"Failed to retrieve Finance Analyzer in region {region}. Error: {e}"
+                )
 
         logging.info(
             "%s FinAnalyzer indices retrieved in %s seconds",

@@ -1,4 +1,5 @@
 """ Module that contains a class that represents a FinAnalyzer retriever catalog item. """
+import os
 from dataclasses import dataclass
 from typing import Any, List, Tuple, Union
 from langchain.schema import BaseRetriever
@@ -34,28 +35,31 @@ class FinAnalyzerRetrieverItem(RetrieverCatalogItem):
     """ FinAnalyzer Data Source IDs that the retriever is supposed to use at the moment. """
 
     def __init__(self, index_id, config, region=None):
-        super().__init__(config.friendly_name)
+        super().__init__(config["friendlyName"])
         self._selected_data_sources = []
         self.index_id = index_id
         self.region = region
 
         # get the list of available stock data
-        response = s3_client.list_objects_v2(Bucket=config.s3_bucket, Prefix=config.s3_prefix + "/", Delimiter="/")
+        response = s3_client.list_objects_v2(Bucket=os.environ["DATA_SOURCES_S3_BUCKET"], Prefix=os.environ["FIN_ANALYZER_S3_PREFIX"] + "/", Delimiter="/")
         
         # Loading company prices and announcements from S3 into data frames
         self._data_sources = []
-        self.prices_df = pd.DataFrame()
-        self.announcement_df = pd.DataFrame()
+        self.prices_df = pd.DataFrame(columns=['open', 'timestamp'])
+        self.announcement_df = pd.DataFrame(columns=['symbol', 'acceptedDate', 'form', 'date_full', 'title', 'date'])
 
-        for content in response.get('CommonPrefixes', []):
-            company = content.get('Prefix').replace(config.s3_prefix, "").replace("/", "")
+        companies_data_folders = response.get('CommonPrefixes', [])
+        
+        for content in companies_data_folders:
+            company = content.get('Prefix').replace(os.environ["FIN_ANALYZER_S3_PREFIX"], "").replace("/", "")
             
-            self.prices_df = pd.concat([self.prices_df, self.read_from_s3(config.s3_bucket, f"""{config.s3_prefix}/{company}/daily_prices.csv""", "csv")], ignore_index=True)
-            self.announcement_df = pd.concat([self.announcement_df, self.read_from_s3(config.s3_bucket, f"""{config.s3_prefix}/{company}/sec_filings_content.json""", "json")], ignore_index=True)
+            self.prices_df = pd.concat([self.prices_df, self.read_from_s3(os.environ["DATA_SOURCES_S3_BUCKET"], f"""{os.environ["FIN_ANALYZER_S3_PREFIX"]}/{company}/daily_prices.csv""", "csv")], ignore_index=True)
+            self.announcement_df = pd.concat([self.announcement_df, self.read_from_s3(os.environ["DATA_SOURCES_S3_BUCKET"], f"""{os.environ["FIN_ANALYZER_S3_PREFIX"]}/{company}/sec_filings_content.json""", "json")], ignore_index=True)
 
             self._data_sources.append({
                 "stock": company
             })
+        
         
         # adjusting dataframes based on retriever needs
         self.prices_df['opening price'] = self.prices_df['open']
@@ -96,6 +100,7 @@ class FinAnalyzerRetrieverItem(RetrieverCatalogItem):
     def read_from_s3(self, bucket, key, format):
         obj = s3_client.get_object(Bucket=bucket, Key=key)
         data = obj['Body'].read().decode('utf-8')
+        print(data)
         
         if format == "csv":
             return pd.read_csv(StringIO(data))

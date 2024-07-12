@@ -100,9 +100,9 @@ def write_sidebar(
         label: str, selected_state_name: str, options: OptionSequence[T], params
     ) -> Tuple[T, bool]:
         default_index = 0
-        if selected_state_name in params and len(params[selected_state_name]) > 0:
+        if selected_state_name in params and len(params.get_all(selected_state_name)) > 0:
             option_names = [str(option) for option in options]
-            filtered_names = list(set(option_names) & set(params[selected_state_name]))
+            filtered_names = list(set(option_names) & set(params.get_all(selected_state_name)))
             options = [option for option in options if str(option) in filtered_names]
 
         selected = st.selectbox(label=label, options=options, index=default_index)
@@ -118,17 +118,19 @@ def write_sidebar(
         return selected, changed
 
     with st.sidebar:
-        # Logo layout with 2 columns good for small square logo
-        # col1, col2 = st.columns([1, 2])
-        # with col1:
-        #     st.image(app_icon, use_column_width="always")
-        # with col2:
-        
-        # Logo layout for big and long logo
-        st.image(app_icon, use_column_width="always")
-        st.title(chatbot_name)
-
         params = st.query_params
+        # Logo layout with 2 columns good for small square logo
+
+        if "small_logo" in params:
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(app_icon, use_column_width="always")
+            with col2:
+                st.title(chatbot_name)
+        else:
+            st.image(app_icon, use_column_width="always")
+            st.title(chatbot_name)
+
 
         _sidebar = SidebarObj()
 
@@ -228,11 +230,11 @@ def write_sidebar(
             filter_query_param_name = "filter"
             if (
                 filter_query_param_name in params
-                and len(params[filter_query_param_name]) > 0
+                and len(params.get_all(filter_query_param_name)) > 0
                 ):
                 option_names = [option[0] for option in filter_options]
                 filtered_names = list(
-                    set(option_names) & set(params[filter_query_param_name])
+                    set(option_names) & set(params.get_all(filter_query_param_name))
                     )
                 filter_options = [
                     option for option in filter_options if option[0] in filtered_names
@@ -294,11 +296,11 @@ def write_sidebar(
                 filter_query_param_name = "filter"
                 if (
                     filter_query_param_name in params
-                    and len(params[filter_query_param_name]) > 0
+                    and len(params.get_all(filter_query_param_name)) > 0
                     ):
                     option_names = [option[0] for option in filter_options]
                     filtered_names = list(
-                        set(option_names) & set(params[filter_query_param_name])
+                        set(option_names) & set(params.get_all(filter_query_param_name))
                         )
                     filter_options = [
                         option for option in filter_options if option[0] in filtered_names
@@ -316,8 +318,9 @@ def write_sidebar(
                     )
 
                 # Finance Analyzer specific options
-                if (app_config.fin_analyzer is not None and 
-                    retriever.friendly_name == app_config.fin_analyzer.parameters.friendly_name):
+                rag = app_config.flow_config.parameters.flows["Retrieval Augmented Generation"]
+                if ("Stock Analysis" in rag and 
+                    retriever.friendly_name == rag["Stock Analysis"]["friendlyName"]):
                     if len(options) > 0:
                         filtered_df = retriever.announcement_df[retriever.announcement_df["symbol"].isin(opt[0] for opt in options)]
                         retriever.announcement_filter = st.multiselect(
@@ -327,17 +330,26 @@ def write_sidebar(
                         )
                     else:
                         st.info("Select companies for analysis")
+                
                 else:
                     retriever.current_filter = options
+                    
+                    if (retriever.friendly_name in rag and len(retriever._selected_data_sources) > 0 and 
+                        retriever._selected_data_sources[0][0] in rag[retriever.friendly_name] and
+                        "rag" in rag[retriever.friendly_name][retriever._selected_data_sources[0][0]]
+                    ):    
+                        slider_config = rag[retriever.friendly_name][retriever._selected_data_sources[0][0]]["rag"]["retrievedDocumentsSlider"]
+                    else:
+                        slider_config = app_config.flow_config.parameters.flows["Retrieval Augmented Generation"]["retrievedDocumentsSlider"]
+
                     retriever.top_k = st.slider(
                         "Retrieved documents",
-                        min_value=1,
-                        ## TODO:: should come from config
-                        max_value=20,
-                        value=3,
-                        step=1
+                        min_value=slider_config["minValue"],
+                        max_value=slider_config["maxValue"],
+                        value=slider_config["value"],
+                        step=slider_config["step"]
                     )
-
+            
         ########### MAIN MODEL STUFF ###############
         model_state_name = "model_catalog"
         if model_state_name not in st.session_state:
