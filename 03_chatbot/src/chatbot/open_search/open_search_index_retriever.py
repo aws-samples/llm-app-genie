@@ -7,11 +7,16 @@ import sys
 from typing import List, Tuple
 
 import boto3
-from chatbot.embeddings import SageMakerEndpointEmbeddings
 from chatbot.helpers.logger import TECHNICAL_LOGGER_NAME
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import OpenSearchVectorSearch
-from opensearchpy import OpenSearch
+from opensearchpy import OpenSearch, AWSV4SignerAuth, RequestsHttpConnection
+
+from sagemaker.huggingface.model import HuggingFacePredictor
+from sagemaker.session import Session
+from chatbot.embeddings import SageMakerEndpointEmbeddings
+from langchain.embeddings import BedrockEmbeddings
+
 
 logger = logging.getLogger(TECHNICAL_LOGGER_NAME)
 
@@ -45,31 +50,45 @@ def get_credentials(secret_id: str, region_name: str) -> str:
     secrets_value = json.loads(response["SecretString"])
     return secrets_value
 
-def get_open_search_index_list(region, domain, os_http_auth):
-    client = boto3.client("opensearch", region)
+def get_open_search_index_list(region, domain, os_http_auth = None):
+    # Currently supports only OpenSearch serverless
+    if not os_http_auth:
+        credentials = boto3.Session().get_credentials()
+        os_http_auth = AWSV4SignerAuth(credentials, region, 'aoss')
+
+    # client = boto3.client("opensearch", region)
     client = OpenSearch(
-        hosts=[{"host": domain["Endpoint"], "port": 443}],
+        hosts=[{"host": domain["Endpoint"].replace("https://", ""), "port": 443}],
         http_auth=os_http_auth,
         use_ssl=True,
-        verify_certs=False,
-        ssl_assert_hostname=False,
-        ssl_show_warn=False,
+        verify_certs=True,
+        connection_class=RequestsHttpConnection,
+        timeout = 300
     )
 
-    response = client.cat.indices(v=True, format="json")
-    indexes = [item for item in response if item['rep'] == "1"]
+    response = client.cat.indices(format="json")
+
+    contains_documents = lambda item: 'docs.count' not in item or item['docs.count'] != '0'
+
+    is_not_hidden = lambda item: not item["index"].startswith(".")
+
+    is_not_system_index = lambda item: item['rep'] in ("1", '')
+
+
+
+    # filtering for non system indices only
+    indexes = [item for item in response if is_not_system_index and is_not_hidden and contains_documents]
     return indexes
 
+    
 class OpenSearchIndexRetriever(BaseRetriever):
     """Retriever to search Amazon OpenSearch.
 
     Args:
         index_name: OpenSearch index name.
-        domain_endpoint: OpenSearch domain endpoint.
-        http_auth: Tuple containing OpenSearch user and password for authentication.
-        embeddings_predictor: HuggingFacePredictor for embeddings.
+        rag_config: RAG config (number of Documents and number of Characters to retrieve).
+        embeddings_config: Embeding enpoing and configuration.
         k: Number of documents to query for. Default: 3
-        max_character_limit: Maximum character limit for each document. Default: 1000
 
     Example:
         ```python
@@ -96,32 +115,59 @@ class OpenSearchIndexRetriever(BaseRetriever):
     def __init__(
         self,
         index_name: str,
-        domain_endpoint: str,
-        http_auth: Tuple[str, str],
-        embeddings_predictor: HuggingFacePredictor,
-        k: int = 3,
-        # TODO::This could be another parameter added to GUI
-        max_character_limit: int = 10000,
+        rag_config,
+        embedding_config,         
+        k: int = 3, # gets value from slider now
     ):
-        os_domain_ep = domain_endpoint
-        os_index_name = index_name
-        sagemaker_endpoint_embeddings = SageMakerEndpointEmbeddings(
-            embeddings_predictor=embeddings_predictor
-        )
+        if index_name in embedding_config and "rag" in embedding_config[index_name]:
+            rag_config = embedding_config[index_name]["rag"]
 
+        # Currently supports only OpenSearch serverless
+        # couldn't do it on upper level due to streamlit issue (deepcopy)
+        if not embedding_config["http_auth"]:
+            credentials = boto3.Session().get_credentials()
+            embedding_config["http_auth"] = AWSV4SignerAuth(credentials, embedding_config["region"], 'aoss')
+
+        if  index_name in embedding_config and "embedding" in embedding_config[index_name]:
+            embedding_type = embedding_config[index_name]["embedding"]["type"]
+            model = embedding_config[index_name]["embedding"]["model"]
+        else:
+            embedding_type = "Sagemaker"
+            model = embedding_config["default_embadding_name"]
+
+        if embedding_type == "Sagemaker":
+            boto3_session = boto3.Session(region_name=embedding_config["region"])
+            session = Session(boto3_session)
+            # replace default endpoint
+            predictor = HuggingFacePredictor(
+                endpoint_name=model, sagemaker_session=session
+            )
+
+            embedding_function = SageMakerEndpointEmbeddings(
+                embeddings_predictor=predictor
+            )
+        elif embedding_type == "Bedrock":
+            bedrock_client = boto3.client("bedrock-runtime", region_name=embedding_config["bedrock_region"])
+            embedding_function = BedrockEmbeddings(
+                client=bedrock_client,
+                model_id=model)
+        else:
+            raise Exception("Embedding type not supported")
+
+        
         opensearchvectorsearch = OpenSearchVectorSearch(
-            index_name=os_index_name,
-            embedding_function=sagemaker_endpoint_embeddings,
-            opensearch_url=os_domain_ep,
-            http_auth=http_auth,
+            index_name=index_name,
+            embedding_function=embedding_function,
+            opensearch_url=embedding_config["endpoint"],
+            http_auth=embedding_config["http_auth"],
+            timeout = 300,
+            connection_class = RequestsHttpConnection,
             use_ssl=True,
-            verify_certs=False,
-            ssl_assert_hostname=False,
-            ssl_show_warn=False,
+            verify_certs=True
         )
         super().__init__(
             k=k,
-            max_character_limit=max_character_limit,
+            max_character_limit=rag_config["maxCharacterLimit"],
             opensearchvectorsearch=opensearchvectorsearch,
         )
 

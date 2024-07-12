@@ -1,6 +1,8 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=redefined-builtin
+import json
+import aws_cdk
 from aws_cdk import Duration, RemovalPolicy
 from aws_cdk import aws_codebuild as codebuild
 from aws_cdk import aws_codecommit as codecommit
@@ -9,18 +11,17 @@ from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_ssm as ssm
+from aws_cdk import aws_secretsmanager as sm
 from constructs import Construct
-from aws_cdk import Stack
 from aws_cdk import aws_ec2 as ec2
 from typing import Optional
 from modules.config import config, quotas, quotas_client
 from modules.stack import GenAiStack
 from stacks.opensearch_domain.opensearch_domain_stack import OpenSearchVpcOutput
 from ..shared.s3_access_logs_stack import S3AccessLogsStack
+from stacks.core.core_stack import CoreStack
 
 import logging
-
-
 
 stack = {"description": "OpenSearch Ingestion Pipeline", "tags": {}}
 class OpenSearchIngestionPipelineStack(GenAiStack):
@@ -30,6 +31,7 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             self, 
             scope: Construct, 
             construct_id: str, 
+            core: CoreStack,
             opensearch_domain_vpc: Optional[OpenSearchVpcOutput] = None,
             **kwargs
     ) -> None:
@@ -50,8 +52,6 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             )
 
         bucket_name = f"{config['appPrefixLowerCase']}-sagemaker-{self.account}-{self.region}"
-
-        
         
         ssm.StringParameter(
             scope=self,
@@ -80,6 +80,15 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             parameter_name=config['appPrefix'] + "OpenSearchIndexName",
             string_value=config["opensearch"]["index"],
         )
+
+        # get fin_analyzer api secrets
+        # TODO: make this check below as well
+        if "fin_analyzer" in config and "secret" in config["fin_analyzer"]:  
+            fin_analyzer_apis = sm.Secret(
+                scope=self,
+                id=config["appPrefix"] + "FinAnalyzerAPIs",
+                secret_string_value = aws_cdk.SecretValue(json.dumps(config["fin_analyzer"]["secret"]))
+            )
 
         s3_access_logs = S3AccessLogsStack(
             scope=self,
@@ -175,11 +184,43 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                         "secretsmanager:ListSecretVersionIds",
                     ],
                     resources=[
-                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefix']}OpenSearchCredentials*"
+                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefix']}OpenSearchCredentials*",
+                        # create secret and automate it
+                        f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:{config['appPrefix']}FinAnalyzerAPIs*"
                     ],
                 ),
             ]
         )
+        bedrock_policy = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["bedrock:InvokeModel"],
+                    resources=["arn:aws:bedrock:*::foundation-model/*"]
+                )
+            ]
+        )
+
+        s3_policy = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "s3:GetObject",
+                        "s3:ListObject",
+                        "s3:PutObject",
+                        "s3:DeleteObject",
+                        "s3:ListBucket",
+                        "s3:GetBucketLocation",
+                        "s3:GetObjectVersion"
+                    ],
+                    resources=[
+                        f"arn:aws:s3:::{core.data_sources_bucket.bucket_name}",
+                        f"arn:aws:s3:::{core.data_sources_bucket.bucket_name}/*"
+                    ]
+            )
+        ])
+
 
         iam_role = iam.Role(
             self,
@@ -197,7 +238,11 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                     "AmazonOpenSearchServiceFullAccess"
                 ),  # in ingest and create indexes
             ],
-            inline_policies={"parametersAndSecrets": secrets_policy},
+            inline_policies={
+                "parametersAndSecrets": secrets_policy,
+                "BedrockAccess": bedrock_policy,
+                "S3Policy": s3_policy
+            },
         )
 
         cdk_deploy = codebuild.PipelineProject(
@@ -291,11 +336,11 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
             }
 
 
-        cdk_ingest = codebuild.PipelineProject(
+        cdk_ingest_admin_ch = codebuild.PipelineProject(
             self,
-            config["appPrefix"] + "CodeBuildIngest",
+            config["appPrefix"] + "CodeBuildIngest" + "AdminCH",
             build_spec=codebuild.BuildSpec.from_asset(
-                "../02_ingestion/buildspec.yml"
+                "../02_ingestion/buildspec_admin_ch.yml"
             ),
             environment=codebuild.BuildEnvironment(build_image=build_image),
             environment_variables={
@@ -316,7 +361,58 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                 ),
                 "APP_PREFIX": codebuild.BuildEnvironmentVariable(
                     value=config['appPrefix']
-                )
+                ),
+                "EMBEDDING_TYPE": codebuild.BuildEnvironmentVariable(
+                    value=config["embedding"]["type"]),
+                "BEDROCK_REGION": codebuild.BuildEnvironmentVariable(
+                    value=config["bedrock_region"]),
+                "BEDROCK_EMBEDDING_MODEL": codebuild.BuildEnvironmentVariable(
+                    value=config["embedding"]["model"] if config["embedding"]["type"] == "Bedrock" else ""),
+            },
+            cache=codebuild.Cache.local(
+                codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
+            ),
+            role=iam_role,
+            timeout=Duration.minutes(300),
+            **ingestion_step_kwargs,
+        )
+        cdk_ingest_fin_analyzer = codebuild.PipelineProject(
+            self,
+            config["appPrefix"] + "CodeBuildIngest" + "FinAnalyzer",
+            build_spec=codebuild.BuildSpec.from_asset(
+                "../02_ingestion/buildspec_fin_analyzer.yml"
+            ),
+            environment=codebuild.BuildEnvironment(build_image=build_image),
+            environment_variables={
+                "S3_BUCKET": codebuild.BuildEnvironmentVariable(
+                    value=core.data_sources_bucket.bucket_name
+                ),
+                "S3_PREFIX": codebuild.BuildEnvironmentVariable(
+                    value=config["fin_analyzer"]["s3"]["prefix"] if "fin_analyzer" in config and "s3" in config["fin_analyzer"] else ""
+                ),
+                "OPENSEARCH_INDEX_NAME": codebuild.BuildEnvironmentVariable(
+                    value=config["fin_analyzer"]["index"] if "fin_analyzer" in config else ""
+                ),
+                "OPENSEARCH_SECRET_NAME": codebuild.BuildEnvironmentVariable(
+                    value=f"{config['appPrefix']}OpenSearchCredentials"
+                ),
+                "OPENSEARCH_DOMAIN_NAME": codebuild.BuildEnvironmentVariable(
+                    value=f"{config['appPrefix']}{config['opensearch']['domain']}"
+                ),
+                "ENDPOINT_NAME": codebuild.BuildEnvironmentVariable(
+                    value=config["appPrefix"] + config["sagemaker"]["embeddings_endpoint_name"]
+                ),
+                "APP_PREFIX": codebuild.BuildEnvironmentVariable(
+                    value=config['appPrefix']
+                ),
+                "EMBEDDING_TYPE": codebuild.BuildEnvironmentVariable(
+                    value=config["embedding"]["type"]),
+                "BEDROCK_REGION": codebuild.BuildEnvironmentVariable(
+                    value=config["bedrock_region"]),
+                "BEDROCK_EMBEDDING_MODEL": codebuild.BuildEnvironmentVariable(
+                    value=config["embedding"]["model"] if config["embedding"]["type"] == "Bedrock" else ""),
+                "APIS_SECRET": codebuild.BuildEnvironmentVariable(
+                    value=fin_analyzer_apis.secret_name if "fin_analyzer" in config else "")
             },
             cache=codebuild.Cache.local(
                 codebuild.LocalCacheMode.DOCKER_LAYER, codebuild.LocalCacheMode.CUSTOM
@@ -331,38 +427,37 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
         source_crawler_output = codepipeline.Artifact()
         source_ingestion_output = codepipeline.Artifact()
 
-        codepipeline.Pipeline(
-            self,
-            "Pipeline",
-            role=iam_role,
-            artifact_bucket=s3_bucket,
-            stages=[
-                codepipeline.StageProps(
-                    stage_name="Source",
-                    actions=[
-                        codepipeline_actions.CodeCommitSourceAction(
-                            action_name="EmbeddingSource",
-                            output=source_embeddings_output,
-                            repository=repo_embeddings,
-                            branch="main",
-                            role=iam_role,
-                        ),
-                        codepipeline_actions.CodeCommitSourceAction(
-                            action_name="CrawlerSource",
-                            output=source_crawler_output,
-                            repository=repo_crawler,
-                            branch="main",
-                            role=iam_role,
-                        ),
-                        codepipeline_actions.CodeCommitSourceAction(
-                            action_name="IngestionSource",
-                            output=source_ingestion_output,
-                            repository=repo_ingestion,
-                            branch="main",
-                            role=iam_role,
-                        ),
-                    ],
-                ),
+        stages = [
+            codepipeline.StageProps(
+                stage_name="Source",
+                actions=[
+                    codepipeline_actions.CodeCommitSourceAction(
+                        action_name="EmbeddingSource",
+                        output=source_embeddings_output,
+                        repository=repo_embeddings,
+                        branch="main",
+                        role=iam_role,
+                    ),
+                    codepipeline_actions.CodeCommitSourceAction(
+                        action_name="CrawlerSource",
+                        output=source_crawler_output,
+                        repository=repo_crawler,
+                        branch="main",
+                        role=iam_role,
+                    ),
+                    codepipeline_actions.CodeCommitSourceAction(
+                        action_name="IngestionSource",
+                        output=source_ingestion_output,
+                        repository=repo_ingestion,
+                        branch="main",
+                        role=iam_role,
+                    ),
+                ],
+            ),
+        ]
+
+        if config["embedding"]["type"] == "Sagemaker":
+            stages.append(
                 codepipeline.StageProps(
                     stage_name="SageMakerEmbeddingsEndpoint",
                     actions=[
@@ -374,7 +469,9 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                             role=iam_role,
                         )
                     ],
-                ),
+                )
+            )
+            stages.append(
                 codepipeline.StageProps(
                     stage_name="DeployEmbeddingsSageMakerEndpoint",
                     actions=[
@@ -393,28 +490,45 @@ class OpenSearchIngestionPipelineStack(GenAiStack):
                             run_order=1,
                         ),
                     ],
-                ),
-                codepipeline.StageProps(
-                    stage_name="Crawler",
-                    actions=[
-                        codepipeline_actions.CodeBuildAction(
-                            action_name="Crawl",
-                            project=cdk_crawler,
-                            input=source_crawler_output,
-                            role=iam_role,
-                        )
-                    ],
-                ),
-                codepipeline.StageProps(
-                    stage_name="Ingestion",
-                    actions=[
-                        codepipeline_actions.CodeBuildAction(
-                            action_name="Ingest",
-                            project=cdk_ingest,
-                            input=source_ingestion_output,
-                            role=iam_role,
-                        )
-                    ],
-                ),
-            ],
+                )
+            )
+
+        stages.append(
+            codepipeline.StageProps(
+                stage_name="Crawler",
+                actions=[
+                    codepipeline_actions.CodeBuildAction(
+                        action_name="Crawl",
+                        project=cdk_crawler,
+                        input=source_crawler_output,
+                        role=iam_role,
+                    )
+                ],
+            ))
+
+        stages.append(
+            codepipeline.StageProps(
+                stage_name="Ingestion",
+                actions=[
+                    codepipeline_actions.CodeBuildAction(
+                        action_name="IngestAdminCH",
+                        project=cdk_ingest_admin_ch,
+                        input=source_ingestion_output,
+                        role=iam_role,
+                    ), 
+                    codepipeline_actions.CodeBuildAction(
+                        action_name="IngestFinAnalyzer",
+                        project=cdk_ingest_fin_analyzer,
+                        input=source_ingestion_output,
+                        role=iam_role,
+                    )
+                ],
+        ))
+
+        codepipeline.Pipeline(
+            self,
+            "Pipeline",
+            role=iam_role,
+            artifact_bucket=s3_bucket,
+            stages=stages,
         )

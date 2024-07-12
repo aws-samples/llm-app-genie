@@ -11,6 +11,7 @@ from .appearance import AWSsomeChatAppearance
 from .aws_region import AWSRegion
 from .llm_config import LLMConfigMap
 from .fin_analyzer import FinAnalyzer
+from .flow_config import FlowConfig
 from .parser_helpers import from_list, from_none, from_union, to_class
 
 # This code is used to parse the configuration file for this application.
@@ -35,6 +36,7 @@ class AppConfig:
     _amazon_bedrock: Optional[List[AmazonBedrock]] = None
     appearance: AWSsomeChatAppearance = None
     _llm_config: LLMConfigMap = field(default_factory=LLMConfigMap({}))
+    _flow_config: Optional[FlowConfig] = None
     _fin_analyzer: Optional[FinAnalyzer] = None
 
     def __init__(
@@ -42,11 +44,13 @@ class AppConfig:
         appearance: AWSsomeChatAppearance,
         amazon_bedrock: Optional[List[AmazonBedrock]] = None,
         llm_config: LLMConfigMap = LLMConfigMap({}),
-        fin_analyzer: Optional[FinAnalyzer] = None
+        flow_config: Optional[FlowConfig] = None,
+        fin_analyzer: Optional[FinAnalyzer] = None,
     ):
         self.appearance = appearance
         self._amazon_bedrock = amazon_bedrock
         self._llm_config = llm_config
+        self._flow_config = flow_config
         self._fin_analyzer = fin_analyzer
 
     @property
@@ -56,6 +60,10 @@ class AppConfig:
     @property
     def llm_config(self) -> LLMConfigMap:
         return self._llm_config
+
+    @property
+    def flow_config(self) -> Optional[FlowConfig]:
+        return self._flow_config
 
     @property
     def fin_analyzer(self) -> Optional[FinAnalyzer]:
@@ -95,11 +103,14 @@ class AppConfig:
         llm_config = from_union(
             [LLMConfigMap.from_dict, from_none], obj.get("llmConfig")
         )
+        flow_config   = from_union(
+            [FlowConfig.from_dict, from_none], obj.get("flowConfig")
+        )
         fin_analyzer  = from_union(
             [FinAnalyzer.from_dict, from_none], obj.get("finAnalyzer")
         )
         return AppConfig(
-            appearance=appearance, amazon_bedrock=amazon_bedrock, llm_config=llm_config, fin_analyzer=fin_analyzer
+            appearance=appearance, amazon_bedrock=amazon_bedrock, llm_config=llm_config, flow_config=flow_config, fin_analyzer=fin_analyzer
         )
 
     def to_dict(self) -> dict:
@@ -111,6 +122,9 @@ class AppConfig:
         )
         result["llmConfig"] = from_union(
             [lambda x: to_class(LLMConfigMap, x), from_none], self.llm_config
+        )
+        result["flowConfig"] = from_union(
+            [lambda x: to_class(FlowConfig, x), from_none], self.flow_config
         )
         result["finAnalyzer"] = from_union(
             [lambda x: to_class(FinAnalyzer, x), from_none], self.fin_analyzer

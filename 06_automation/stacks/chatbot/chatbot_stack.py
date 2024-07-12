@@ -1,9 +1,8 @@
 import json
+import aws_cdk
 import os
-
 from aws_cdk import CustomResource, Duration, RemovalPolicy, Tags, Names
 from aws_cdk import aws_certificatemanager as acm
-from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets
 from aws_cdk import aws_ecs as ecs
@@ -11,6 +10,7 @@ from aws_cdk import aws_ecs_patterns as ecs_patterns
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_lambda_python_alpha as lambda_python
+# from aws_cdk import aws_lambda as lambda_python
 from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import custom_resources as cr
 from aws_cdk import aws_ssm as ssm
@@ -19,7 +19,9 @@ from constructs import Construct
 from modules.config import config
 from modules.stack import GenAiStack
 from ..shared.s3_access_logs_stack import S3AccessLogsStack
-from modules.ssm_parameter_reader import SSMParameterReader, SSMParameterReaderProps
+# from modules.ssm_parameter_reader import SSMParameterReader, SSMParameterReaderProps
+from stacks.core.core_stack import CoreStack
+
 
 stack = {
     "description": "Generative AI Chatbot Application",
@@ -37,7 +39,7 @@ class ChatbotStack(GenAiStack):
         self,
         scope: Construct,
         construct_id: str,
-        vpc: ec2.IVpc,
+        core: CoreStack,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
@@ -67,6 +69,7 @@ class ChatbotStack(GenAiStack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=120),
         )
+
 
         provider = cr.Provider(
             self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
@@ -142,33 +145,6 @@ class ChatbotStack(GenAiStack):
 
         certificate.node.add_dependency(custom_resource)
 
-        memory_table = dynamodb.Table(
-            self,
-            "MemoryTable",
-            partition_key=dynamodb.Attribute(
-                name="SessionId", type=dynamodb.AttributeType.STRING
-            ),
-            removal_policy=RemovalPolicy.DESTROY,
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            point_in_time_recovery=True
-        )
-
-        textract_bucket = s3.Bucket(
-            self,
-            f"TextractBucket",
-            versioned=False,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            encryption=s3.BucketEncryption.S3_MANAGED,
-            enforce_ssl=True,
-            removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True,
-        )
-
-        Tags.of(memory_table).add(
-            f"genie:memory-table",
-            "Use this table to store the history",
-        )
-
         # ==================================================
         # =============== STREAMLIT CREDENTIALS ============
         # ==================================================
@@ -184,23 +160,10 @@ class ChatbotStack(GenAiStack):
             ),
         )
 
-        # ==================================================
-        # ========== IAM ROLE for the ECS task =============
-        # ==================================================
-        role = iam.Role(
-            scope=self,
-            id="Taskrole",
-            assumed_by=iam.ServicePrincipal(service="ecs-tasks.amazonaws.com"),
-        )
-        role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonECS_FullAccess")
-        )
-        role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name(
-                "AmazonEC2ContainerRegistryReadOnly"
-            )
-        )
-        role.add_to_policy(
+        # =============================================================
+        # ========== Update ECS role with application policies ========
+        # =============================================================
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["sagemaker:InvokeEndpoint", "sagemaker:DescribeEndpoint"],
@@ -212,44 +175,19 @@ class ChatbotStack(GenAiStack):
                 }
             )
         )
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW, actions=["sagemaker:List*"], resources=["*"]
             )
         )
-        role.add_managed_policy(
+        core.role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "SecretsManagerReadWrite"
-            )  # is this still necessary?
-        )
-        role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["kendra:Query", "kendra:ListTagsForResource"],
-                resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
             )
         )
-        # Policy to allow listing Kendra indices
-        role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["kendra:ListIndices", "kendra:ListDataSources"],
-                resources=["*"],
-            )
-        )
-        # Policy statement to allow querying the Kendra indices that have the genie:deployment tag
-        role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["kendra:Query", "kendra:Retrieve"],
-                resources=[f"arn:aws:kendra:{self.region}:{self.account}:index/*"],
-                conditions={
-                      "StringEquals": {f"aws:ResourceTag/genie:deployment": "True"}
-                },
-            )
-        )
+
         # Policy statement to grant access to Amazon Bedrock
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -262,14 +200,14 @@ class ChatbotStack(GenAiStack):
                 resources=["*"],
             )
         )
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["es:ListDomainNames"],
                 resources=["*"],
             )
         )
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -282,7 +220,7 @@ class ChatbotStack(GenAiStack):
                 ],
             )
         )
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -294,7 +232,7 @@ class ChatbotStack(GenAiStack):
                 resources=["*"],
             )
         )
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -312,12 +250,13 @@ class ChatbotStack(GenAiStack):
                     "dynamodb:PutItem",
                 ],
                 resources=[
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{memory_table.table_name}"
+                    # this makes the core class depend on this one create a cyclic reference.
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{core.memory_table.table_name}"
                 ],
             )
         )
 
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -330,13 +269,15 @@ class ChatbotStack(GenAiStack):
                     "s3:GetObjectVersion"
                 ],
                 resources=[
-                    f"arn:aws:s3:::{textract_bucket.bucket_name}",
-                    f"arn:aws:s3:::{textract_bucket.bucket_name}/*"
+                    f"arn:aws:s3:::{core.textract_bucket.bucket_name}",
+                    f"arn:aws:s3:::{core.textract_bucket.bucket_name}/*",
+                    f"arn:aws:s3:::{core.data_sources_bucket.bucket_name}",
+                    f"arn:aws:s3:::{core.data_sources_bucket.bucket_name}/*"
                 ]
             )
         )
 
-        role.add_to_policy(
+        core.role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -352,12 +293,12 @@ class ChatbotStack(GenAiStack):
         # ==================================================
         # =============== FARGATE SERVICE ==================
         # ==================================================
-        cluster = ecs.Cluster(scope=self, id="Cluster", vpc=vpc, container_insights=True)
+        cluster = ecs.Cluster(scope=self, id="Cluster", vpc=core.vpc, container_insights=True)
 
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
             id=config["appPrefix"] + "StreamlitChatbot",
-            task_role=role,
+            task_role=core.role,
             cpu=2 * 1024,
             memory_limit_mib=4 * 1024,
         )
@@ -376,9 +317,11 @@ class ChatbotStack(GenAiStack):
                 "REGION": self.region,
                 "AWS_DEFAULT_REGION": self.region,
                 "BEDROCK_REGION": config["bedrock_region"],
-                "AMAZON_TEXTRACT_S3_BUCKET": textract_bucket.bucket_name,
+                "AMAZON_TEXTRACT_S3_BUCKET": core.textract_bucket.bucket_name,
                 "APP_PREFIX": config["appPrefix"],
-                "SERPAPI_API_KEY": SERPAPI_API_KEY
+                "SERPAPI_API_KEY": SERPAPI_API_KEY,
+                "DATA_SOURCES_S3_BUCKET": core.data_sources_bucket.bucket_name,
+                "FIN_ANALYZER_S3_PREFIX": config["fin_analyzer"]["s3"]["prefix"] if "fin_analyzer" in config and "s3" in config["fin_analyzer"] else "",
             },
             secrets={
                 "PASSWORD": ecs.Secret.from_secrets_manager(
@@ -401,7 +344,7 @@ class ChatbotStack(GenAiStack):
         fargate_service_sg = ec2.SecurityGroup(
             self,
             "ChatbotFargateServiceSecurityGroup",
-            vpc=vpc,
+            vpc=core.vpc,
             description="Chatbot service security group",
             allow_all_outbound=False,
             disable_inline_rules=True,
@@ -443,7 +386,7 @@ class ChatbotStack(GenAiStack):
         )
 
         service_connectable.allow_from(
-            ec2.Peer.ipv4(vpc.vpc_cidr_block),
+            ec2.Peer.ipv4(core.vpc.vpc_cidr_block),
             port_range=ec2.Port.tcp(self.container_port),
             description=f"Allow inbound from VPC for {config['appPrefixLowerCase']}-ai-app",
         )

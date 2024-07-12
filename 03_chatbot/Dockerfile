@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 ARG LISTEN_PORT=8001
 
-FROM public.ecr.aws/docker/library/python:3.10-slim as poetry_base
+FROM public.ecr.aws/docker/library/python:3.10-slim AS poetry_base
 
 
 ENV PIP_NO_CACHE_DIR=off \
@@ -32,7 +32,7 @@ FROM poetry_base
 ARG LISTEN_PORT
 ENV YOUR_ENV="production"
 
-ENV APP_DIR "/code"
+ENV APP_DIR="/code"
 
 ENV YOUR_ENV=${YOUR_ENV} \
   PYTHONFAULTHANDLER=1 \

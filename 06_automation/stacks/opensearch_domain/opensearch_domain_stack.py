@@ -16,6 +16,8 @@ from modules.stack import GenAiStack
 from stacks.opensearch_domain.opensearch_private_vpc_stack import (
     OpenSearchPrivateVPCStackOutput,
 )
+from stacks.core.core_stack import CoreStack
+
 
 stack = {
     "description": "OpenSearch Domain", 
@@ -55,7 +57,7 @@ class OpenSearchStack(GenAiStack):
         self,
         scope: Construct,
         construct_id: str,
-        vpc_output: Optional[OpenSearchPrivateVPCStackOutput] = None,
+        core: CoreStack,
         # deploy_in_vpc = False,
         **kwargs,
     ) -> None:
@@ -70,8 +72,8 @@ class OpenSearchStack(GenAiStack):
                 master_nodes=3
             ),
         }
-        if vpc_output:
-            vpc = vpc_output.vpc
+        if core.vpc:
+            vpc = core.vpc
             subnet_selection = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, one_per_az=True )
 
             open_search_sg = ec2.SecurityGroup(

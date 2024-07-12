@@ -6,6 +6,7 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
+      - pip install tqdm --quiet
       - pip install pandas s3fs sagemaker --quiet
       - pip install transformers --quiet
       - pip install langchain==0.0.218 --quiet
@@ -14,8 +15,10 @@ phases:
       - pip install awswrangler[opensearch] --quiet
       - pip install requests_aws4auth --quiet
       - pip install jsonpath_ng --quiet
+      - pip install markdownify finnhub-python alpaca_trade_api defusedxml --quiet
       - export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
   build:
     on-failure: ABORT
-    commands:
-      - python scripts/ingest.py
+    commands:      
+      - python scripts/fin_analyzer_data.py
+      - python scripts/fin_analyzer_embedding.py

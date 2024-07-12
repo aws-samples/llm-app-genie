@@ -1,2 +1,1 @@
 from .kendra_data_source import KendraDataSource
-from .kendra_url_data_source import KendraUrlDataSource

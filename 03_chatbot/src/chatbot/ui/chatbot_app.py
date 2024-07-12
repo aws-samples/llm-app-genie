@@ -2,6 +2,8 @@
 import os
 import sys
 import uuid
+import re
+
 from typing import Dict, List
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -102,8 +104,15 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
         print(f"textract_s3_bucket: {textract_s3_bucket}")
         st.session_state["textract_s3_bucket"] = textract_s3_bucket
 
-    chatbot_name = app_config.config.appearance.parameters.name
-    favicon_url = app_config.config.appearance.parameters.favicon_url
+    if "chatbot_name" in st.query_params and len(st.query_params["chatbot_name"]):
+        chatbot_name = st.query_params["chatbot_name"]
+    else:
+        chatbot_name = app_config.config.appearance.parameters.name
+
+    if "favicon_url" in st.query_params and len(st.query_params["favicon_url"]):
+        favicon_url = st.query_params["favicon_url"]
+    else:
+        favicon_url = app_config.config.appearance.parameters.favicon_url
 
     if not is_url(favicon_url):
         favicon_url = os.path.join(base_dir, favicon_url)
@@ -249,7 +258,7 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
     prompt = st.chat_input(empty_input_text)
 
     # Showing hints buttons
-    button_prompt = write_prompt_hints(_sidebar)
+    button_prompt = write_prompt_hints(_sidebar, app_config.config)
     if button_prompt:
         refresh(memory)
         prompt = button_prompt
@@ -259,7 +268,29 @@ def write_chatbot(base_dir: str, environment: ChatbotEnvironment):
 
     
     ## Conditional display of AI generated responses as a function of user provided prompts
+    prompts = None
     if prompt:
+        # check for custom prompts per data source
+        if _sidebar.flow.friendly_name in app_config.config.flow_config.parameters.flows and "prompts" in app_config.config.flow_config.parameters.flows[_sidebar.flow.friendly_name]:
+            prompts = app_config.config.flow_config.parameters.flows[_sidebar.flow.friendly_name]["prompts"]
+
+        if "Retrieval Augmented Generation" in app_config.config.flow_config.parameters.flows and _sidebar.flow.friendly_name == "Retrieval Augmented Generation":
+            rag = app_config.config.flow_config.parameters.flows["Retrieval Augmented Generation"]
+
+            # checking for custom prompt for datasource
+            if (_sidebar.retriever.friendly_name in rag and 
+                len(_sidebar.retriever._selected_data_sources) == 1 and
+                "prompts" in rag[_sidebar.retriever.friendly_name][_sidebar.retriever._selected_data_sources[0][0]]):
+                prompts = rag[_sidebar.retriever.friendly_name][_sidebar.retriever._selected_data_sources[0][0]]["prompts"]
+        
+        # check the rexexp match and overwrite the prompt to only configured values
+        if prompts:
+            for p in prompts:
+                if re.match(p, _sidebar.model.model_id):
+                    _sidebar.model.rag_prompt_identifier = prompts[p]["ragPrompt"]
+                    _sidebar.model.chat_prompt_identifier = prompts[p]["chatPrompt"]
+
+
         app = _sidebar.flow.llm_app_factory(
             _sidebar.model,
             _sidebar.retriever,

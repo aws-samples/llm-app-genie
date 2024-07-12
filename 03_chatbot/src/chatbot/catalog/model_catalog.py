@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import boto3
 import botocore
-from chatbot.config import AmazonBedrock, LLMConfig
+from chatbot.config import AmazonBedrock, LLMConfig, FlowConfig
 from chatbot.helpers import get_boto_session
 
 from .model_catalog_item_bedrock import BedrockModelItem
@@ -85,18 +85,26 @@ class ModelCatalog(Catalog):
                 foundation_models = sort_list_by_string("ai21", foundation_models)
                 foundation_models = sort_list_by_string("anthropic", foundation_models)
 
-                models += [
-                    BedrockModelItem(
-                        model_id=fm["modelId"],
-                        llm_config=self.get_llm_config(
-                            fm["modelId"], config_model_id_regexs
-                        ),
-                        bedrock_config=bedrock_config.parameters,
-                        callbacks=self.callbacks,
-                        supports_streaming= ("responseStreamingSupported" in fm) and fm["responseStreamingSupported"]
+                # check the models in config file and apply only if config available
+                # also checking only for ON_DEMAND modelds, filtering FINE_TUNNING and PROVISIONED out
+                for fm in foundation_models:
+                    llm_config=self.get_llm_config(
+                        fm["modelId"], config_model_id_regexs
                     )
-                    for fm in foundation_models
-                ]
+                    if not llm_config or fm["inferenceTypesSupported"] != ["ON_DEMAND"] or fm["modelId"] in bedrock_config.parameters.hide_models:
+                        continue
+
+                    models += [
+                        BedrockModelItem(
+                            model_id=fm["modelId"],
+                            llm_config=self.get_llm_config(
+                                fm["modelId"], config_model_id_regexs
+                            ),
+                            bedrock_config=bedrock_config.parameters,
+                            callbacks=self.callbacks,
+                            supports_streaming= ("responseStreamingSupported" in fm) and fm["responseStreamingSupported"]
+                        )
+                    ]
 
             except (
                 botocore.exceptions.EndpointConnectionError,
@@ -153,6 +161,7 @@ class ModelCatalog(Catalog):
                     async_endpoint_s3 = None
                     if "genie:async-endpoint-s3" in tags_dict:
                         async_endpoint_s3 = tags_dict["genie:async-endpoint-s3"]
+
                     models.append(
                         SageMakerModelItem(
                             model_name=friendly_name,

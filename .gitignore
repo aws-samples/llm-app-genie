@@ -31,8 +31,8 @@ secrets.toml
 
 # binary internationalization files
 *.mo
-*.mo # binary internationalization files
 
 **/test-results/*
 report.html
 **/screenshots/*
+**/demos/

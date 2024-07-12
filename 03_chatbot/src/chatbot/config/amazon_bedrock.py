@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from .aws_region import AWSRegion
 from .iam import Iam
-from .parser_helpers import from_none, from_str, from_union, to_class, to_enum
+from .parser_helpers import from_none, from_str, from_union, to_class, to_enum, from_list
 
 
 @dataclass
@@ -14,6 +14,8 @@ class AmazonBedrockParameters:
     """Optional endpoint url to access Amazon Bedrock."""
     iam: Optional[Iam] = None
     """Optional IAM configuration to access Amazon Bedrock."""
+    hide_models: Optional[List[str]] = None
+    """Bedrock models to hide."""
 
     @staticmethod
     def from_dict(obj: Any) -> "AmazonBedrockParameters":
@@ -21,13 +23,15 @@ class AmazonBedrockParameters:
         region = AWSRegion(obj.get("region"))
         endpoint_url = from_union([from_str, from_none], obj.get("endpointURL"))
         iam = from_union([Iam.from_dict, from_none], obj.get("iam"))
-        return AmazonBedrockParameters(region, endpoint_url, iam)
+        hide_models = from_union([lambda x: from_list(from_str, x), from_none], obj.get("hide_models"))
+        return AmazonBedrockParameters(region, endpoint_url, iam, hide_models)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["region"] = to_enum(AWSRegion, self.region)
         result["endpointURL"] = from_union([from_str, from_none], self.endpoint_url)
         result["iam"] = from_union([lambda x: to_class(Iam, x), from_none], self.iam)
+        result["hide_models"] = from_union([lambda x: from_list(from_str, x), from_none], self.hide_models)
         return result
 
 
