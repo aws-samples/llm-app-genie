@@ -110,7 +110,7 @@ opensearch_vpc_endpoint = OpenSearchVPCEndpointStack(
     env=env,
     opensearch_domain=opensearch_stack_private.output.domain,
     consumer_target_vpc=core_stack.vpc,
-    consumer_security_group=chatbot.chatbot_security_group
+    consumer_security_group=core_stack.chatbot_security_group
 )
 
 opensearch_vpc_endpoint.add_dependency(opensearch_stack_private)

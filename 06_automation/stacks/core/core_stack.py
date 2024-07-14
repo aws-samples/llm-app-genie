@@ -26,6 +26,7 @@ class CoreStack(GenAiStack):
     vpc: ec2.IVpc
     subnets: Sequence[ec2.ISubnet]
     chatbot_security_group: ec2.ISecurityGroup
+    chatbot_security_group_id_cfn_output_name: str = "ChatbotSecurityGroupIdOutput"
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
@@ -102,6 +103,14 @@ class CoreStack(GenAiStack):
             description="Chatbot service security group",
             allow_all_outbound=False,
             disable_inline_rules=True,
+        )
+
+        # Export chatbot security group id to prevent cyclic references.
+        CfnOutput(self,
+            self.chatbot_security_group_id_cfn_output_name,
+            value=chatbot_sg.security_group_id,
+            export_name=self.chatbot_security_group_id_cfn_output_name,
+            description="Chatbot security group id."
         )
 
 

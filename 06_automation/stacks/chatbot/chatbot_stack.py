@@ -1,7 +1,7 @@
 import json
 import aws_cdk
 import os
-from aws_cdk import CustomResource, Duration, RemovalPolicy, Tags, Names
+from aws_cdk import CustomResource, Duration, RemovalPolicy, Tags, Names, Fn
 from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets
@@ -32,7 +32,7 @@ SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '')
 
 class ChatbotStack(GenAiStack):
 
-    chatbot_security_group: ec2.ISecurityGroup
+   
 
     # def __init__(self, scope: Construct, construct_id: str, config: Config, **kwargs) -> None:
     def __init__(
@@ -341,7 +341,14 @@ class ChatbotStack(GenAiStack):
 
         container.add_port_mappings(self.port_mapping)
 
-        fargate_service_sg = core.chatbot_security_group
+        # To prevent cyclic references. Cannot use security group construct from core stack directly
+        security_group_id = Fn.import_value(core.chatbot_security_group_id_cfn_output_name)
+
+        fargate_service_sg = ec2.SecurityGroup.from_security_group_id(
+            self,
+            "ChatbotSGLookup",
+            security_group_id=security_group_id
+        ) 
 
         # fargate_service_sg = ec2.SecurityGroup(
         #     self,
@@ -381,7 +388,7 @@ class ChatbotStack(GenAiStack):
         
         service_connectable = fargate_service.service.connections
 
-        self.chatbot_security_group = service_connectable.connections.security_groups[0]
+
         # Setup service security group
         service_connectable.allow_to_any_ipv4(
             port_range=ec2.Port.tcp(443), description="Allow HTTPS to internet"
