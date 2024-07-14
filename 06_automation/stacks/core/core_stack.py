@@ -127,11 +127,11 @@ class CoreStack(GenAiStack):
             "ECREndpointSecurityGroup",
             vpc=vpc,
             description="Allow access to the ECR Private Endpoint",
-            allow_all_outbound=False,
+            allow_all_outbound=True,
             disable_inline_rules=True,
         )
 
-        ecr_api_vpc_endpoint = vpc.add_interface_endpoint(
+        vpc.add_interface_endpoint(
             id="AmazonECRAPIVPCEndpoint",
             service=ec2.InterfaceVpcEndpointService(
                 f"com.amazonaws.{self.region}.ecr.api", 443
@@ -143,7 +143,7 @@ class CoreStack(GenAiStack):
             security_groups=[_ecr_endpoint_sg],
         )
 
-        ecr_dkr_vpc_endpoint = vpc.add_interface_endpoint(
+        vpc.add_interface_endpoint(
             id="AmazonECRDKRVPCEndpoint",
             service=ec2.InterfaceVpcEndpointService(
                 f"com.amazonaws.{self.region}.ecr.dkr", 443
@@ -153,6 +153,12 @@ class CoreStack(GenAiStack):
                 one_per_az=True
             ),
             security_groups=[_ecr_endpoint_sg],
+        )
+
+        _ecr_endpoint_sg.add_ingress_rule(
+            chatbot_sg,
+            connection=ec2.Port.tcp(443),
+            description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
         )
 
         # ==================================================
@@ -171,3 +177,40 @@ class CoreStack(GenAiStack):
                 "AmazonEC2ContainerRegistryReadOnly"
             )
         )
+
+
+        # ==================================================
+        # ============== AWS Secrets Manager ===============
+        # ==================================================
+
+        _secrets_manager_endpoint_sg = ec2.SecurityGroup(
+            self,
+            "SecretsManagerEndpointSecurityGroup",
+            vpc=vpc,
+            description="Allow access to the Secrets Manager Private Endpoint",
+            allow_all_outbound=True,
+            disable_inline_rules=True,
+        )
+
+        vpc.add_interface_endpoint(
+            id="AmazonSecretsManagerVPCEndpoint",
+            service=ec2.InterfaceVpcEndpointService(
+                f"com.amazonaws.{self.region}.ecr.secretsmanager", 443
+            ),
+            private_dns_enabled=True,
+            subnets=ec2.SubnetSelection(
+                one_per_az=True
+            ),
+            security_groups=[_secrets_manager_endpoint_sg],
+        )
+
+        _secrets_manager_endpoint_sg.add_ingress_rule(
+            chatbot_sg,
+            connection=ec2.Port.tcp(443),
+            description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
+        )
+
+        # TODO
+        #ResourceInitializationError: unable to pull secrets or registry auth: unable to retrieve secret from asm: There is a connection issue between the task and AWS Secrets Manager. Check your task network configuration. failed to fetch secret arn:aws:secretsmanager:eu-west-1:843197046435:secret:GenieStreamlitCredentials-MKpxe0 from secrets manager: RequestCanceled: request context canceled caused by: context deadline exceeded
+
+      
