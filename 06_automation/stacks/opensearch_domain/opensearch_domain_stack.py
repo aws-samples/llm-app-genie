@@ -85,6 +85,12 @@ class OpenSearchStack(GenAiStack):
                 disable_inline_rules=True,
             )
 
+            open_search_sg.allow_from(
+                core.chatbot_security_group,
+                port_range=ec2.Port.tcp(443),
+                description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
+            )
+
             domain_kwargs = {
                 "vpc": vpc,
                 "vpc_subnets": [subnet_selection],

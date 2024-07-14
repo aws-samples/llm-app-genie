@@ -25,6 +25,7 @@ class CoreStack(GenAiStack):
     """
     vpc: ec2.IVpc
     subnets: Sequence[ec2.ISubnet]
+    chatbot_security_group: ec2.ISecurityGroup
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
@@ -93,7 +94,18 @@ class CoreStack(GenAiStack):
             )
             }
         )
-            
+
+        chatbot_sg = ec2.SecurityGroup(
+            self,
+            "ChatbotSecurityGroup",
+            vpc=vpc,
+            description="Chatbot service security group",
+            allow_all_outbound=False,
+            disable_inline_rules=True,
+        )
+
+
+        self.chatbot_security_group = chatbot_sg    
         self.vpc = vpc
         self.subnets = vpc.private_subnets + vpc.isolated_subnets + vpc.public_subnets
 
