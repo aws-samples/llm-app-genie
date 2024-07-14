@@ -341,14 +341,16 @@ class ChatbotStack(GenAiStack):
 
         container.add_port_mappings(self.port_mapping)
 
-        fargate_service_sg = ec2.SecurityGroup(
-            self,
-            "ChatbotFargateServiceSecurityGroup",
-            vpc=core.vpc,
-            description="Chatbot service security group",
-            allow_all_outbound=False,
-            disable_inline_rules=True,
-        )
+        fargate_service_sg = core.chatbot_security_group
+
+        # fargate_service_sg = ec2.SecurityGroup(
+        #     self,
+        #     "ChatbotFargateServiceSecurityGroup",
+        #     vpc=core.vpc,
+        #     description="Chatbot service security group",
+        #     allow_all_outbound=False,
+        #     disable_inline_rules=True,
+        # )
 
         # Set up security group rules for chatbot service running on Fargate.
         # Note the ApplicationLoadBalancedFargateService construct takes care
