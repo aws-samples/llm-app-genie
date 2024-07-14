@@ -85,9 +85,9 @@ class OpenSearchStack(GenAiStack):
                 disable_inline_rules=True,
             )
 
-            open_search_sg.allow_from(
+            open_search_sg.add_ingress_rule(
                 core.chatbot_security_group,
-                port_range=ec2.Port.tcp(443),
+                connection=ec2.Port.tcp(443),
                 description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
             )
 
