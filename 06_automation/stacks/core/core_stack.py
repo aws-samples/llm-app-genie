@@ -195,7 +195,7 @@ class CoreStack(GenAiStack):
         vpc.add_interface_endpoint(
             id="AmazonSecretsManagerVPCEndpoint",
             service=ec2.InterfaceVpcEndpointService(
-                f"com.amazonaws.{self.region}.ecr.secretsmanager", 443
+                f"com.amazonaws.{self.region}.secretsmanager", 443
             ),
             private_dns_enabled=True,
             subnets=ec2.SubnetSelection(
