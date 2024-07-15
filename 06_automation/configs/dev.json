@@ -9,15 +9,7 @@
     "cidr_range": "10.0.0.0/16",
     "cidr_mask": 24
   },
-  "vpc": {
-    "cidr_range": "10.0.0.0/16",
-    "cidr_mask": 24
-  },
   "bedrock_region": "us-west-2",
-  "embedding": {
-    "type": "Bedrock",
-    "model": "amazon.titan-embed-text-v2:0"
-  },
   "embedding": {
     "type": "Bedrock",
     "model": "amazon.titan-embed-text-v2:0"
