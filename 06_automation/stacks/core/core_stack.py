@@ -13,7 +13,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_dynamodb as dynamodb
 
 stack = {
-    "description": "OpenSearch Domain", 
+    "description": "Core stack for the chatbot.", 
     "tags": {}
 }
 
@@ -26,10 +26,12 @@ class CoreStack(GenAiStack):
     vpc: ec2.IVpc
     subnets: Sequence[ec2.ISubnet]
     chatbot_security_group: ec2.ISecurityGroup
-    chatbot_security_group_id_cfn_output_name: str = "ChatbotSecurityGroupIdOutput"
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, stack, **kwargs)
+
+
+        self.chatbot_security_group_id_cfn_output_name = f"{construct_id}ChatbotSecurityGroupIdOutput"
 
         self.memory_table = dynamodb.Table(
             self,
