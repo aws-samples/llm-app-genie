@@ -172,7 +172,7 @@ class CoreStack(GenAiStack):
         # ==================================================
         self.create_interface_endpoint_for_chatbot(endpoint_sg, "logs", vpc)
         self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecs-agent", vpc)
-        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecs-agent", vpc)
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecs-telemetry", vpc)
 
 
         # ==================================================
