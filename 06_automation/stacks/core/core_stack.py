@@ -31,7 +31,7 @@ class CoreStack(GenAiStack):
         super().__init__(scope, construct_id, stack, **kwargs)
 
 
-        self.chatbot_security_group_id_cfn_output_name = f"{construct_id}ChatbotSecurityGroupIdOutput"
+        self.chatbot_security_group_id_cfn_output_name = f"{self.construct_id}ChatbotSecurityGroupIdOutput"
 
         self.memory_table = dynamodb.Table(
             self,
