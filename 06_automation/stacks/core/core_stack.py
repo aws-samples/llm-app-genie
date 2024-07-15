@@ -101,7 +101,7 @@ class CoreStack(GenAiStack):
             "ChatbotSecurityGroup",
             vpc=vpc,
             description="Chatbot service security group",
-            allow_all_outbound=False,
+            allow_all_outbound=True,
             disable_inline_rules=True,
         )
 
@@ -118,48 +118,8 @@ class CoreStack(GenAiStack):
         self.vpc = vpc
         self.subnets = vpc.private_subnets + vpc.isolated_subnets + vpc.public_subnets
 
-        # ==================================================
-        # ============= ECR Private Endpoint ===============
-        # ==================================================
+        
 
-        _ecr_endpoint_sg = ec2.SecurityGroup(
-            self,
-            "ECREndpointSecurityGroup",
-            vpc=vpc,
-            description="Allow access to the ECR Private Endpoint",
-            allow_all_outbound=True,
-            disable_inline_rules=True,
-        )
-
-        vpc.add_interface_endpoint(
-            id="AmazonECRAPIVPCEndpoint",
-            service=ec2.InterfaceVpcEndpointService(
-                f"com.amazonaws.{self.region}.ecr.api", 443
-            ),
-            private_dns_enabled=True,
-            subnets=ec2.SubnetSelection(
-                one_per_az=True
-            ),
-            security_groups=[_ecr_endpoint_sg],
-        )
-
-        vpc.add_interface_endpoint(
-            id="AmazonECRDKRVPCEndpoint",
-            service=ec2.InterfaceVpcEndpointService(
-                f"com.amazonaws.{self.region}.ecr.dkr", 443
-            ),
-            private_dns_enabled=True,
-            subnets=ec2.SubnetSelection(
-                one_per_az=True
-            ),
-            security_groups=[_ecr_endpoint_sg],
-        )
-
-        _ecr_endpoint_sg.add_ingress_rule(
-            chatbot_sg,
-            connection=ec2.Port.tcp(443),
-            description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
-        )
 
         # ==================================================
         # ========== IAM self.ROLE for the ECS task ========
@@ -179,38 +139,63 @@ class CoreStack(GenAiStack):
         )
 
 
-        # ==================================================
-        # ============== AWS Secrets Manager ===============
-        # ==================================================
-
-        _secrets_manager_endpoint_sg = ec2.SecurityGroup(
+        endpoint_sg = ec2.SecurityGroup(
             self,
-            "SecretsManagerEndpointSecurityGroup",
+            f"ChatbotVPCEndpointsSecurityGroup",
             vpc=vpc,
-            description="Allow access to the Secrets Manager Private Endpoint",
+            description=f"Allow access from the Chatbot to the Private Endpoint",
             allow_all_outbound=True,
             disable_inline_rules=True,
         )
 
-        vpc.add_interface_endpoint(
-            id="AmazonSecretsManagerVPCEndpoint",
-            service=ec2.InterfaceVpcEndpointService(
-                f"com.amazonaws.{self.region}.secretsmanager", 443
-            ),
-            private_dns_enabled=True,
-            subnets=ec2.SubnetSelection(
-                one_per_az=True
-            ),
-            security_groups=[_secrets_manager_endpoint_sg],
-        )
-
-        _secrets_manager_endpoint_sg.add_ingress_rule(
+        endpoint_sg.add_ingress_rule(
             chatbot_sg,
             connection=ec2.Port.tcp(443),
             description=f"Allow inbound from chatbot for {config['appPrefixLowerCase']}-ai-app",
         )
 
-        # TODO
-        #ResourceInitializationError: unable to pull secrets or registry auth: unable to retrieve secret from asm: There is a connection issue between the task and AWS Secrets Manager. Check your task network configuration. failed to fetch secret arn:aws:secretsmanager:eu-west-1:843197046435:secret:GenieStreamlitCredentials-MKpxe0 from secrets manager: RequestCanceled: request context canceled caused by: context deadline exceeded
+        # ==================================================
+        # ============= ECR Private Endpoints ===============
+        # ==================================================
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecr.api", vpc)
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecr.dkr", vpc)
 
+
+        # ==================================================
+        # ============== AWS Secrets Manager ===============
+        # ==================================================
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "secretsmanager", vpc)
+
+
+        # ==================================================
+        # ================= Logs Endpoints =================
+        # ==================================================
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "logs", vpc)
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecs-agent", vpc)
+        self.create_interface_endpoint_for_chatbot(endpoint_sg, "ecs-agent", vpc)
+
+
+        # ==================================================
+        # ================== S3 Endpoint ===================
+        # ==================================================
+        vpc.add_gateway_endpoint("S3GatewayEndpoint",
+            service=ec2.GatewayVpcEndpointAwsService.S3
+        )
+        
       
+    def create_interface_endpoint_for_chatbot(self, endpoint_sg, endpoint_name, vpc):
+        
+
+        vpc.add_interface_endpoint(
+            id=f"{endpoint_name}ManagerVPCEndpoint",
+            service=ec2.InterfaceVpcEndpointService(
+                f"com.amazonaws.{self.region}.{endpoint_name}", 443
+            ),
+            private_dns_enabled=True,
+            subnets=ec2.SubnetSelection(
+                one_per_az=True
+            ),
+            security_groups=[endpoint_sg],
+        )
+
+        
