@@ -10,6 +10,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 - 
 
+## [1.3.6] - 2024-07-15
+
+
+
+### Added
+
+- feat(Fin Analyzer): update documentation
+- feat(Fin Analyzer): update ingestion pipeline
+- feat(Fin Analyzer): automate data download logic
+- feat(Fin Analyzer): move configuration to dev.json
+- feat(Fin Analyzer): update crawler to include UBS, remove NFLX and TSLA
+- feat: add CDK Core stack to manage common elements
+- feat: filter models to only those with available setup
+- feat: redesign OpenSearch retriever
+- feat: add Flow control config
+- perf: add chunking to embedding to double performance
+- feat: add option to hide models (claude-3-opus) to avoid errors
+- feat: add chatbot_name and logo customizations
+- feat: add bedrock configuration for ingestion pipeline
+
+
+### Fixed
+
+- bug: fix embedding module import
+- bug: fix Docker legacy warning
+- bug: fix custom prompts and hints
+- bug: fix query string filtering
+- bug: add error handling for missing financial analyzer access in app.config
+- bug: fix Kendra data source deployment
+
+### Changed
+
+- The release switches from a multi VPC deployment to a single VPC deployment. You will need to keep the existing OpenSearch domain in the OpenSearch VPC or migrate the OpenSearch domain to the chatbot VPC.
+- refactor: rename admin.ch embedding files for clarity
+- refactor: switch to one VPC
+- refactor: move role policies to corresponding stacks
+- refactor: move VPC to core stack
+- refactor: remove unused Kendra URL data source
+- refactor: move setup to appconfig.json, delete old hints.yaml
+- refactor: move hardcoded RAG slider parameters to appconfig.json
+- refactor: update Streamlit modules
+- refactor: remove outdated Streamlit configurations
+- refactor: update and refactor ingest.py for OpenSearch serverless and bedrock
+
+
+
+
+
+
 ## [1.2.1] - 2024-03-09
 
 ### Added
