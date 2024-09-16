@@ -102,7 +102,7 @@ To install `Python Poetry`, or see [poetry installation details](https://python-
 
 - Linux, macOS, Windows (WSL):
   ```bash
-  curl -sSL https://install.python-poetry.org | python3 -
+  curl -sSL https://install.python-poetry.org | python3.10 -
   ```
 - Windows (Powershell)
   ```sh
