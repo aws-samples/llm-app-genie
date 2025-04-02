@@ -1,5 +1,12 @@
 # LLM App Genie - Get started building generative AI into your apps <a name="genie---generative-enterprise-assistant"></a>
 
+This project is not maintained anymore. To create custom RAG solutions, you can explore the following alternatives:
+
+* [Amazon Bedrock](https://aws.amazon.com/bedrock/knowledge-bases/) as managed service provides most features
+* [Bedrock Claude Chat](https://github.com/aws-samples/aws-genai-llm-chatbot)
+* [Building RAG use cases with GenAI Chatbot on AWS](https://github.com/aws-samples/bedrock-claude-chat)
+
+
 ## Table of contents <a name="table-of-contents"></a>
 
 - [LLM App Genie - Get started building generative AI into your apps](#genie---generative-enterprise-assistant)
