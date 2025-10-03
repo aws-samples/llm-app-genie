@@ -57,9 +57,9 @@ The main features are:
   # user has to be in poetry shell
   cd crawly
   scrapy crawl webpage -O ../web-content/admin_ch_press_releases_en.json -a filename=configs/admin-ch-press-releases-en.json
-  aws s3 cp admin_ch_press_releases_en.json s3://gen-ai-foundation/crawlers/admin-ch/
+  aws s3 cp admin_ch_press_releases_en.json s3://<you-own-bucket>/crawlers/admin-ch/
   scrapy crawl webpage -O ../web-content/admin_ch_press_releases_de.json -a filename=configs/admin-ch-press-releases-de.json
-  aws s3 cp admin_ch_press_releases_de.json s3://gen-ai-foundation/crawlers/admin-ch/
+  aws s3 cp admin_ch_press_releases_de.json s3://<you-own-bucket>/crawlers/admin-ch/
   ```
 
 ## Debugging the crawler
